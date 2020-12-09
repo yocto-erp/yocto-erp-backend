@@ -1,0 +1,288 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "This is api specs for Vote demo",
+    "version": "1.0.0",
+    "title": "Swagger Vote",
+    "contact": {
+      "email": "team@crypto-cash.app"
+    }
+  },
+  "basePath": "/api",
+  "tags": [
+    {
+      "name": "survey",
+      "description": "Everything about Survey"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/survey/{id}": {
+      "get": {
+        "tags": [
+          "survey"
+        ],
+        "summary": "Get survey information",
+        "description": "",
+        "operationId": "getSurvey",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Survey Id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid Survey"
+          },
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/Survey"
+            }
+          }
+        }
+      }
+    },
+    "/survey/{id}/code": {
+      "post": {
+        "tags": [
+          "survey"
+        ],
+        "summary": "Send code for join to answer the survey",
+        "description": "Send code for join to answer the survey",
+        "operationId": "sendCode",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Survey Id",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "body",
+            "name": "request",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "target": {
+                  "type": "string"
+                },
+                "clientId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "target",
+                "clientId"
+              ]
+            },
+            "description": "Email or Phone Number",
+            "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid Request"
+          },
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/survey/{code}/join": {
+      "get": {
+        "tags": [
+          "survey"
+        ],
+        "summary": "Join to answer the survey, return survey with list of questions",
+        "description": "Join to answer the survey, return survey with list of questions",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "description": "Unique Code for join the survey",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid Survey"
+          },
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/Survey"
+            }
+          }
+        }
+      }
+    },
+    "/survey/{code}/answer": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "description": "Code for verify",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "request",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "formPerson": {
+                  "type": "object",
+                  "description": "user information who answer the survey",
+                  "properties": {
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "formAnswer": {
+                  "type": "object",
+                  "properties": {
+                    "questionId": {
+                      "type": "integer"
+                    },
+                    "answer": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "required": [
+                "formPerson",
+                "formAnswer"
+              ]
+            },
+            "description": "Email or Phone Number",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Answer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "content": {
+          "type": "string",
+          "description": "Question content"
+        },
+        "key": {
+          "type": "string",
+          "description": "Answer Key, using for report or calculation."
+        }
+      }
+    },
+    "Question": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "content": {
+          "type": "string",
+          "description": "Question content"
+        },
+        "data": {
+          "type": "string",
+          "description": "Extra configuration for each question."
+        },
+        "type": {
+          "type": "integer",
+          "description": "Type of question: \n * `1` - RADIO\n * `2` - CHECKBOX",
+          "enum": [
+            1,
+            2
+          ]
+        }
+      }
+    },
+    "Survey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string",
+          "description": "Survey name"
+        },
+        "remark": {
+          "type": "string",
+          "format": "Remark"
+        },
+        "totalAnswer": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Total person join to answer the survey"
+        },
+        "type": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Survey Type:\n * `1` - Public, anyone can join\n * `2` - Need verify via email\n * `3` - Need verify via SMS",
+          "enum": [
+            1,
+            2,
+            3
+          ]
+        },
+        "questions": {
+          "type": "array",
+          "maximum": 100,
+          "items": {
+            "$ref": "#/definitions/Question"
+          }
+        }
+      }
+    }
+  }
+}

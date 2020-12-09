@@ -1,0 +1,7 @@
+{
+  "require": [
+    "@babel/register",
+    "test/env.js"
+  ],
+  "timeout": 60000
+}

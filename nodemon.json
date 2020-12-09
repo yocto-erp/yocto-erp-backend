@@ -1,0 +1,14 @@
+{
+  "verbose": false,
+  "ignore": [
+    "dist/*",
+    "logs/*",
+    "README.md",
+    "sessions/*",
+    "uploads/*",
+    "public/*",
+    "package.json",
+    "update.sh",
+    ".gitignore"
+  ]
+}

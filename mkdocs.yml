@@ -1,0 +1,21 @@
+site_name: Yocto BankEnd Api
+repo_url: https://github.com/yocto-erp/backend
+repo_name: 'GitHub'
+copyright: 'MIT'
+theme: readthedocs
+nav:
+  - Home: 'index.md'
+  - 'Product Management': './product.md'
+  - Inventory:
+    - 'Inventory': './inventory/index.md'
+    - 'Goods Receipt': './inventory/goods-receipt.md'
+    - 'Goods Issue': './inventory/goods-issue.md'
+  - 'Warehouse': './warehouse/warehouse.md'
+  - Order:
+    - Purchase: './order/purchase-order.md'
+    - Sale: './order/sale-order.md'
+  - 'Cost Management': 'cost-management.md'
+  - Person: 'person.md'
+  - Company: 'company.md'
+  - Image: 'image.md'
+  - About: 'about.md'
