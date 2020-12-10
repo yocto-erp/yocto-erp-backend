@@ -1,16 +1,8 @@
 import express from 'express';
-import {
-  warehouses,
-  createWarehouse,
-  removeWarehouse,
-  updateWarehouse,
-  getWarehouse
-} from '../../service/warehouse/warehouse.service';
-import { hasPermission } from '../middleware/permission';
+import {hasPermission} from '../middleware/permission';
 import {PERMISSION} from "../../db/models/acl/acl-action";
-import { pagingParse } from '../middleware/paging.middleware';
-import { warehouseValidator } from '../middleware/validators/warehouse.validator';
-import { logEmail } from '../../service/log.service';
+import {pagingParse} from '../middleware/paging.middleware';
+import {logEmail} from '../../service/log.service';
 
 const log = express.Router();
 

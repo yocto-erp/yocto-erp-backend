@@ -52,5 +52,13 @@ export function logEmail(user, query, order, offset, limit) {
     ],
     offset,
     limit
+  }).then(t => {
+    return {
+      count: t.count,
+      rows: t.rows.map(row => ({
+        ...row.toJSON(),
+        id: row.emailId
+      }))
+    }
   });
 }
