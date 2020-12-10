@@ -20,6 +20,7 @@ import {initSurveyController} from "./survey/survey.controller";
 import {initWebSurveyAdminController} from './survey/survey-admin.controller';
 import {initSurveyQuestionAdminController} from './survey/survey-question-admin.controller';
 import {initEmailTemplateController} from "./template/template-email.controller";
+import { initWebLogController } from './log.controller';
 
 
 export function initWebController(app) {
@@ -45,4 +46,5 @@ export function initWebController(app) {
   initWebSurveyAdminController(app);
   initSurveyQuestionAdminController(app);
   initEmailTemplateController(app);
+  initWebLogController(app);
 }
