@@ -35,6 +35,17 @@ export function listEmailTemplate(query, order, offset, limit, user) {
     ],
     offset,
     limit
+  }).then(res => {
+    return {
+      count: res.count,
+      rows: res.rows.map(t => {
+        return {
+          ...t.toJSON(),
+          cc: t.cc && t.cc.length ? t.cc.split(',') : null,
+          bcc: t.bcc && t.bcc.length ? t.bcc.split(',') : null
+        };
+      })
+    }
   });
 }
 
@@ -58,10 +69,16 @@ export async function getEmailTemplate(id, user) {
     ]
   });
   if (!rs) {
-    throw badRequest('inventory', FIELD_ERROR.INVALID, 'inventory not found');
+    throw badRequest('emailTemplate', FIELD_ERROR.INVALID, 'Email Template not found');
   }
 
-  return rs;
+  const json = rs.toJSON();
+
+  return {
+    ...json,
+    cc: json.cc && json.cc.length ? [...json.cc.split(',')] : null,
+    bcc: json.bcc && json.bcc.length ? [...json.bcc.split(',')] : null
+  };
 }
 
 export async function createEmailTemplate(user, createForm) {
@@ -80,12 +97,15 @@ export async function createEmailTemplate(user, createForm) {
     }, {transaction});
     const emailTemplate = await db.EmailTemplate.create({
       templateId: template.id,
-      subject: createForm.subject
+      subject: createForm.subject,
+      from: createForm.from,
+      cc: createForm.cc ? createForm.cc.join(',') : '',
+      bcc: createForm.bcc ? createForm.bcc.join(',') : ''
     }, {transaction});
     await transaction.commit();
     return {
       template: template.get({plain: true}),
-      subject: emailTemplate.subject
+      ...emailTemplate.get({plain: true})
     }
   } catch (e) {
     await transaction.rollback();
@@ -104,6 +124,9 @@ export async function updateEmailTemplate(id, user, updateForm) {
   const transaction = await db.sequelize.transaction();
   try {
     oldRs.subject = updateForm.subject;
+    oldRs.from = updateForm.from;
+    oldRs.cc = updateForm.cc ? updateForm.cc.join(',') : '';
+    oldRs.bcc = updateForm.bcc ? updateForm.bcc.join(',') : '';
     oldRs.template.name = updateForm.name;
     oldRs.template.content = updateForm.content;
     oldRs.template.remark = updateForm.remark || '';
