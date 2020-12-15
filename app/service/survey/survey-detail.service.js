@@ -12,8 +12,17 @@ export function createSurveyI18N(surveyId, surveyI18Form, transaction) {
 }
 
 export async function removeSurveyI18N(surveyId, transaction) {
-  console.log('surveyId', surveyId);
   return db.SurveyI18N.destroy({
     where: { surveyId: surveyId}
+  }, { transaction });
+}
+
+export async function removeDetailSurvey(surveyId, transaction) {
+  await removeSurveyI18N(surveyId, transaction);
+  await db.SurveyI18N.destroy({
+    where: { surveyId: surveyId}
+  }, { transaction });
+  return db.Survey.destroy({
+    where: { id: surveyId}
   }, { transaction });
 }
