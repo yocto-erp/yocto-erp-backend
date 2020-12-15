@@ -207,7 +207,7 @@ export async function confirmEmail(email, token) {
   return user;
 }
 
-export async function resendEmailActive(email) {
+export async function resendEmailActive(email, origin) {
   const user = await db.User.findOne({
     where: {
       email
@@ -217,7 +217,7 @@ export async function resendEmailActive(email) {
   if (user) {
     try {
       const token = md5(`${user.email}-${new Date()}`);
-      const url = `${process.env.WEB_URL || 'http://localhost:4200'}/email-activate?email=${user.email}&token=${token}`;
+      const url = `${origin || 'http://localhost:4200'}/email-activate?email=${user.email}&token=${token}`;
 
       return db.UserActivate.create({
         user_id: user.id,

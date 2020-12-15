@@ -29,7 +29,8 @@ auth.get('/access-denies', hasPermission([PERMISSION.INVENTORY.READ, PERMISSION.
 });
 
 auth.get('/resendEmailActive', (req, res, next) => {
-  return resendEmailActive(req.query.email)
+  const origin = getOrigin(req);
+  return resendEmailActive(req.query.email, origin)
     .then(() => res.status(200).json({ok: 1}))
     .catch(next);
 });
