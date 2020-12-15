@@ -7,7 +7,10 @@ export default class EmailTemplate extends Sequelize.Model {
     return super.init(
       {
         subject: {type: DataTypes.TEXT},
-        templateId: {type: DataTypes.BIGINT, primaryKey: true}
+        templateId: {type: DataTypes.BIGINT, primaryKey: true},
+        from: {type: DataTypes.STRING(250)},
+        cc: {type: DataTypes.TEXT},
+        bcc: {type: DataTypes.TEXT}
       },
       {
         tableName: 'email_template',
