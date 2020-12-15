@@ -1,6 +1,6 @@
 import db from '../../db/models';
 import {badRequest, FIELD_ERROR} from '../../config/error';
-import { createSurveyI18N, removeSurveyI18N } from './survey-detail.service';
+import { createSurveyI18N, removeDetailSurvey, removeSurveyI18N } from './survey-detail.service';
 
 const {Op} = db.Sequelize;
 
@@ -87,7 +87,7 @@ export async function updateSurvey(sId, updateForm) {
       lastModifiedById: 0
     }, transaction);
     if (updateForm.surveyI18Ns && updateForm.surveyI18Ns.length) {
-      await removeSurveyI18N(surveyCheck.id, transaction);
+      await removeSurvey(surveyCheck.id, transaction);
       await createSurveyI18N(surveyCheck.id, updateForm.surveyI18Ns, transaction);
     }
     await transaction.commit();
@@ -120,10 +120,7 @@ export async function removeSurvey(sId) {
         where: { surveyId: surveyCheck.id }
       }, { transaction });
     }
-    await removeSurveyI18N(surveyCheck.id, transaction);
-    const survey = await db.Survey.destroy({
-      where: { id: surveyCheck.id }
-    }, { transaction });
+    const survey = await removeDetailSurvey(surveyCheck.id, transaction)
     await transaction.commit();
     return survey;
   } catch (error) {
