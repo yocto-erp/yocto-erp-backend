@@ -225,7 +225,7 @@ export async function resendEmailActive(email, origin) {
         date_inserted: new Date()
       })
         .then(async () => {
-          await emailService.sendRegister(user.email, user.displayName, url);
+          await emailService.sendRegister(user.email, user.displayName || user.email, url);
         });
     } catch (e) {
       appLog.error(e.message, e);

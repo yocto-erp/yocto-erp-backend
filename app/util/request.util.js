@@ -11,5 +11,5 @@ export function userAgent(req) {
 
 
 export function getOrigin(req) {
-  return req.get('origin');
+  return req.get('origin') || req.get('host');
 }
