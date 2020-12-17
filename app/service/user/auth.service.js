@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import md5 from 'md5';
 import db from '../../db/models';
-import { badRequest, FIELD_ERROR, FieldError, FormError, HTTP_ERROR, HttpError } from '../../config/error';
+import {badRequest, FIELD_ERROR, FieldError, FormError, HTTP_ERROR, HttpError} from '../../config/error';
 import {USER_STATUS} from '../../db/models/user/user';
 import APP_CONFIG from '../../config/application';
 import {appLog} from '../../config/winston';
@@ -9,7 +9,6 @@ import {USER_EVENT, userEmitter} from '../../event/user.event';
 import {ALL_PERMISSIONS} from '../../db/models/acl/acl-action';
 import {ACTION_TYPE} from '../../db/models/acl/acl-group-action';
 import * as emailService from '../email/email.service';
-
 
 
 const userNameFilter = ['admin', 'www', 'support', 'cryptocash', 'usd', 'ciphercore', 'ciphc', 'peak', 'addfund',
@@ -125,7 +124,7 @@ export async function register(registerForm) {
             pwd: db.User.hashPassword(registerForm.password),
             displayName: registerForm.displayName,
             status: USER_STATUS.ACTIVE,
-            insertedDate: new Date(),
+            createdDate: new Date(),
             email_active: false,
             groupId: group.id
           },
@@ -138,7 +137,6 @@ export async function register(registerForm) {
         if (process.env.NODE_ENV !== 'test') {
           userEmitter.emit(USER_EVENT.REGISTER, newUser);
         }
-
 
         return newUser;
       } catch (e) {
@@ -245,7 +243,7 @@ export async function createCompanyOnboard(user, createForm) {
         remark: createForm.remark,
         createdDate: new Date(),
         createdById: user.id
-      }, { transaction }
+      }, {transaction}
     );
 
     await db.UserCompany.create({
@@ -288,7 +286,7 @@ export async function createCompanyOnboard(user, createForm) {
     userJson.userCompanies = userCompany;
     userJson.companyId = userCompany;
     const token = jwt.sign(userJson, APP_CONFIG.JWT.secret);
-    return { token };
+    return {token};
   } catch (e) {
     await transaction.rollback();
     throw e;
