@@ -120,10 +120,8 @@ async function worker({type, inventory}, cb) {
     const {details, warehouseId, lastModifiedById, createdById, type: inventoryType, companyId} = inventory
 
     const products = await preProcessProducts(details);
-    console.log(products);
     const keys = Object.keys(products);
     for (let i = 0; i < keys.length; i += 1) {
-      console.log(products[keys[i]]);
       const {productId, quantity, unitId, serials, baseUnit} = products[keys[i]];
       // eslint-disable-next-line no-await-in-loop
       await processProduct({

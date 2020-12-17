@@ -157,7 +157,6 @@ export async function createStudentMonthlyFee(user, createForm) {
 }
 
 export async function updateStudentMonthlyFee(sId, updateForm, user) {
-  console.log(sId);
   try {
     if (updateForm && updateForm.details) {
       for (let i = 0; i < updateForm.details.length; i += 1) {
@@ -205,7 +204,6 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
 
 export async function removeStudentMonthlyFee(sId, user) {
   const bId = hex2binary(sId);
-  console.log(bId, user.companyId);
   const checkStudent = await db.StudentMonthlyFee.findOne({
     where: {
       id: bId,

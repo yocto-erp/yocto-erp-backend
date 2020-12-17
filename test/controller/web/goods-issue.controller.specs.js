@@ -97,7 +97,6 @@
 //       .get(`/api/inventory/goods-issue/${inventoryId}`)
 //       .set('Authorization', `Bearer ${token}`);
 //     res.should.have.status(200);
-//     console.log(res.body);
 //   });
 //
 //   it('delete', async () => {
@@ -105,6 +104,5 @@
 //       .delete(`/api/inventory/goods-issue/${inventoryId}`)
 //       .set('Authorization', `Bearer ${token}`);
 //     res.should.have.status(200);
-//     console.log(res.body);
 //   });
 // });

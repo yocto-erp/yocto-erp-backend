@@ -61,14 +61,12 @@ export async function templateRenderPDF(templateId, object, name) {
   const templateLastUpdated = formatDateTime(template.template.lastUpdatedDate);
   const fileName = `${RENDER_FOLDER}/${name}_${templateLastUpdated}.pdf`;
   if (fs.existsSync(fileName)) {
-    console.log('FileExisted')
     return fileName;
   }
   return Promise.all([puppeteer.launch(), printTemplateRender(templateId, object)])
     .then(async ([browser, print]) => {
       const page = await browser.newPage();
       await page.setContent(print.body, {waitUntil: 'networkidle0'})
-      console.log(CONTENT_CSS);
       await page.addStyleTag({path: CONTENT_CSS})
       await page.pdf({path: fileName, format: 'a4'});
       await browser.close();

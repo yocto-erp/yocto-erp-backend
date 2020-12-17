@@ -180,7 +180,7 @@ export async function updateInventory(inventoryId, user, type, updateForm) {
     }
 
     await transaction.commit();
-    const inventoryNew = await getInventory(inventoryId, user.companyId);
+    const inventoryNew = await getInventory(inventoryId, user);
     queueInventoryOut(inventoryOld);
     queueInventoryIn(inventoryNew);
     return inventoryNew;

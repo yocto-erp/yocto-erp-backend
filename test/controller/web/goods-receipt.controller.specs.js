@@ -97,7 +97,6 @@
 //       .get(`/api/inventory/goods-receipt/${inventoryId}`)
 //       .set('Authorization', `Bearer ${token}`);
 //     res.should.have.status(200);
-//     console.log(res.body);
 //   });
 //
 //   it('delete', async () => {

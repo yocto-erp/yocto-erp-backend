@@ -96,7 +96,6 @@ export async function resendEmail(emailId) {
 }
 
 export function sendRegister(email, displayName, url) {
-  console.log(email);
   try {
     const templatePath = getTemplateFile('email-confirm');
     emailLog.info(`Template Path: ${templatePath}`);
