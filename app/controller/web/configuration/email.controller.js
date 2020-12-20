@@ -21,7 +21,6 @@ emailConfiguration.post('/', isAuthenticated(),
 
 emailConfiguration.post('/test', isAuthenticated(),
   (req, res, next) => {
-    console.log(req.body);
     const {configuration, email: {from, to}} = req.body;
     return sendTestEmail(configuration, {
       from,

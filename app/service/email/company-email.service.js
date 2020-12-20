@@ -74,7 +74,6 @@ export async function sendCompanyEmail(emailId, companyId) {
       lock: transaction.LOCK.UPDATE
     })
     const {from, to, cc, bcc, content, subject, attachments} = email;
-    console.log(attachments);
     // eslint-disable-next-line no-await-in-loop
     const emailConfigure = await getEmailConfigure(companyId)
     const emailMsg = {
@@ -86,7 +85,6 @@ export async function sendCompanyEmail(emailId, companyId) {
     let resp = {};
     try {
       resp = await getEmailClient(emailConfigure).send(emailMsg);
-      console.log(`Email Response: ${JSON.stringify(resp)}`);
       email.status = EMAIL_STATUS.SUCCESS;
     } catch (e) {
       resp = e;

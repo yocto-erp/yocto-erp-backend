@@ -3,7 +3,6 @@ export function pagingParse({column, dir}) {
     let page;
     let size;
     let order;
-    console.log(req.query);
     try {
       page = parseInt(req.query.page, 10);
       if (Number.isNaN(page)) {

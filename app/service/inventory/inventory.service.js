@@ -180,9 +180,9 @@ export async function updateInventory(inventoryId, user, type, updateForm) {
     }
 
     await transaction.commit();
-    const inventoryNew = await getInventory(inventoryId, user.companyId);
-    queueInventoryOut(inventoryOld);
-    queueInventoryIn(inventoryNew);
+    const inventoryNew = await getInventory(inventoryId, user);
+    await queueInventoryOut(inventoryOld);
+    await queueInventoryIn(inventoryNew);
     return inventoryNew;
   } catch (error) {
     await transaction.rollback();

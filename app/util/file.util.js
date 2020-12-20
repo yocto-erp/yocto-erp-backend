@@ -4,7 +4,6 @@ import path from 'path';
 const absolutePath = path.resolve('public', 'uploads');
 
 export async function writeExcelFile() {
-  console.log(absolutePath);
   const options = {
     filename: `${absolutePath}/streamed-workbook.xlsx`,
     useStyles: true,

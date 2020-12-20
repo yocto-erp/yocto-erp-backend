@@ -84,7 +84,6 @@ export async function getQuestionSummary(questionId, search) {
       havingWhere.total = filterQuestion.length;
     }
 
-    console.log(personAnswerSearch);
     const personFilter = await db.SurveyPersonAnswer.findAll({
       attributes: ['surveyPersonId', [db.Sequelize.fn('count', db.Sequelize.col('SurveyPersonAnswer.id')), 'total']],
       where: personAnswerSearch,
@@ -100,8 +99,6 @@ export async function getQuestionSummary(questionId, search) {
       [Op.in]: filterSurvey
     }
   }
-
-  console.log(`SurveyPersonAnswerWhere`, surveyPersonAnswerWhere);
 
   const question = await db.SurveyQuestion.findByPk(questionId, {
     include: [
@@ -131,7 +128,6 @@ export async function getQuestionSummary(questionId, search) {
     let total = 0;
     for (let j = 0; j < answers.length; j += 1) {
       if (key === answers[j].answer) {
-        console.log(answers[j]);
         // eslint-disable-next-line prefer-destructuring
         total = answers[j].total;
         break;
@@ -278,7 +274,6 @@ export async function getSurveyQuestions(surveyId, language = '') {
 
   let questions = [];
   let languageId = 0;
-  console.log('language', language);
   if (language) {
     const lang = await db.Language.findOne({
       where: {code: language}
@@ -328,7 +323,7 @@ export async function getSurveyQuestions(surveyId, language = '') {
       })
     })
   }
-  console.log('question', questions);
+
   for (let i = 0; i < questions.length; i += 1) {
     const question = questions[i];
     let answers = [];
@@ -386,7 +381,6 @@ export async function surveyJoin(requestCode, language) {
     throw badRequest('survey', 'INVALID', 'Invalid survey id');
   }
 
-  console.log('survey', survey);
   const surveyPersonWhere = {};
   const personWhere = {};
   if (survey.type === SURVEY_TYPE.EMAIL_VERIFY) {
@@ -623,7 +617,6 @@ async function mapSurveyPersonData(surveyPerson) {
     surveyId
   } = surveyPerson;
 
-  console.log(surveyPerson);
   let survey;
   try {
     survey = await getSurveyWithLanguageId(surveyId, languageId);
@@ -637,7 +630,6 @@ async function mapSurveyPersonData(surveyPerson) {
     const {questionId, answer} = surveyPersonAnswers[i];
     // eslint-disable-next-line no-await-in-loop
     const question = await getQuestionWithLangId(questionId, languageId);
-    console.log(question, surveyPersonAnswers[i]);
     let existedQuestion = null;
     let userAnswers;
 
