@@ -8,6 +8,17 @@ export const GENDER = {
   OTHER: 2
 }
 
+export const getGenderStr = (gender) => {
+  switch (gender) {
+    case GENDER.MALE:
+      return 'MALE';
+    case GENDER.FEMALE:
+      return 'FEMALE';
+    default:
+      return 'OTHER';
+  }
+}
+
 export default class Person extends Sequelize.Model {
   static init(sequelize, opts) {
     return super.init(

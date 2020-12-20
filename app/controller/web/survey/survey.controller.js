@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  exportSurveyAnswerRaw,
   getAllQuestions,
   getQuestionSummary,
   getResultQuestion,
@@ -93,6 +94,17 @@ router.get('/:id(\\d+)/person-answers', pagingParse({column: 'id', dir: 'asc'}),
         res.status(200).json(result);
       })
       .catch(next);
+  });
+
+router.get('/:id(\\d+)/person-answers/raw',
+  (req, res, next) => {
+    try {
+      res.set('Content-Type', 'text/csv');
+
+      return exportSurveyAnswerRaw(req.params.id, res);
+    } catch (e) {
+      return next(e);
+    }
   });
 
 router.get('/:id(\\d+)/questions',

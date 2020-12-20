@@ -7,6 +7,10 @@ import {isArray} from "../../util/func.util";
 import {SURVEY_QUESTION_TYPE} from "../../db/models/survey/survey-question";
 import {addIPFS} from "../ipfs.service";
 import {sign} from "../ethereum/vote-manager.service";
+import {getGenderStr} from "../../db/models/person";
+import {formatDateTime} from "../template/template.util";
+
+const Stream = require('stream');
 
 const {Op} = db.Sequelize;
 
@@ -879,9 +883,93 @@ export async function getAllQuestions(surveyId) {
       {model: db.SurveyQuestionAnswer, as: 'questionAnswers'}
     ],
     order: [
-      ['id', 'asc']
+      [{model: db.SurveyQuestionAnswer, as: 'questionAnswers'}, 'questionId', 'asc'],
+      [{model: db.SurveyQuestionAnswer, as: 'questionAnswers'}, 'id', 'asc']
     ]
   });
+}
+
+export async function exportSurveyAnswerRaw(id, res) {
+  const readableStream = new Stream.Readable({
+    read() {
+    }
+  });
+
+  const whereSurveyPerson = {surveyId: id};
+  const questions = await getAllQuestions(id);
+
+  const survey = await getSurvey(id);
+  res.setHeader('Content-disposition', `attachment; filename=${survey.name}.csv`);
+  const surveyPerson = await db.SurveyPerson.findAll({
+    distinct: true,
+    where: whereSurveyPerson,
+    include: [
+      {
+        model: db.Person,
+        required: true
+      },
+      {
+        model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers'
+      }
+    ],
+    order: [
+      [{model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers'}, 'questionId', 'asc'],
+      [{model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers'}, 'id', 'asc']
+    ]
+  });
+  const newLine = '\r\n';
+  readableStream.pipe(res);
+  const headers = ['ClientId'];
+  for (let i = 0; i < questions.length; i += 1) {
+    const {questionAnswers, type} = questions[i];
+    const questionIndex = i + 1;
+    if (type === SURVEY_QUESTION_TYPE.CHECKBOX) {
+      for (let j = 0; j < questionAnswers.length; j += 1) {
+        headers.push(`Q${questionIndex}_${j + 1}`);
+      }
+    } else {
+      headers.push(`Q${questionIndex}`);
+    }
+  }
+  headers.push('First Name', 'Last Name', 'Gender', 'Age Range', 'Email', 'City', 'Submitted Date')
+  console.log(headers);
+  readableStream.push(`${headers.join(',')}${newLine}`);
+
+  for (let spI = 0; spI < surveyPerson.length; spI += 1) {
+    const {
+      person: {firstName, lastName, email, sex, address},
+      surveyPersonAnswers,
+      submittedDate,
+      clientId,
+      ageRange
+    } = surveyPerson[spI];
+    const row = [clientId];
+    for (let i = 0; i < questions.length; i += 1) {
+      const {questionAnswers, type, id: questionId} = questions[i];
+      const userAnswerQuestions = surveyPersonAnswers.filter(t => t.questionId === questionId);
+      // console.log('Question', questions[i].get({plain: true}));
+      // console.log('UserAnswers', userAnswerQuestions.map(t => t.get({plain: true})));
+      if (type === SURVEY_QUESTION_TYPE.CHECKBOX) {
+        for (let j = 0; j < questionAnswers.length; j += 1) {
+          const {key} = questionAnswers[j];
+          const isUserHasAnswer = userAnswerQuestions.find(t => t.answer === key);
+          console.log('Question', questionId, 'answer', key, 'userAnswer', isUserHasAnswer);
+          if (isUserHasAnswer) {
+            row.push('1');
+          } else {
+            row.push('');
+          }
+        }
+      } else {
+        const userAnswer = userAnswerQuestions[0];
+        const indexAnswer = questionAnswers.findIndex(t => t.key === userAnswer.answer);
+        row.push(indexAnswer + 1);
+      }
+    }
+    row.push(firstName, lastName, getGenderStr(sex), ageRange, email, address, formatDateTime(submittedDate))
+    readableStream.push(`${row.join(',')}${newLine}`);
+  }
+  readableStream.push(null);
 }
 
 export async function getSurveySummary(surveyId) {
