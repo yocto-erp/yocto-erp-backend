@@ -46,13 +46,11 @@ export async function createSurvey({name, remark, type, languages}, user = {}) {
 export async function getQuestionSummary(questionId, search) {
   const {fromDate, toDate, questions} = search;
 
-  let isNeedFilter = false;
   let filterSurvey = [];
   const surveyPersonAnswerWhere = {
     questionId
   };
   if (fromDate || toDate || (questions && questions.length)) {
-    isNeedFilter = true;
     const personSearch = {};
     const personAnswerSearch = {};
     const havingWhere = {};
@@ -153,11 +151,21 @@ async function getSurveyWithLanguageId(surveyId, languageId) {
     if (!t) {
       throw badRequest('survey', 'INVALID', 'Not found any survey with language');
     }
+    let formDetail = {};
+    console.log('Survey', t.survey);
+    if (t.survey.formDetail) {
+      try {
+        formDetail = JSON.parse(t.survey.formDetail);
+      } catch (e) {
+      }
+    }
+
     return {
       id: t.survey.id,
       type: t.survey.type,
       name: t.name,
       remark: t.remark,
+      formDetail,
       languageId
     };
   });
@@ -179,6 +187,23 @@ export async function getSurvey(id, language) {
   }
   if (!rs) {
     rs = await db.Survey.findByPk(Number(id));
+    let formDetail = {};
+    console.log(rs.formDetail);
+    if (rs.formDetail) {
+      try {
+        formDetail = JSON.parse(rs.formDetail);
+      } catch (e) {
+      }
+    }
+
+    rs = {
+      id: rs.id,
+      type: rs.type,
+      name: rs.name,
+      remark: rs.remark,
+      formDetail,
+      languageId: null
+    };
   }
   return rs;
 }
@@ -340,6 +365,9 @@ export async function getSurveyQuestions(surveyId, language = '') {
               questionId: question.id
             }
           }
+        ],
+        order: [
+          [{model: db.SurveyQuestionAnswer, as: 'surveyQuestionAnswer'}, 'id', 'asc']
         ]
       }).then(t => {
         return t.map(item => {
@@ -353,7 +381,10 @@ export async function getSurveyQuestions(surveyId, language = '') {
       answers = await db.SurveyQuestionAnswer.findAll({
         where: {
           questionId: question.id
-        }
+        },
+        order: [
+          ['id', 'asc']
+        ]
       }).then(t => {
         return t.map(item => {
           const {content, id, key} = item;
@@ -363,12 +394,17 @@ export async function getSurveyQuestions(surveyId, language = '') {
     }
     question.questionAnswers = answers;
   }
-
+  let formDetail = {};
+  try {
+    formDetail = JSON.parse(survey.formDetail);
+  } catch (e) {
+  }
   return {
     id: survey.id,
     type: survey.type,
     name: survey.name,
     remark: survey.remark,
+    formDetail,
     languageId, questions
   };
 }
@@ -421,11 +457,16 @@ export async function postAnswerQuestion(surveyId, clientId, target, code, form,
     await isValidCode(clientId, target, code);
   }
 
-  const lang = await db.Language.findOne({
-    where: {
-      code: form.language
-    }
-  });
+  let languageId = null;
+  if (form.language) {
+    const lang = await db.Language.findOne({
+      where: {
+        code: form.language
+      }
+    });
+    languageId = lang.id;
+  }
+
 
   const surveyPersonWhere = {};
   const personWhere = {};
@@ -458,7 +499,7 @@ export async function postAnswerQuestion(surveyId, clientId, target, code, form,
         firstName,
         lastName,
         email: target || email,
-        sex: gender,
+        sex: gender || null,
         address,
         createdById: 0,
         createdDate: new Date()
@@ -473,7 +514,7 @@ export async function postAnswerQuestion(surveyId, clientId, target, code, form,
       submittedDate: new Date(),
       IP: ip,
       ageRange: age,
-      languageId: lang?.id,
+      languageId,
       clientAgent
     }, transaction);
     const personAnswers = [];
@@ -494,7 +535,7 @@ export async function postAnswerQuestion(surveyId, clientId, target, code, form,
         personAnswers.push({
           surveyPersonId: createSurveyPerson.id,
           questionId,
-          answer: answer
+          answer: answer || ''
         })
       }
     }
@@ -651,7 +692,7 @@ async function mapSurveyPersonData(surveyPerson) {
       if (question.type === SURVEY_QUESTION_TYPE.CHECKBOX) {
         userAnswers = [userAnswerObj.key];
       } else {
-        userAnswers = userAnswerObj.key;
+        userAnswers = userAnswerObj?.key || '';
       }
       existedQuestion = {question, answer: userAnswers};
       answers.push(existedQuestion);
@@ -735,7 +776,7 @@ async function syncSurveyPerson(surveyPerson) {
   let {ipfsId, blockchainId} = surveyPerson;
   if (!ipfsId) {
     ipfsId = await addIPFS(mapSurveyForIPFS(survey));
-    db.SurveyPerson.update({
+    await db.SurveyPerson.update({
       ipfsId,
       lastUpdatedDate: new Date()
     }, {
@@ -750,14 +791,14 @@ async function syncSurveyPerson(surveyPerson) {
   }
 
   if (!blockchainId) {
-    sign(ipfsId, surveyPersonId, async (txId) => {
+    await sign(ipfsId, surveyPersonId, async (txId) => {
       surveyPerson.blockchainId = txId;
       surveyPerson.lastUpdatedDate = new Date();
       await surveyPerson.save();
     }).then((resp) => {
       console.log('Success', resp);
     }, (err) => {
-      console.log('Error', err);
+      console.error('Error', err);
     })
   }
 }
@@ -793,7 +834,8 @@ export async function getAllSurveyNotYetSync() {
     ],
     order: [
       [{model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers'}, 'id', 'asc']
-    ]
+    ],
+    limit: 3
   });
   try {
     for (let i = 0; i < surveyPersons.length; i += 1) {
@@ -801,7 +843,7 @@ export async function getAllSurveyNotYetSync() {
       await syncSurveyPerson(surveyPersons[i]);
     }
   } catch (e) {
-    console.error('Got error', e);
+    console.error('Sync Got error', e);
   }
 }
 

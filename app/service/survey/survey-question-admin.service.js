@@ -77,7 +77,7 @@ export async function createQuestion(createForm) {
 
 export async function updateQuestion(qId, updateForm) {
 
-  const checkQuestion =  await db.SurveyQuestion.findOne({
+  const checkQuestion = await db.SurveyQuestion.findOne({
     where: {
       id: qId
     }
@@ -87,6 +87,9 @@ export async function updateQuestion(qId, updateForm) {
   }
   const transaction = await db.sequelize.transaction();
   try {
+    checkQuestion.type = updateForm.type;
+    checkQuestion.content = updateForm.content;
+    await checkQuestion.save({transaction});
     await db.SurveyQuestionAnswer.destroy({
       where: {questionId: checkQuestion.id}
     }, {transaction});

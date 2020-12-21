@@ -108,10 +108,13 @@ const ropstenContract = new ropstenWeb3.eth.Contract(abi, process.env.ETHER_SMAR
 
 export async function sign(hash, fingering, transactionHash) {
   const tx = ropstenContract.methods.vote(hash, fingering);
+  const transactionCount = await ropstenWeb3.eth.getTransactionCount(process.env.ETHER_PUBLIC_KEY, "pending");
+  console.log('Transaction Count', transactionCount);
   return tx
     .send({
       from: signer.address,
-      gas: await tx.estimateGas()
+      gas: await tx.estimateGas(),
+      nonce: transactionCount
     })
     .once('transactionHash', transactionHash);
 }

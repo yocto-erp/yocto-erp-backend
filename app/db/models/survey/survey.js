@@ -22,7 +22,8 @@ export default class Survey extends Sequelize.Model {
         lastModifiedById: {type: DataTypes.BIGINT},
         totalAnswer: {type: DataTypes.INTEGER},
         lastAnsweredDate: {type: DataTypes.DATE},
-        type: {type: DataTypes.INTEGER}
+        type: {type: DataTypes.INTEGER},
+        formDetail: {type: DataTypes.TEXT}
       },
       {
         tableName: 'survey',

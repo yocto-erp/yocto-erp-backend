@@ -25,8 +25,7 @@ router.get('/:id(\\d+)',
         if (!result) {
           throw badRequest('survey', 'NOT_FOUND', 'not found any survey');
         }
-        const {id, name, type, remark, totalAnswer} = result;
-        res.status(200).json({id, name, type, remark, totalAnswer});
+        res.status(200).json(result);
       })
       .catch(next);
   });
