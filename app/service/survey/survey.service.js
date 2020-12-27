@@ -156,6 +156,7 @@ async function getSurveyWithLanguageId(surveyId, languageId) {
     if (t.survey.formDetail) {
       try {
         formDetail = JSON.parse(t.survey.formDetail);
+        // eslint-disable-next-line no-empty
       } catch (e) {
       }
     }
@@ -192,6 +193,7 @@ export async function getSurvey(id, language) {
     if (rs.formDetail) {
       try {
         formDetail = JSON.parse(rs.formDetail);
+        // eslint-disable-next-line no-empty
       } catch (e) {
       }
     }
@@ -211,6 +213,7 @@ export async function getSurvey(id, language) {
 export function listSurveyResults(id, paging, query) {
   const {search} = query;
   let wherePerson = {};
+  const surveyPersonWhere = {surveyId: id};
   if (search && search.length) {
     wherePerson = {
       [Op.or]: [
@@ -236,9 +239,7 @@ export function listSurveyResults(id, paging, query) {
   }
 
   return db.SurveyPerson.findAndCountAll({
-    where: {
-      surveyId: id
-    },
+    where: surveyPersonWhere,
     include: [
       {
         model: db.Person,
@@ -397,6 +398,7 @@ export async function getSurveyQuestions(surveyId, language = '') {
   let formDetail = {};
   try {
     formDetail = JSON.parse(survey.formDetail);
+    // eslint-disable-next-line no-empty
   } catch (e) {
   }
   return {

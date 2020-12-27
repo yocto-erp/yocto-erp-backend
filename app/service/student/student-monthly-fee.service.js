@@ -1,11 +1,11 @@
 import {v4 as uuidv4} from 'uuid';
+import Mustache from "mustache";
 import db from '../../db/models';
 import {badRequest, FIELD_ERROR} from '../../config/error';
 import {hex2binary} from "../../util/string.util";
 import {formatDateTime, formatTemplateMoney, personToPrintData} from "../template/template.util";
 import {templateRenderPDF} from "../template/template-render.service";
 import {getEmailTemplate} from "../template/template-email.service";
-import Mustache from "mustache";
 import {EMAIL_ATTACHMENT_TYPE} from "../../db/models/email/email-attachment";
 import {addEmailQueue} from "../email/company-email.service";
 
@@ -46,7 +46,7 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
         model: db.Student, as: 'student',
         required: true,
         include: [
-          {model: db.Person, as: 'child', where: wherePerson, required: true,}
+          {model: db.Person, as: 'child', where: wherePerson, required: true}
         ]
       }
     ],
@@ -144,6 +144,8 @@ export async function createStudentMonthlyFee(user, createForm) {
           remark: createForm.details[i].remark,
           feePerMonth: createForm.details[i].feePerMonth,
           totalAmount: createForm.details[i].totalAmount,
+          studentAbsentDay: createForm.details[i].studentAbsentDay,
+          studentAbsentDayFee: createForm.details[i].studentAbsentDayFee,
           lastUpdatedDate: new Date(),
           lastUpdatedById: user.id
         });
@@ -190,6 +192,8 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
           otherFee: +updateForm.details[i].otherFee,
           otherDeduceFee: +updateForm.details[i].otherDeduceFee,
           remark: updateForm.details[i].remark,
+          studentAbsentDay: updateForm.details[i].studentAbsentDay,
+          studentAbsentDayFee: updateForm.details[i].studentAbsentDayFee,
           feePerMonth: updateForm.details[i].feePerMonth,
           totalAmount: updateForm.details[i].totalAmount,
           lastUpdatedDate: new Date(), lastUpdatedById: user.id
@@ -247,9 +251,12 @@ export async function toPrintData(id, companyId) {
     yearFee: fee.yearFee,
     scholarShip: formatTemplateMoney(fee.scholarFee),
     scholarShipPercent: `${fee.scholarShip} %`,
-    scholarFee: formatTemplateMoney(fee.feePerMonth),
+    tuitionFee: formatTemplateMoney(fee.feePerMonth),
     mealFee: formatTemplateMoney(fee.mealFee),
-    absentDate: fee.absentDate,
+    absentDay: fee.absentDay,
+    absentDayFee: fee.absentDayFee,
+    studentAbsentDay: fee.studentAbsentDay,
+    studentAbsentDayFee: formatTemplateMoney(fee.studentAbsentDayFee),
     deduceTuition: formatTemplateMoney(fee.deduceTuition),
     busFee: formatTemplateMoney(fee.busFee),
     beginningYearFee: formatTemplateMoney(fee.beginningYearFee),
