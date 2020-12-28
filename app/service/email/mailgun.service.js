@@ -1,5 +1,7 @@
 import {client} from 'mailgun.js';
 
+const fs = require('fs');
+
 export const mailgunClient = (configure) => {
   const {key, domain} = configure;
   const emailClient = client({
@@ -18,7 +20,7 @@ export const mailgunClient = (configure) => {
     }
 
     if (attachments) {
-      emailOpts.attachment = attachments.map(t => t.data)
+      emailOpts.attachment = attachments.map(t => fs.createReadStream(t.data))
     }
     return emailClient.messages.create(domain, emailOpts);
   };
