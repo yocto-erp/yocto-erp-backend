@@ -63,7 +63,10 @@ export async function templateRenderPDF(templateId, object, name) {
   if (fs.existsSync(fileName)) {
     return fileName;
   }
-  return Promise.all([puppeteer.launch(), printTemplateRender(templateId, object)])
+  return Promise.all([puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox']
+  }), printTemplateRender(templateId, object)])
     .then(async ([browser, print]) => {
       const page = await browser.newPage();
       await page.setContent(print.body, {waitUntil: 'networkidle0'})
