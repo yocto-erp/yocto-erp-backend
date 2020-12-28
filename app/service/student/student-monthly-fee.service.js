@@ -131,6 +131,7 @@ export async function createStudentMonthlyFee(user, createForm) {
           monthFee: month,
           yearFee: year,
           scholarShip: createForm.details[i].scholarShip,
+          scholarFee: createForm.details[i].scholarFee,
           studentId: createForm.details[i].studentId,
           companyId: user.companyId,
           absentDay: createForm.details[i].absentDay,
