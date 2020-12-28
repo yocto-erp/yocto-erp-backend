@@ -121,15 +121,7 @@ export async function updateEmailTemplate(id, user, updateForm) {
     },
     include: [
       {
-        model: db.Template, required: true, where: {companyId: user.companyId}, as: 'template',
-        include: [
-          {
-            model: db.User, as: 'createdBy',
-            attributes: ['id', 'displayName', 'email']
-          }, {
-            model: db.TemplateType, as: 'templateType'
-          }
-        ]
+        model: db.Template, required: true, where: {companyId: user.companyId}, as: 'template'
       }
     ]
   });
