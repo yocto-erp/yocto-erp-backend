@@ -133,7 +133,7 @@ export async function updateEmailTemplate(id, user, updateForm) {
   const transaction = await db.sequelize.transaction();
   try {
     oldRs.subject = updateForm.subject;
-    oldRs.from = updateForm.from;
+    oldRs.from = updateForm.from || '';
     oldRs.cc = updateForm.cc ? updateForm.cc.join(',') : '';
     oldRs.bcc = updateForm.bcc ? updateForm.bcc.join(',') : '';
     oldRs.template.name = updateForm.name;
