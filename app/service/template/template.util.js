@@ -45,6 +45,7 @@ export function gender(sex) {
 export function personToPrintData(person) {
   if (!person) return {};
   return {
+    id: person.id,
     firstName: person.firstName,
     lastName: person.lastName,
     gsm: person.gsm,

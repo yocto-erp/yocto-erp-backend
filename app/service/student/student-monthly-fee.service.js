@@ -274,7 +274,7 @@ export async function toPrintData(id, companyId) {
   const mother = personToPrintData(fee.student.mother);
 
   return {
-    name: `${student.firstName} ${student.lastName}_${formatDateTime(fee.lastUpdatedDate)}`,
+    name: `${student.id}_${formatDateTime(fee.lastUpdatedDate)}`,
     studentFee, student, mother, father
   }
 }
