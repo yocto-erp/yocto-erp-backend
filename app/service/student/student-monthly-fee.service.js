@@ -263,7 +263,8 @@ export async function toPrintData(id, companyId) {
     otherFee: formatTemplateMoney(fee.otherFee),
     otherDeduceFee: formatTemplateMoney(fee.otherDeduceFee),
     debt: formatTemplateMoney(fee.debt),
-    remark: fee.remark
+    remark: fee.remark,
+    total: formatTemplateMoney(fee.totalAmount)
   };
   const student = personToPrintData(fee.student.child);
 
