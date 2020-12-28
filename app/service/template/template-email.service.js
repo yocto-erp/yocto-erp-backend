@@ -114,7 +114,7 @@ export async function createEmailTemplate(user, createForm) {
 }
 
 export async function updateEmailTemplate(id, user, updateForm) {
-
+  console.log(updateForm);
   const oldRs = await db.EmailTemplate.findOne({
     where: {
       templateId: id
