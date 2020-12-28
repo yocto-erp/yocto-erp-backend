@@ -336,7 +336,7 @@ export async function sendEmails({listId, emailTemplateId, isPDFAttached, printT
       rs.success.push(listId[i]);
     } catch (e) {
       console.error(e);
-      rs.fail.push(listId[i]);
+      rs.fail.push({id: listId[i], message: e.message});
     }
   }
   return rs;

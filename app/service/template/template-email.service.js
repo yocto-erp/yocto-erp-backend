@@ -115,10 +115,27 @@ export async function createEmailTemplate(user, createForm) {
 
 export async function updateEmailTemplate(id, user, updateForm) {
 
-  const oldRs = await getEmailTemplate(id, user);
+  const oldRs = await db.EmailTemplate.findOne({
+    where: {
+      templateId: id
+    },
+    include: [
+      {
+        model: db.Template, required: true, where: {companyId: user.companyId}, as: 'template',
+        include: [
+          {
+            model: db.User, as: 'createdBy',
+            attributes: ['id', 'displayName', 'email']
+          }, {
+            model: db.TemplateType, as: 'templateType'
+          }
+        ]
+      }
+    ]
+  });
 
   if (!oldRs) {
-    throw badRequest('template', FIELD_ERROR.INVALID, 'Email Template not found');
+    throw badRequest('emailTemplate', FIELD_ERROR.INVALID, 'Email Template not found');
   }
 
   const transaction = await db.sequelize.transaction();
