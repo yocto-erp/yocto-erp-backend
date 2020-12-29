@@ -139,6 +139,7 @@ export async function createStudentMonthlyFee(user, createForm) {
           trialDate: createForm.details[i].trialDate,
           trialDateFee: createForm.details[i].trialDateFee,
           busFee: createForm.details[i].busFee,
+          debt: createForm.details[i].debt,
           mealFee: createForm.details[i].mealFee,
           otherFee: +createForm.details[i].otherFee,
           otherDeduceFee: +createForm.details[i].otherDeduceFee,
@@ -160,8 +161,10 @@ export async function createStudentMonthlyFee(user, createForm) {
 }
 
 export async function updateStudentMonthlyFee(sId, updateForm, user) {
-  try {
-    if (updateForm && updateForm.details) {
+
+  if (updateForm && updateForm.details) {
+    const transaction = await db.sequelize.transaction();
+    try {
       for (let i = 0; i < updateForm.details.length; i += 1) {
         const splitMonthYear = updateForm.details[i].monthYear.split('-');
         const month = splitMonthYear[1];
@@ -171,7 +174,7 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
           where: {
             id: Buffer.from(updateForm.details[i].id, 'hex'),
             companyId: user.companyId
-          }
+          }, transaction
         });
         if (!studentFee) {
           throw badRequest('studentFee', FIELD_ERROR.INVALID, `Student Fee not exist`);
@@ -190,7 +193,8 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
           trialDateFee: updateForm.details[i].trialDateFee,
           busFee: updateForm.details[i].busFee,
           mealFee: updateForm.details[i].mealFee,
-          otherFee: +updateForm.details[i].otherFee,
+          otherFee: updateForm.details[i].otherFee,
+          debt: updateForm.details[i].debt,
           otherDeduceFee: +updateForm.details[i].otherDeduceFee,
           remark: updateForm.details[i].remark,
           studentAbsentDay: updateForm.details[i].studentAbsentDay,
@@ -198,13 +202,15 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
           feePerMonth: updateForm.details[i].feePerMonth,
           totalAmount: updateForm.details[i].totalAmount,
           lastUpdatedDate: new Date(), lastUpdatedById: user.id
-        });
+        }, {transaction});
       }
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
-    return true;
-  } catch (error) {
-    throw error;
   }
+  return true;
 }
 
 export async function removeStudentMonthlyFee(sId, user) {
