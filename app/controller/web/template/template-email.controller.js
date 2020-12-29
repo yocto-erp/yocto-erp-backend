@@ -14,7 +14,7 @@ import {templateValidator} from "../../middleware/validators/template.validator"
 const router = express.Router();
 
 router.get('/', hasPermission([PERMISSION.TEMPLATE.READ]),
-  pagingParse({column: 'id', dir: 'asc'}),
+  pagingParse({column: 'templateId', dir: 'asc'}),
   (req, res, next) => {
     return listEmailTemplate(req.query, req.paging.order, req.paging.offset, req.paging.size, req.user)
       .then(result => res.status(200).json(result)).catch(next);

@@ -5,6 +5,7 @@ import {TEMPLATE_TYPE} from "../../db/models/template/template";
 const {Op} = db.Sequelize;
 
 export function listEmailTemplate(query, order, offset, limit, user) {
+  console.log(order);
   const where = {};
   if (query) {
     if (query.search && query.search.length) {
@@ -17,12 +18,18 @@ export function listEmailTemplate(query, order, offset, limit, user) {
     }
   }
 
+  const _orders = order.map(([name, dir]) => {
+    if (name === 'createdDate') {
+      return [{model: db.Template, as: 'template'}, name, dir]
+    }
+    return [name, dir];
+  })
+
   where.companyId = user.companyId;
   return db.EmailTemplate.findAndCountAll({
     include: [
       {
         model: db.Template, required: true, where, as: 'template',
-        order,
         include: [
           {
             model: db.User, as: 'createdBy',
@@ -33,6 +40,7 @@ export function listEmailTemplate(query, order, offset, limit, user) {
         ]
       }
     ],
+    order: _orders,
     offset,
     limit
   }).then(res => {
