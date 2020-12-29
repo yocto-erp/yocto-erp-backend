@@ -69,9 +69,14 @@ export async function templateRenderPDF(templateId, object, name) {
   }), printTemplateRender(templateId, object)])
     .then(async ([browser, print]) => {
       const page = await browser.newPage();
+      const marginAll = '0';
       await page.setContent(print.body, {waitUntil: 'networkidle0'})
       await page.addStyleTag({path: CONTENT_CSS})
-      await page.pdf({path: fileName, format: 'a4'});
+      await page.pdf({
+        path: fileName,
+        margin: {top: '30px', bottom: marginAll, right: marginAll, left: marginAll}
+      });
+
       await browser.close();
       return fileName;
     })
