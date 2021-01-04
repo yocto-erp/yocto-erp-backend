@@ -1,10 +1,10 @@
 import db from '../../db/models';
-import { badRequest, FIELD_ERROR } from '../../config/error';
+import {badRequest, FIELD_ERROR} from '../../config/error';
 
-const { Op } = db.Sequelize;
+const {Op} = db.Sequelize;
 
 export function students(query, order, offset, limit, user) {
-  const { search } = query;
+  const {search} = query;
   const where = {};
   let wherePerson = {};
   if (search && search.length) {
@@ -83,6 +83,14 @@ export async function getStudent(sId, user) {
 }
 
 export async function createStudent(user, createForm) {
+  const existedStudent = await db.Student.findOne({
+    where: {
+      studentId: createForm.studentId
+    }
+  });
+  if (existedStudent) {
+    throw badRequest('studentId', 'EXISTED', 'Student Id existed !')
+  }
   const transaction = await db.sequelize.transaction();
   try {
     const splitFullName = createForm.fullName.trim().split(' ');
@@ -101,7 +109,7 @@ export async function createStudent(user, createForm) {
         sex: createForm.sex ? createForm.sex : null,
         createdById: user.id,
         createdDate: new Date()
-      }, { transaction }
+      }, {transaction}
     );
 
     const student = await db.Student.create(
@@ -114,16 +122,16 @@ export async function createStudent(user, createForm) {
         status: createForm.status ? createForm.status : null,
         fatherId: createForm.fatherId,
         motherId: createForm.motherId,
-        feePackage: createForm.feePackage ? createForm.feePackage: null,
+        feePackage: createForm.feePackage ? createForm.feePackage : null,
         enableBus: createForm.enableBus ? createForm.enableBus : false,
         toSchoolBusRoute: createForm.toSchoolBusRoute,
         toHomeBusRoute: createForm.toHomeBusRoute,
-        enableMeal: createForm.enableMeal ? createForm.enableMeal: false,
+        enableMeal: createForm.enableMeal ? createForm.enableMeal : false,
         class: createForm.class,
         createdById: user.id,
         createdDate: new Date()
 
-      }, { transaction }
+      }, {transaction}
     );
     await transaction.commit();
     return student;
@@ -177,18 +185,18 @@ export async function updateStudent(sId, updateForm, user) {
       studentId: updateForm.studentId,
       alias: updateForm.alias,
       joinDate: updateForm.joinDate,
-      status: updateForm.status ? updateForm.status: null,
+      status: updateForm.status ? updateForm.status : null,
       fatherId: updateForm.fatherId,
       motherId: updateForm.motherId,
-      feePackage: updateForm.feePackage ? updateForm.feePackage: null,
+      feePackage: updateForm.feePackage ? updateForm.feePackage : null,
       enableBus: updateForm.enableBus ? updateForm.enableBus : false,
       toSchoolBusRoute: updateForm.toSchoolBusRoute,
       toHomeBusRoute: updateForm.toHomeBusRoute,
-      enableMeal: updateForm.enableMeal ? updateForm.enableMeal: false,
+      enableMeal: updateForm.enableMeal ? updateForm.enableMeal : false,
       class: updateForm.class,
       lastModifiedById: user.id,
       lastModifiedDate: new Date()
-    }, {where: {id: sId}}, { transaction });
+    }, {where: {id: sId}}, {transaction});
 
     await transaction.commit();
     return studentUpdate;
@@ -223,12 +231,12 @@ export async function removeStudent(sId, user) {
       where: {
         id: checkPerson.id
       }
-    }, { transaction });
+    }, {transaction});
     await db.Student.destroy({
       where: {
         id: sId
       }
-    }, { transaction });
+    }, {transaction});
     await transaction.commit();
     return checkStudent;
   } catch (error) {
