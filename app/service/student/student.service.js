@@ -18,6 +18,14 @@ export function students(query, order, offset, limit, user) {
           lastName: {
             [Op.like]: `%${search}%`
           }
+        }, {
+          alias: {
+            [Op.like]: `%${search}%`
+          }
+        }, {
+          studentId: {
+            [Op.like]: `%${search}%`
+          }
         }
       ]
     };
