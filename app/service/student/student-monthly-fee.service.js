@@ -290,7 +290,7 @@ export async function generatePDF(templateId, feeId, companyId) {
   return templateRenderPDF(templateId, templateData, templateData.name);
 }
 
-async function processSendEmailForFee(feeId, emailTemplate, printTemplateId, isPDFAttached, user, from, cc) {
+async function processSendEmailForFee(feeId, emailTemplate, printTemplateId, isPDFAttached, user, from, cc, bcc) {
   const attachments = [];
   const templateData = await toPrintData(feeId, user.companyId);
   if (isPDFAttached) {
@@ -317,7 +317,8 @@ async function processSendEmailForFee(feeId, emailTemplate, printTemplateId, isP
 
   const emailMessage = {
     from,
-    cc,
+    cc: cc ? cc.join(',') : '',
+    bcc: bcc ? bcc.join(',') : '',
     to: to.join(','),
     subject: subjectText,
     message: contentHTML,
@@ -326,7 +327,7 @@ async function processSendEmailForFee(feeId, emailTemplate, printTemplateId, isP
   return addEmailQueue(emailMessage, user.companyId, user.id);
 }
 
-export async function sendEmails({listId, emailTemplateId, isPDFAttached, printTemplateId, from, cc}, user) {
+export async function sendEmails({listId, emailTemplateId, isPDFAttached, printTemplateId, from, cc, bcc}, user) {
   const emailTemplate = await getEmailTemplate(emailTemplateId, user);
   if (!emailTemplate) {
     throw badRequest('EmailTemplate', 'NOT_FOUND', 'Invalid email template');
@@ -338,7 +339,7 @@ export async function sendEmails({listId, emailTemplateId, isPDFAttached, printT
   for (let i = 0; i < listId.length; i += 1) {
     try {
       // eslint-disable-next-line no-await-in-loop,no-unused-vars
-      const email = await processSendEmailForFee(listId[i], emailTemplate, printTemplateId, isPDFAttached, user, from, cc);
+      const email = await processSendEmailForFee(listId[i], emailTemplate, printTemplateId, isPDFAttached, user, from, cc, bcc);
       rs.success.push(listId[i]);
     } catch (e) {
       console.error(e);

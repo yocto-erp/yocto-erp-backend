@@ -11,6 +11,7 @@ import {
   listStudentMonthlyFee,
   removeStudentMonthlyFee,
   sendEmails,
+  toPrintData,
   updateStudentMonthlyFee
 } from '../../../service/student/student-monthly-fee.service';
 
@@ -75,6 +76,16 @@ studentMonthlyFee.delete('/:id', hasPermission(PERMISSION.CUSTOMER.DELETE), (req
     .catch(next);
 });
 
+studentMonthlyFee.get('/:id/print-data', hasPermission(PERMISSION.CUSTOMER.READ), async (req, res, next) => {
+  return toPrintData(req.params.id, req.user.companyId)
+    .then(t => res.status(200).json(t))
+    .catch(next)
+});
+
+studentMonthlyFee.post('/:id/paid', hasPermission(PERMISSION.CUSTOMER.READ), async (req, res, next) => {
+  console.log(req.body);
+  res.status(200).json({});
+});
 
 export function initWebStudentMonthlyFeeController(app) {
   app.use('/api/student-monthly-fee', studentMonthlyFee);
