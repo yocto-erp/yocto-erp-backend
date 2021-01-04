@@ -8,6 +8,7 @@ import {templateRenderPDF} from "../template/template-render.service";
 import {getEmailTemplate} from "../template/template-email.service";
 import {EMAIL_ATTACHMENT_TYPE} from "../../db/models/email/email-attachment";
 import {addEmailQueue} from "../email/company-email.service";
+import {COST_TYPE} from "../../db/models/cost/cost";
 
 const {Op} = db.Sequelize;
 
@@ -213,23 +214,36 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
   return true;
 }
 
-export async function removeStudentMonthlyFee(sId, user) {
-  const bId = hex2binary(sId);
-  const checkStudent = await db.StudentMonthlyFee.findOne({
+async function getStudentMonthlyFeeItem(id, companyId) {
+  const bId = hex2binary(id);
+  return db.StudentMonthlyFee.findOne({
     where: {
       id: bId,
-      companyId: user.companyId
-    }
+      companyId
+    }, include: [
+      {
+        model: db.Student, as: 'student',
+        include: [
+          {
+            model: db.Person, as: 'child'
+          }, {
+            model: db.Person, as: 'father'
+          }, {
+            model: db.Person, as: 'mother'
+          }
+        ]
+      }
+    ]
   });
+}
+
+export async function removeStudentMonthlyFee(sId, user) {
+  const checkStudent = await getStudentMonthlyFeeItem(sId, user.companyId);
   if (!checkStudent) {
     throw badRequest('student', FIELD_ERROR.INVALID, 'Student fee not found');
   }
 
-  return db.StudentMonthlyFee.destroy({
-    where: {
-      id: bId
-    }
-  });
+  return checkStudent.destroy();
 }
 
 export async function toPrintData(id, companyId) {
@@ -347,4 +361,67 @@ export async function sendEmails({listId, emailTemplateId, isPDFAttached, printT
     }
   }
   return rs;
+}
+
+export async function paidMonthlyFee(feeId, form, user) {
+  const {
+    amount,
+    bcc,
+    cc,
+    content,
+    from,
+    remark,
+    sendEmailConfirm,
+    storeCashIn,
+    subject
+  } = form;
+  const {companyId} = user;
+  const fee = await getStudentMonthlyFeeItem(feeId, user.companyId);
+  if (!fee) {
+    throw badRequest('studentFee', FIELD_ERROR.INVALID, 'Student fee not found');
+  }
+  const transaction = await db.sequelize.transaction();
+  try {
+    fee.paidAmount = amount;
+    fee.paidDate = new Date();
+    fee.paidInformation = remark;
+    if (storeCashIn) {
+      const cost = await db.Cost.create({
+        name: '',
+        remark: remark,
+        companyId: companyId,
+        type: COST_TYPE.RECEIPT,
+        processedDate: new Date(),
+        amount: amount,
+        createdById: user.id,
+        createdDate: new Date()
+      }, {transaction});
+
+      fee.costId = cost.id;
+    }
+    await fee.save({transaction});
+    await transaction.commit();
+    if (sendEmailConfirm) {
+      const to = [];
+      const {father, mother} = fee.student;
+      if (father && father.email) {
+        to.push(`${father.firstName} ${father.lastName} <${father.email}>`)
+      }
+      if (mother && mother.email) {
+        to.push(`${mother.firstName} ${mother.lastName} <${mother.email}>`)
+      }
+      const emailMessage = {
+        from,
+        cc: cc ? cc.join(',') : '',
+        bcc: bcc ? bcc.join(',') : '',
+        to: to.join(','),
+        subject,
+        message: content
+      }
+      addEmailQueue(emailMessage, user.companyId, user.id).then();
+    }
+    return fee;
+  } catch (e) {
+    await transaction.rollback();
+  }
 }

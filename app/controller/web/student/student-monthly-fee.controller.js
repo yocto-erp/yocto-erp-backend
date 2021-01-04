@@ -9,6 +9,7 @@ import {
   generatePDF,
   getStudentMonthlyFee,
   listStudentMonthlyFee,
+  paidMonthlyFee,
   removeStudentMonthlyFee,
   sendEmails,
   toPrintData,
@@ -82,9 +83,11 @@ studentMonthlyFee.get('/:id/print-data', hasPermission(PERMISSION.CUSTOMER.READ)
     .catch(next)
 });
 
-studentMonthlyFee.post('/:id/paid', hasPermission(PERMISSION.CUSTOMER.READ), async (req, res, next) => {
+studentMonthlyFee.post('/:id/pay', hasPermission(PERMISSION.CUSTOMER.READ), async (req, res, next) => {
   console.log(req.body);
-  res.status(200).json({});
+  return paidMonthlyFee(req.params.id, req.body, req.user)
+    .then(t => res.status(200).json(t))
+    .catch(next);
 });
 
 export function initWebStudentMonthlyFeeController(app) {

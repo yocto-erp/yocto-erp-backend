@@ -35,7 +35,8 @@ export default class StudentMonthlyFee extends Sequelize.Model {
       lastUpdatedDate: {type: DataTypes.DATE},
       lastUpdatedById: {type: DataTypes.INTEGER},
       studentAbsentDay: {type: DataTypes.INTEGER},
-      studentAbsentDayFee: {type: DataTypes.DECIMAL(12, 2)}
+      studentAbsentDayFee: {type: DataTypes.DECIMAL(12, 2)},
+      costId: {type: DataTypes.BIGINT}
     }, {
       tableName: 'student_monthly_fee',
       modelName: 'studentMonthlyFee',
@@ -46,5 +47,6 @@ export default class StudentMonthlyFee extends Sequelize.Model {
 
   static associate(models) {
     this.belongsTo(models.Student, {foreignKey: 'studentId', as: 'student'});
+    this.belongsTo(models.Cost, {foreignKey: 'costId', as: 'payment'});
   }
 }
