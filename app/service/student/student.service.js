@@ -11,11 +11,11 @@ export function students(query, order, offset, limit, user) {
     wherePerson = {
       [Op.or]: [
         {
-          firstName: {
+          '$child.firstName$': {
             [Op.like]: `%${search}%`
           }
         }, {
-          lastName: {
+          '$child.lastName$': {
             [Op.like]: `%${search}%`
           }
         }, {
@@ -24,7 +24,7 @@ export function students(query, order, offset, limit, user) {
           }
         }, {
           studentId: {
-            [Op.like]: `%${search}%`
+            [Op.eq]: `${search}`
           }
         }
       ]
@@ -33,15 +33,14 @@ export function students(query, order, offset, limit, user) {
   where.companyId = user.companyId;
   return db.Student.findAndCountAll({
     order,
-    where,
+    where: {...where, ...wherePerson},
     include: [
       {
         model: db.User, as: 'createdBy',
         attributes: ['id', 'displayName']
       },
       {
-        model: db.Person, as: 'child',
-        where: wherePerson
+        model: db.Person, as: 'child'
       },
       {
         model: db.Person, as: 'father',
