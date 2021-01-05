@@ -20,11 +20,15 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
     wherePerson = {
       [Op.or]: [
         {
-          firstName: {
+          '$student.child.firstName$': {
             [Op.like]: `%${search}%`
           }
         }, {
-          lastName: {
+          '$student.child.lastName$': {
+            [Op.like]: `%${search}%`
+          }
+        }, {
+          '$student.alias$': {
             [Op.like]: `%${search}%`
           }
         }
@@ -41,13 +45,15 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
   where.companyId = user.companyId;
   const resp = await db.StudentMonthlyFee.findAndCountAll({
     order,
-    where,
+    where: {
+      ...wherePerson, ...where
+    },
     include: [
       {
         model: db.Student, as: 'student',
         required: true,
         include: [
-          {model: db.Person, as: 'child', where: wherePerson, required: true}
+          {model: db.Person, as: 'child', required: true}
         ]
       }
     ],
