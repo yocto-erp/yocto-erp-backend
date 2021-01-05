@@ -1,4 +1,17 @@
-export function pagingParse({column, dir}) {
+function getDefaultSorts(sorts) {
+  let rs = [];
+  if (Array.isArray(sorts)) {
+    rs = sorts.map(t => [t.column, t.dir]);
+  } else if (sorts) {
+    const {column, dir} = sorts;
+    if (column && dir) {
+      rs = [[sorts.column, sorts.dir]]
+    }
+  }
+  return rs;
+}
+
+export function pagingParse(sorts) {
   return (req, res, next) => {
     let page;
     let size;
@@ -22,11 +35,7 @@ export function pagingParse({column, dir}) {
     }
 
     if (!req.query.sorts) {
-      if (column && dir) {
-        order = [
-          [column, dir]
-        ];
-      }
+      order = getDefaultSorts(sorts);
     } else {
       order = [];
       const [_column, _dir] = req.query.sorts.split(':');

@@ -43,8 +43,16 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
     where.yearFee = year;
   }
   where.companyId = user.companyId;
+
+  const _order = order.map(t => {
+    const [col, dir] = t;
+    if (col === 'lastName') {
+      return [{model: db.Student, as: 'student'}, {model: db.Person, as: 'child'}, col, dir]
+    }
+    return t;
+  })
   const resp = await db.StudentMonthlyFee.findAndCountAll({
-    order,
+    order: _order,
     where: {
       ...wherePerson, ...where
     },

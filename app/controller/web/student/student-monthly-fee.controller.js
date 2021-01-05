@@ -18,10 +18,18 @@ import {
 
 const studentMonthlyFee = express.Router();
 
-studentMonthlyFee.get('/', [pagingParse({
-  column: 'id',
-  dir: 'asc'
-}), hasPermission(PERMISSION.CUSTOMER.READ)], (req, res, next) => {
+studentMonthlyFee.get('/', [pagingParse([
+  {
+    column: 'yearFee',
+    dir: 'desc'
+  }, {
+    column: 'monthFee',
+    dir: 'desc'
+  }, {
+    column: 'lastName',
+    dir: 'asc'
+  }]), hasPermission(PERMISSION.CUSTOMER.READ)], (req, res, next) => {
+  console.log(req.paging);
   return listStudentMonthlyFee(req.query, req.paging.order, req.paging.offset, req.paging.size, req.user)
     .then(t => {
       res.status(200).json(t)
