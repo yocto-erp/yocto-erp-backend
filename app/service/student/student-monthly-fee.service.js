@@ -387,7 +387,8 @@ export async function paidMonthlyFee(feeId, form, user) {
     remark,
     sendEmailConfirm,
     storeCashIn,
-    subject
+    subject,
+    name
   } = form;
   const {companyId} = user;
   const fee = await getStudentMonthlyFeeItem(feeId, user.companyId);
@@ -401,7 +402,7 @@ export async function paidMonthlyFee(feeId, form, user) {
     fee.paidInformation = remark;
     if (storeCashIn) {
       const cost = await db.Cost.create({
-        name: '',
+        name: name,
         remark: remark,
         companyId: companyId,
         type: COST_TYPE.RECEIPT,

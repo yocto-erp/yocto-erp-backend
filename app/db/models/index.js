@@ -61,6 +61,7 @@ import SurveyQuestionI18N from "./survey/survey-question-i18n";
 import SurveyQuestionAnswerI18N from "./survey/survey-question-answer-i18n";
 import Language from "./language";
 import EmailTemplate from "./email/email-template";
+import ReportCostDaily from "./cost/report-cost-daily";
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -93,7 +94,7 @@ const models = {
   Cost: Cost.init(sequelize),
   CostPurpose: CostPurpose.init(sequelize),
   CostAsset: CostAsset.init(sequelize),
-
+  ReportCostDaily: ReportCostDaily.init(sequelize),
   // Email
   EmailSend: EmailSend.init(sequelize),
   EmailCompany: EmailCompany.init(sequelize),

@@ -9,7 +9,7 @@ export function isAuthenticated() {
     if (req.isAuthenticated()) {
       next();
     } else {
-      throw new HttpError(HTTP_ERROR.NOT_AUTHENTICATE);
+      throw new HttpError(HTTP_ERROR.NOT_AUTHENTICATE, 'Not Authenticated', null);
     }
   }]
 }
@@ -38,7 +38,7 @@ export function hasPermission(permission) {
     if (isValid) {
       next();
     } else {
-      throw new HttpError(HTTP_ERROR.ACCESS_DENIED);
+      throw new HttpError(HTTP_ERROR.ACCESS_DENIED, 'AccessDenied', 'You have not permission to do this.');
     }
   }]
 }
