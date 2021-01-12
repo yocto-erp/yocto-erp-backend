@@ -56,7 +56,7 @@ export async function costSummary(from, to) {
       }
     }
 
-    await db.ReportCostDaily.bulkCreate(reports, {
+    return db.ReportCostDaily.bulkCreate(reports, {
       updateOnDuplicate: ["receipt", "payment", "lastUpdated"]
     });
   } catch (e) {

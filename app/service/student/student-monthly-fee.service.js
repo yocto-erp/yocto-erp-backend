@@ -438,5 +438,6 @@ export async function paidMonthlyFee(feeId, form, user) {
     return fee;
   } catch (e) {
     await transaction.rollback();
+    throw e;
   }
 }

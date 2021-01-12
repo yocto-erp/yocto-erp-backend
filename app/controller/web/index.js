@@ -23,6 +23,7 @@ import {initEmailTemplateController} from "./template/template-email.controller"
 import {initWebLogController} from './log.controller';
 import {initEmailController} from "./email.controller";
 import {initSummaryController} from "./summary/summary.controller";
+import {initManualController} from "./manual/manual.controller";
 
 
 export function initWebController(app) {
@@ -51,4 +52,5 @@ export function initWebController(app) {
   initWebLogController(app);
   initEmailController(app);
   initSummaryController(app);
+  initManualController(app);
 }
