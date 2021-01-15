@@ -62,7 +62,8 @@
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.0",
     "yup": "^0.29.3",
-    "telegraf": "^3.38.0"
+    "telegraf": "^3.38.0",
+    "firebase-admin": "^9.4.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.10.4",

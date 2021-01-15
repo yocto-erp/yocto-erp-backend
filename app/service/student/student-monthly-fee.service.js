@@ -13,7 +13,7 @@ import {COST_TYPE} from "../../db/models/cost/cost";
 const {Op} = db.Sequelize;
 
 export async function listStudentMonthlyFee(query, order, offset, limit, user) {
-  const {search, month: monthStr} = query;
+  const {search, month: monthStr, isPaid, class: studentClass} = query;
   const where = {};
   let wherePerson = {};
   if (search && search.length) {
@@ -34,6 +34,17 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
         }
       ]
     };
+  }
+  if (isPaid === '1') {
+    where.paidDate = null;
+  } else if (isPaid === '2') {
+    where.paidDate = {
+      [Op.ne]: null
+    }
+  }
+  console.log(isPaid,where);
+  if (studentClass && studentClass.length) {
+    wherePerson['$student.class$'] = studentClass;
   }
   if (monthStr && monthStr.length) {
     const selectDate = new Date(monthStr);
