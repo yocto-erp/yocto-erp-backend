@@ -38,8 +38,15 @@ export function pagingParse(sorts) {
       order = getDefaultSorts(sorts);
     } else {
       order = [];
-      const [_column, _dir] = req.query.sorts.split(':');
-      order.push([_column, _dir]);
+      if (Array.isArray(req.query.sorts)) {
+        req.query.sorts.forEach(t => {
+          const [_column, _dir] = t.split(':');
+          order.push([_column, _dir]);
+        })
+      } else {
+        const [_column, _dir] = req.query.sorts.split(':');
+        order.push([_column, _dir]);
+      }
     }
 
     req.paging = {
