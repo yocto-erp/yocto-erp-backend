@@ -43,6 +43,10 @@ export default class Cost extends Sequelize.Model {
       otherKey: 'assetId',
       as: 'assets'
     });
+    this.hasMany(models.TaggingItem, {
+      foreignKey: 'itemId',
+      as: 'taggingItems'
+    });
     this.hasMany(models.CostPurpose, {
       foreignKey: 'costId',
       as: 'costPurpose'

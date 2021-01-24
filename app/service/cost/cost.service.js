@@ -1,10 +1,18 @@
 import db from '../../db/models';
-import {createCostPurpose, updateCostPurpose, removeCostPurpose} from "./cost-purpose.service";
+import {createCostPurpose, removeCostPurpose, updateCostPurpose} from "./cost-purpose.service";
 import {badRequest, FIELD_ERROR} from '../../config/error';
 import {createCostAsset, mergeAssets, removeCostAssets, updateCostAssets} from '../asset/asset.service';
 import User from '../../db/models/user/user';
+import {updateItemTags} from "../tagging/tagging.service";
+import {TAGGING_TYPE} from "../../db/models/tagging/tagging-item-type";
+import {COST_TYPE} from "../../db/models/cost/cost";
 
 const {Op} = db.Sequelize;
+
+const mapping = (item) => ({
+  ...item,
+  tagging: item.taggingItems.map(t => t.tagging)
+})
 
 export async function costs(query, order, offset, limit, user) {
   let where = {};
@@ -55,11 +63,23 @@ export async function costs(query, order, offset, limit, user) {
         attributes: ['id', 'displayName', 'email']
       },
       {model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name']},
-      {model: db.Company, as: 'partnerCompany', attributes: ['id', 'name']}
+      {model: db.Company, as: 'partnerCompany', attributes: ['id', 'name']},
+      {
+        model: db.TaggingItem, as: 'taggingItems',
+        required: false,
+        where: {
+          itemType: {
+            [Op.in]: [TAGGING_TYPE.PAYMENT_VOUCHER, TAGGING_TYPE.RECEIPT_VOUCHER]
+          }
+        },
+        include: [
+          {model: db.Tagging, as: 'tagging'}
+        ]
+      }
     ],
     offset,
     limit
-  });
+  }).then(resp => ({...resp, rows: resp.rows.map(item => mapping(item.get({ plain: true })))}));
 }
 
 export async function createCost(user, createForm) {
@@ -86,6 +106,14 @@ export async function createCost(user, createForm) {
     if (createForm.purposeId && createForm.purposeId.length > 0 && createForm.relativeId && createForm.relativeId.length > 0) {
       await createCostPurpose(cost.id, createForm.purposeId, createForm.relativeId, transaction);
     }
+    if (createForm.tagging && createForm.tagging.length) {
+      await updateItemTags({
+        id: cost.id,
+        type: createForm.type === COST_TYPE.RECEIPT ? TAGGING_TYPE.RECEIPT_VOUCHER : TAGGING_TYPE.PAYMENT_VOUCHER,
+        transaction,
+        newTags: createForm.tagging
+      })
+    }
     await transaction.commit();
     return cost;
   } catch (error) {
@@ -111,13 +139,25 @@ export async function getCost(cId, user) {
         attributes: ['id', 'name', 'type', 'ext', 'size', 'fileId', 'source'],
         through: {attributes: []}
       },
-      {model: db.CostPurpose, as: 'costPurpose', attributes: ['purposeId', 'relativeId']}
+      {model: db.CostPurpose, as: 'costPurpose', attributes: ['purposeId', 'relativeId']},
+      {
+        model: db.TaggingItem, as: 'taggingItems',
+        required: false,
+        where: {
+          itemType: {
+            [Op.in]: [TAGGING_TYPE.PAYMENT_VOUCHER, TAGGING_TYPE.RECEIPT_VOUCHER]
+          }
+        },
+        include: [
+          {model: db.Tagging, as: 'tagging'}
+        ]
+      }
     ]
   });
   if (!cost) {
     throw badRequest('cost', FIELD_ERROR.INVALID, 'cost not found');
   }
-  return cost;
+  return mapping(cost.get({ plain: true }));
 }
 
 export async function updateCost(cId, user, updateForm) {
@@ -156,6 +196,14 @@ export async function updateCost(cId, user, updateForm) {
     const listMerge = await mergeAssets(existedCost.assets, updateForm.assets, user.companyId);
     if ((listMerge && listMerge.length) || (existedCost.assets && existedCost.assets.length)) {
       await updateCostAssets(existedCost.assets, listMerge, cId, transaction)
+    }
+    if (updateForm.tagging && updateForm.tagging.length) {
+      await updateItemTags({
+        id: cId,
+        type: updateForm.type === COST_TYPE.RECEIPT ? TAGGING_TYPE.RECEIPT_VOUCHER : TAGGING_TYPE.PAYMENT_VOUCHER,
+        transaction,
+        newTags: updateForm.tagging
+      })
     }
     await transaction.commit();
     return existedCost;

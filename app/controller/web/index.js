@@ -24,6 +24,7 @@ import {initWebLogController} from './log.controller';
 import {initEmailController} from "./email.controller";
 import {initSummaryController} from "./summary/summary.controller";
 import {initManualController} from "./manual/manual.controller";
+import {initTaggingController} from "./tagging/tagging.controller";
 
 
 export function initWebController(app) {
@@ -53,4 +54,5 @@ export function initWebController(app) {
   initEmailController(app);
   initSummaryController(app);
   initManualController(app);
+  initTaggingController(app);
 }

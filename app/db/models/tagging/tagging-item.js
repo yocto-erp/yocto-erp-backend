@@ -2,7 +2,7 @@ import Sequelize from 'sequelize';
 
 const {DataTypes} = Sequelize;
 
-export default class TaggingItem extends Sequelize.Model{
+export default class TaggingItem extends Sequelize.Model {
   static init(sequelize, opts) {
     return super.init(
       {
@@ -16,5 +16,9 @@ export default class TaggingItem extends Sequelize.Model{
         timestamps: false,
         sequelize, ...opts
       })
+  }
+
+  static associate(models) {
+    this.belongsTo(models.Tagging, {foreignKey: 'taggingId', as: 'tagging'});
   }
 }

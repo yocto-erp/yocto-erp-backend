@@ -8,6 +8,7 @@ import {unitBaseAndSumQuantity} from '../../event/inventory.event';
 import User from '../../db/models/user/user';
 import {INVENTORY_TYPE} from '../../db/models/inventory/inventory';
 import {queueInventoryIn, queueInventoryOut} from "../../queue/inventory.queue";
+import {updateItemTags} from "../tagging/tagging.service";
 
 const {Op} = db.Sequelize;
 
