@@ -42,7 +42,11 @@ export default class Inventory extends Sequelize.Model {
       foreignKey: 'inventoryId',
       as: 'details'
     });
-    this.belongsTo(models.WareHouse, {foreignKey: 'warehouseId', as: 'warehouse'})
+    this.belongsTo(models.WareHouse, {foreignKey: 'warehouseId', as: 'warehouse'});
+    this.hasMany(models.TaggingItem, {
+      foreignKey: 'itemId',
+      as: 'taggingItems'
+    });
   }
 
 }
