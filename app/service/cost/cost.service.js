@@ -6,6 +6,9 @@ import User from '../../db/models/user/user';
 import {updateItemTags} from "../tagging/tagging.service";
 import {TAGGING_TYPE} from "../../db/models/tagging/tagging-item-type";
 import {COST_TYPE} from "../../db/models/cost/cost";
+import {auditAction} from "../audit/audit.service";
+import {PERMISSION} from "../../db/models/acl/acl-action";
+import {addTaggingQueue} from "../../queue/tagging.queue";
 
 const {Op} = db.Sequelize;
 
@@ -79,7 +82,7 @@ export async function costs(query, order, offset, limit, user) {
     ],
     offset,
     limit
-  }).then(resp => ({...resp, rows: resp.rows.map(item => mapping(item.get({ plain: true })))}));
+  }).then(resp => ({...resp, rows: resp.rows.map(item => mapping(item.get({plain: true})))}));
 }
 
 export async function createCost(user, createForm) {
@@ -113,7 +116,13 @@ export async function createCost(user, createForm) {
         transaction,
         newTags: createForm.tagging
       })
+      addTaggingQueue(createForm.tagging.map(t => t.id));
     }
+    auditAction({
+      actionId: PERMISSION.COST.CREATE,
+      user, partnerPersonId: createForm.partnerPersonId, partnerCompanyId: createForm.partnerCompanyId,
+      relativeId: String(cost.id)
+    }).then();
     await transaction.commit();
     return cost;
   } catch (error) {
@@ -157,7 +166,7 @@ export async function getCost(cId, user) {
   if (!cost) {
     throw badRequest('cost', FIELD_ERROR.INVALID, 'cost not found');
   }
-  return mapping(cost.get({ plain: true }));
+  return mapping(cost.get({plain: true}));
 }
 
 export async function updateCost(cId, user, updateForm) {
@@ -169,7 +178,17 @@ export async function updateCost(cId, user, updateForm) {
         {companyId: user.companyId}
       ]
     },
-    include: [{model: db.Asset, as: 'assets'}]
+    include: [
+      {model: db.Asset, as: 'assets'},
+      {
+        model: db.TaggingItem, as: 'taggingItems',
+        required: false,
+        where: {
+          itemType: {
+            [Op.in]: [TAGGING_TYPE.PAYMENT_VOUCHER, TAGGING_TYPE.RECEIPT_VOUCHER]
+          }
+        },
+      }]
   });
   if (!existedCost) {
     throw badRequest('cost', FIELD_ERROR.INVALID, 'cost not found');
@@ -197,21 +216,31 @@ export async function updateCost(cId, user, updateForm) {
     if ((listMerge && listMerge.length) || (existedCost.assets && existedCost.assets.length)) {
       await updateCostAssets(existedCost.assets, listMerge, cId, transaction)
     }
-    if (updateForm.tagging && updateForm.tagging.length) {
+    if ((updateForm.tagging && updateForm.tagging.length) || (existedCost.taggingItems && existedCost.taggingItems.length)) {
       await updateItemTags({
         id: cId,
         type: updateForm.type === COST_TYPE.RECEIPT ? TAGGING_TYPE.RECEIPT_VOUCHER : TAGGING_TYPE.PAYMENT_VOUCHER,
         transaction,
         newTags: updateForm.tagging
       })
+
+      addTaggingQueue([
+        ...((updateForm.tagging || []).map(t => t.id)),
+        ...((existedCost.taggingItems || []).map(t => t.taggingId))]
+      );
     }
+
+    auditAction({
+      actionId: PERMISSION.COST.UPDATE,
+      user, partnerPersonId: updateForm.partnerPersonId, partnerCompanyId: updateForm.partnerCompanyId,
+      relativeId: String(cId)
+    }).then();
     await transaction.commit();
     return existedCost;
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
-
 }
 
 export async function removeCost(cId, user) {

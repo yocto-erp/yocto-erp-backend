@@ -21,4 +21,8 @@ export default class Tagging extends Sequelize.Model{
         sequelize, ...opts
       })
   }
+
+  static associate(models) {
+    this.belongsTo(models.User, {foreignKey: 'createdById', as: 'createdBy'});
+  }
 }

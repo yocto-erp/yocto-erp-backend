@@ -118,15 +118,24 @@ export async function register(registerForm) {
         });
         await db.ACLGroupAction.bulkCreate(actions, {transaction: t});
 
+        const person = await db.Person.create({
+          firstName: registerForm.firstName,
+          lastName: registerForm.lastName,
+          email: registerForm.email,
+          createdById: 0,
+          createdDate: new Date()
+        }, {transaction: t});
+
         const newUser = await db.User.create(
           {
             email: registerForm.email,
             pwd: db.User.hashPassword(registerForm.password),
-            displayName: registerForm.displayName,
+            displayName: `${registerForm.firstName} ${registerForm.lastName}`,
             status: USER_STATUS.ACTIVE,
             createdDate: new Date(),
             email_active: false,
-            groupId: group.id
+            groupId: group.id,
+            personId: person.id
           },
           {transaction: t}
         );

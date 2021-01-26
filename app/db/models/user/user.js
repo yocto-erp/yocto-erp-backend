@@ -1,4 +1,4 @@
-import { DataTypes, Model } from 'sequelize';
+import {DataTypes, Model} from 'sequelize';
 import bcrypt from 'bcrypt';
 
 const saltRounds = 10;
@@ -28,7 +28,8 @@ export default class User extends Model {
         email_active: {type: DataTypes.BOOLEAN},
         remark: {type: DataTypes.TEXT},
         status: {type: DataTypes.INTEGER},
-        createdById: {type: DataTypes.BIGINT}
+        createdById: {type: DataTypes.BIGINT},
+        personId: {type: DataTypes.BIGINT}
       },
       {
         tableName: 'user',
@@ -52,6 +53,10 @@ export default class User extends Model {
     this.belongsTo(models.ACLGroup, {
       foreignKey: 'groupId',
       as: 'group'
+    });
+    this.belongsTo(models.Person, {
+      foreignKey: 'personId',
+      as: 'person'
     });
     this.hasMany(models.ACLGroupAction, {
       foreignKey: 'groupId',

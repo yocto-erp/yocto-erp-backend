@@ -1,7 +1,7 @@
 import express from 'express';
 import {isAuthenticated} from "../../middleware/permission";
 import {pagingParse} from "../../middleware/paging.middleware";
-import {createTag, getListTags} from "../../../service/tagging/tagging.service";
+import {createTag, getListTags, readTagging, removeTagging} from "../../../service/tagging/tagging.service";
 
 const router = express.Router();
 
@@ -14,6 +14,18 @@ router.get('/', [isAuthenticated(), pagingParse({column: 'id', dir: 'asc'})], as
 router.post('/', isAuthenticated(), async (req, res, next) => {
   return createTag(req.body, req.user)
     .then(t => res.status(200).json(t))
+    .catch(next);
+});
+
+router.get('/:id(\\d+)', isAuthenticated(), (req, res, next) => {
+  return readTagging(req.params.id, req.user)
+    .then(result => res.status(200).json(result))
+    .catch(next);
+});
+
+router.delete('/:id(\\d+)', isAuthenticated(), (req, res, next) => {
+  return removeTagging(req.params.id, req.user)
+    .then(result => res.status(200).json(result))
     .catch(next);
 });
 
