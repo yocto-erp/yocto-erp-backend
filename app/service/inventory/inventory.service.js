@@ -9,8 +9,15 @@ import User from '../../db/models/user/user';
 import {INVENTORY_TYPE} from '../../db/models/inventory/inventory';
 import {queueInventoryIn, queueInventoryOut} from "../../queue/inventory.queue";
 import {updateItemTags} from "../tagging/tagging.service";
+import { TAGGING_TYPE } from '../../db/models/tagging/tagging-item-type';
 
 const {Op} = db.Sequelize;
+
+const mapping = (item) => ({
+  ...item,
+  tagging: item.taggingItems.map(t => t.tagging)
+})
+
 
 export function inventories(query, order, offset, limit, user) {
   const where = {};
@@ -58,11 +65,23 @@ export function inventories(query, order, offset, limit, user) {
         model: User, as: 'lastModifiedBy',
         attributes: ['id', 'displayName', 'email']
       },
-      {model: db.WareHouse, as: 'warehouse', attributes: ['id', 'name', 'address']}
+      {model: db.WareHouse, as: 'warehouse', attributes: ['id', 'name', 'address']},
+      {
+        model: db.TaggingItem, as: 'taggingItems',
+        required: false,
+        where: {
+          itemType: {
+            [Op.in]: [TAGGING_TYPE.INVENTORY_GOOD_ISSUE, TAGGING_TYPE.INVENTORY_GOOD_RECEIPT]
+          }
+        },
+        include: [
+          {model: db.Tagging, as: 'tagging'}
+        ]
+      }
     ],
     offset,
     limit
-  });
+  }).then(resp => ({...resp, rows: resp.rows.map(item => mapping(item.get({ plain: true })))}));;
 }
 
 export async function getInventory(inventoryId, user) {
@@ -88,6 +107,18 @@ export async function getInventory(inventoryId, user) {
             }
           }
         ]
+      },
+      {
+        model: db.TaggingItem, as: 'taggingItems',
+        required: false,
+        where: {
+          itemType: {
+            [Op.in]: [TAGGING_TYPE.INVENTORY_GOOD_ISSUE, TAGGING_TYPE.INVENTORY_GOOD_RECEIPT]
+          }
+        },
+        include: [
+          {model: db.Tagging, as: 'tagging'}
+        ]
       }
     ]
   });
@@ -95,7 +126,7 @@ export async function getInventory(inventoryId, user) {
     throw badRequest('inventory', FIELD_ERROR.INVALID, 'inventory not found');
   }
 
-  return inventory;
+  return mapping(inventory.get({ plain: true }));
 }
 
 export async function createInventory(user, type, createForm) {
@@ -137,6 +168,15 @@ export async function createInventory(user, type, createForm) {
     if (createForm.purposeId && createForm.purposeId.length && createForm.relativeId && createForm.relativeId.length) {
       await createInventoryPurpose(inventory.id, createForm.purposeId, createForm.relativeId, transaction);
     }
+    if (createForm.tagging && createForm.tagging.length) {
+      await updateItemTags({
+        id: inventory.id,
+        type: type === INVENTORY_TYPE.OUT ? TAGGING_TYPE.INVENTORY_GOOD_ISSUE : TAGGING_TYPE.INVENTORY_GOOD_RECEIPT,
+        transaction,
+        newTags: createForm.tagging
+      })
+    }
+
     await transaction.commit();
     queueInventoryIn(await getInventory(inventory.id, user));
     return inventory;
@@ -148,8 +188,43 @@ export async function createInventory(user, type, createForm) {
 }
 
 export async function updateInventory(inventoryId, user, type, updateForm) {
-
-  const inventoryOld = await getInventory(inventoryId, user);
+  const inventoryOld = await db.Inventory.findOne({
+    where: {
+      [Op.and]: [
+        {id: inventoryId},
+        {companyId: user.companyId}
+      ]
+    }, include: [
+      {model: db.WareHouse, as: 'warehouse'},
+      {
+        model: db.InventoryDetail, as: 'details',
+        include: [
+          {model: db.Product, as: 'product', attributes: ['id', 'name', 'remark']},
+          {
+            model: db.ProductUnit, as: 'unit',
+            required: false,
+            where: {
+              productId: {
+                [Op.eq]: db.Sequelize.col('details.productId')
+              }
+            }
+          }
+        ]
+      },
+      {
+        model: db.TaggingItem, as: 'taggingItems',
+        required: false,
+        where: {
+          itemType: {
+            [Op.in]: [TAGGING_TYPE.INVENTORY_GOOD_ISSUE, TAGGING_TYPE.INVENTORY_GOOD_RECEIPT]
+          }
+        },
+        include: [
+          {model: db.Tagging, as: 'tagging'}
+        ]
+      }
+    ]
+  });
 
   if (!inventoryOld) {
     throw badRequest('inventory', FIELD_ERROR.INVALID, 'inventory not found');
@@ -178,6 +253,15 @@ export async function updateInventory(inventoryId, user, type, updateForm) {
 
     if (updateForm.purposeId && updateForm.purposeId.length && updateForm.relativeId && updateForm.relativeId.length) {
       await updateInventoryPurpose(inventoryOld.id, updateForm.purposeId, updateForm.relativeId, transaction);
+    }
+
+    if (updateForm.tagging && updateForm.tagging.length) {
+      await updateItemTags({
+        id: inventoryId,
+        type: type === INVENTORY_TYPE.OUT ? TAGGING_TYPE.INVENTORY_GOOD_ISSUE : TAGGING_TYPE.INVENTORY_GOOD_RECEIPT,
+        transaction,
+        newTags: updateForm.tagging
+      })
     }
 
     await transaction.commit();

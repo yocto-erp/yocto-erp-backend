@@ -3,13 +3,21 @@ import db from '../../db/models';
 import { createOrderDetail, removeOrderDetail } from './order-detail.service';
 import { badRequest, FIELD_ERROR } from '../../config/error';
 import User from '../../db/models/user/user';
+import { TAGGING_TYPE } from '../../db/models/tagging/tagging-item-type';
+import { updateItemTags } from '../tagging/tagging.service';
+import { ORDER_TYPE } from '../../db/models/order/order';
 
 const { Op } = db.Sequelize;
 
 export function sumTotalProduct(orderDetailsForm) {
-  const result = orderDetailsForm.reduce((valOld, valNew) => valOld + (valNew.quantity * valNew.price), 0);
-  return result;
+  return orderDetailsForm.reduce((valOld, valNew) => valOld + (valNew.quantity * valNew.price), 0);
 }
+
+const mapping = (item) => ({
+  ...item,
+  tagging: item.taggingItems.map(t => t.tagging)
+})
+
 
 export function orders(type, search, order, offset, limit, user) {
   const where = { type };
@@ -57,12 +65,24 @@ export function orders(type, search, order, offset, limit, user) {
         attributes: ['id', 'displayName', 'email']
       },
       { model: db.Company, as: 'partnerCompany', attributes: ['id', 'name'] },
-      { model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name'] }
+      { model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name'] },
+      {
+        model: db.TaggingItem, as: 'taggingItems',
+        required: false,
+        where: {
+          itemType: {
+            [Op.in]: [TAGGING_TYPE.SALE_ORDER, TAGGING_TYPE.PURCHASE_ORDER]
+          }
+        },
+        include: [
+          {model: db.Tagging, as: 'tagging'}
+        ]
+      }
     ],
     where,
     offset,
     limit
-  });
+  }).then(resp => ({...resp, rows: resp.rows.map(item => mapping(item.get({ plain: true })))}));
 }
 
 export async function getOrder(oId, user) {
@@ -89,13 +109,25 @@ export async function getOrder(oId, user) {
             }
           }
         ]
+      },
+      {
+        model: db.TaggingItem, as: 'taggingItems',
+        required: false,
+        where: {
+          itemType: {
+            [Op.in]: [TAGGING_TYPE.SALE_ORDER, TAGGING_TYPE.PURCHASE_ORDER]
+          }
+        },
+        include: [
+          {model: db.Tagging, as: 'tagging'}
+        ]
       }
     ]
   });
   if (!order) {
     throw badRequest('order', FIELD_ERROR.INVALID, 'order not found');
   }
-  return order;
+  return mapping(order.get({ plain: true }));
 }
 
 export async function createOrder(user, type, createForm) {
@@ -132,7 +164,14 @@ export async function createOrder(user, type, createForm) {
         transaction
       });
     }
-
+    if (createForm.tagging && createForm.tagging.length) {
+      await updateItemTags({
+        id: order.id,
+        type: type === ORDER_TYPE.PURCHASE ? TAGGING_TYPE.PURCHASE_ORDER : TAGGING_TYPE.SALE_ORDER,
+        transaction,
+        newTags: createForm.tagging
+      })
+    }
     await transaction.commit();
     return order;
   } catch (error) {
@@ -188,7 +227,14 @@ export async function updateOrder(oId, user, type, updateForm) {
       await removeOrderDetail(existedOrder.id, transaction);
       await createOrderDetail(existedOrder.id, updateForm.details, transaction);
     }
-
+    if (updateForm.tagging && updateForm.tagging.length) {
+      await updateItemTags({
+        id: oId,
+        type: type === ORDER_TYPE.PURCHASE ? TAGGING_TYPE.PURCHASE_ORDER : TAGGING_TYPE.SALE_ORDER,
+        transaction,
+        newTags: updateForm.tagging
+      })
+    }
     await transaction.commit();
     return existedOrder;
   } catch (error) {
