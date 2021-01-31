@@ -42,7 +42,7 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
       [Op.ne]: null
     }
   }
-  console.log(isPaid,where);
+
   if (studentClass && studentClass.length) {
     wherePerson['$student.class$'] = studentClass;
   }
@@ -54,7 +54,7 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
     where.yearFee = year;
   }
   where.companyId = user.companyId;
-
+  console.log(isPaid, where);
   const _order = order.map(t => {
     const [col, dir] = t;
     if (col === 'lastName') {
