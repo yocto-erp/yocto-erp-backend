@@ -48,7 +48,7 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
   }
   if (monthStr && monthStr.length) {
     const selectDate = new Date(monthStr);
-    const month = selectDate.getMonth() + 1;
+    const month = selectDate.getMonth();
     const year = selectDate.getFullYear();
     where.monthFee = month;
     where.yearFee = year;
@@ -127,9 +127,9 @@ export async function createStudentMonthlyFee(user, createForm) {
   try {
     if (createForm && createForm.details) {
       for (let i = 0; i < createForm.details.length; i += 1) {
-        const splitMonthYear = createForm.details[i].monthYear.split('-');
-        const month = splitMonthYear[1];
-        const year = splitMonthYear[0];
+        const monthYear = new Date(createForm.details[i].monthYear);
+        const month = monthYear.getMonth();
+        const year = monthYear.getFullYear();
         const uuidS = hex2binary(uuidv4());
         // eslint-disable-next-line no-await-in-loop
         const studentFee = await db.StudentMonthlyFee.findOne({
