@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import {appLog, httpStream} from './config/winston';
 import appConf from './config/application';
 
-import {FormError, isSystemError} from './config/error';
+import {FormError, HttpError, isSystemError} from './config/error';
 import {loadConfigure} from "./config/system";
 import {initWebController} from './controller/web';
 import {initMobileController} from "./controller/mobile";
@@ -45,6 +45,9 @@ app.use((err, req, res, next) => {
   if (err instanceof FormError) {
     res.status(err.code)
       .json(err.errors);
+  } else if (err instanceof HttpError) {
+    res.status(err.code)
+      .json({error: err.message});
   } else if (!isSystemError(err)) {
     res.statusMessage = err.message;
     res.status(500)
