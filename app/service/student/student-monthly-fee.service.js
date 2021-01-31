@@ -13,6 +13,7 @@ import {COST_TYPE} from "../../db/models/cost/cost";
 const {Op} = db.Sequelize;
 
 export async function listStudentMonthlyFee(query, order, offset, limit, user) {
+  console.log(query);
   const {search, month: monthStr, isPaid, class: studentClass} = query;
   const where = {};
   let wherePerson = {};
@@ -46,12 +47,9 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
   if (studentClass && studentClass.length) {
     wherePerson['$student.class$'] = studentClass;
   }
-  if (monthStr && monthStr.length) {
-    const selectDate = new Date(monthStr);
-    const month = selectDate.getMonth();
-    const year = selectDate.getFullYear();
-    where.monthFee = month;
-    where.yearFee = year;
+  if (monthStr && monthStr.year && monthStr.month) {
+    where.monthFee = monthStr.month;
+    where.yearFee = monthStr.year;
   }
   where.companyId = user.companyId;
   console.log(isPaid, where);
@@ -127,17 +125,16 @@ export async function createStudentMonthlyFee(user, createForm) {
   try {
     if (createForm && createForm.details) {
       for (let i = 0; i < createForm.details.length; i += 1) {
-        const monthYear = new Date(createForm.details[i].monthYear);
-        const month = monthYear.getMonth();
-        const year = monthYear.getFullYear();
+        const {monthYear: {month, year}} = createForm.details[i];
+
         const uuidS = hex2binary(uuidv4());
         // eslint-disable-next-line no-await-in-loop
         const studentFee = await db.StudentMonthlyFee.findOne({
           where: {
             studentId: +createForm.details[i].studentId,
             companyId: user.companyId,
-            monthFee: +month,
-            yearFee: +year
+            monthFee: month,
+            yearFee: year
           },
           include: [
             {
