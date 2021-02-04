@@ -235,6 +235,19 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
   return true;
 }
 
+export async function deleteListStudentMonthlyFee(sId, user) {
+  const listId = sId.map(t => hex2binary(t));
+  console.log(listId)
+  return db.StudentMonthlyFee.destroy({
+    where: {
+      id: {
+        [Op.in]: listId
+      },
+      companyId: user.companyId
+    }
+  })
+}
+
 async function getStudentMonthlyFeeItem(id, companyId) {
   const bId = hex2binary(id);
   return db.StudentMonthlyFee.findOne({
