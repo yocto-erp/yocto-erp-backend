@@ -189,9 +189,8 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
     const transaction = await db.sequelize.transaction();
     try {
       for (let i = 0; i < updateForm.details.length; i += 1) {
-        const splitMonthYear = updateForm.details[i].monthYear.split('-');
-        const month = splitMonthYear[1];
-        const year = splitMonthYear[0];
+        const {monthYear: {month, year}} = updateForm.details[i];
+
         // eslint-disable-next-line no-await-in-loop
         const studentFee = await db.StudentMonthlyFee.findOne({
           where: {
