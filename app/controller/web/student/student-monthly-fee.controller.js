@@ -6,6 +6,7 @@ import {PERMISSION} from "../../../db/models/acl/acl-action";
 import {pagingParse} from '../../middleware/paging.middleware';
 import {
   createStudentMonthlyFee,
+  deleteListStudentMonthlyFee,
   generatePDF,
   getStudentMonthlyFee,
   listStudentMonthlyFee,
@@ -81,6 +82,12 @@ studentMonthlyFee.post('/:ids', [hasPermission(PERMISSION.CUSTOMER.UPDATE)], (re
 
 studentMonthlyFee.delete('/:id', hasPermission(PERMISSION.CUSTOMER.DELETE), (req, res, next) => {
   return removeStudentMonthlyFee(req.params.id, req.user)
+    .then(result => res.status(200).json(result))
+    .catch(next);
+});
+
+studentMonthlyFee.post('/list/delete', hasPermission(PERMISSION.CUSTOMER.DELETE), (req, res, next) => {
+  return deleteListStudentMonthlyFee(req.body.ids, req.user)
     .then(result => res.status(200).json(result))
     .catch(next);
 });
