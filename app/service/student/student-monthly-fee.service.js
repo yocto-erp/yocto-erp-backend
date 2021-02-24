@@ -201,10 +201,9 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
         if (!studentFee) {
           throw badRequest('studentFee', FIELD_ERROR.INVALID, `Student Fee not exist`);
         }
-        const monthStr = `0${month + 1}`;
         // eslint-disable-next-line no-await-in-loop
         await studentFee.update({
-          monthFee: monthStr.substr(monthStr.length - 2, 2),
+          monthFee: month,
           yearFee: year,
           scholarShip: updateForm.details[i].scholarShip,
           scholarFee: updateForm.details[i].scholarFee,
@@ -302,8 +301,10 @@ export async function toPrintData(id, companyId) {
       }
     ]
   });
+
+  const monthStr = `0${fee.monthFee + 1}`;
   const studentFee = {
-    monthFee: fee.monthFee,
+    monthFee: monthStr.substr(monthStr.length - 2, 2),
     yearFee: fee.yearFee,
     scholarShip: formatTemplateMoney(fee.scholarFee),
     scholarShipPercent: `${fee.scholarShip} %`,
