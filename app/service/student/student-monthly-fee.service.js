@@ -201,9 +201,10 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
         if (!studentFee) {
           throw badRequest('studentFee', FIELD_ERROR.INVALID, `Student Fee not exist`);
         }
+        const monthStr = `0${month + 1}`;
         // eslint-disable-next-line no-await-in-loop
         await studentFee.update({
-          monthFee: month,
+          monthFee: monthStr.substr(monthStr.length - 2, 2),
           yearFee: year,
           scholarShip: updateForm.details[i].scholarShip,
           scholarFee: updateForm.details[i].scholarFee,
