@@ -5,7 +5,7 @@ let node;
 
 export async function initIPFS() {
   node = await IPFS.create({
-    repo: `${os.homedir()  }/.jsipfs2`,
+    repo: `${os.homedir()}/.jsipfs2`,
     config: {
       Addresses: {
         Swarm: [
