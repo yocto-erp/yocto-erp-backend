@@ -26,6 +26,7 @@ import {initSummaryController} from "./summary/summary.controller";
 import {initManualController} from "./manual/manual.controller";
 import {initTaggingController} from "./tagging/tagging.controller";
 import {initAuditController} from "./audit/audit.controller";
+import { initWebUserController } from './user/user.controller';
 
 
 export function initWebController(app) {
@@ -57,4 +58,5 @@ export function initWebController(app) {
   initManualController(app);
   initTaggingController(app);
   initAuditController(app);
+  initWebUserController(app);
 }
