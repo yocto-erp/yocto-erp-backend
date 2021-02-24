@@ -9,7 +9,7 @@
     "copy-template": "ncp app/service/template/print_template.html dist/service/template/print_template.html && ncp app/service/template/template.html dist/service/template/template.html && ncp app/service/template/print dist/service/template/print",
     "build": "npm run clean && babel app --out-dir dist && ncp app/template dist/template && ncp app/swagger/swagger.json dist/swagger/swagger.json && npm run copy-template",
     "start": "env-cmd nodemon --exec babel-node app/server.js",
-    "serve": "node dist/server.js",
+    "serve": "env-cmd node dist/server.js",
     "test": "mocha --recursive --timeout 100000 --exit",
     "coverage": "nyc npm test && nyc report --reporter=text-lcov | coveralls"
   },
