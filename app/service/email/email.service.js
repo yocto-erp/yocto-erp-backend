@@ -46,9 +46,9 @@ export function buildTemplate(templateName, params) {
   });
 }
 
-export function sendHtml({
-                           from, to, subject, html, bcc, cc
-                         }) {
+export async function sendHtml({
+                                 from, to, subject, html, bcc, cc
+                               }) {
   emailLog.info(`Send email ${subject} to ${to}`);
   const emailOpts = {
     from, to, subject, html
@@ -60,26 +60,39 @@ export function sendHtml({
     emailOpts.cc = cc;
   }
 
-  return getMailGunClient().messages.create(domain, emailOpts)
-    .then((t) => {
-      emailLog.info(`Send Email Resp: ${JSON.stringify(t)}`);
-      db.EmailSend.create({
-        from: from,
-        to: to,
-        cc: cc || '',
-        bcc: bcc || '',
-        subject: subject,
-        content: html,
-        status: EMAIL_STATUS.SUCCESS,
-        retry: 0,
-        api_response: JSON.stringify(t),
-        sent_date: new Date()
-      });
-      return true;
-    }).catch((error) => {
-      console.log(error);
-      emailLog.error(error.message, error);
+  try {
+    const rs = await getMailGunClient().messages.create(domain, emailOpts);
+    emailLog.info(`Send Email Resp: ${JSON.stringify(rs)}`);
+    db.EmailSend.create({
+      from: from,
+      to: to,
+      cc: cc || '',
+      bcc: bcc || '',
+      subject: subject,
+      content: html,
+      status: EMAIL_STATUS.SUCCESS,
+      retry: 0,
+      api_response: JSON.stringify(rs),
+      sent_date: new Date()
     });
+    return true;
+  } catch (error) {
+    console.log('Email Errror', error);
+    db.EmailSend.create({
+      from: from,
+      to: to,
+      cc: cc || '',
+      bcc: bcc || '',
+      subject: subject,
+      content: html,
+      status: EMAIL_STATUS.FAIL,
+      retry: 0,
+      api_response: JSON.stringify(error),
+      sent_date: new Date()
+    });
+    emailLog.error(error.message, error);
+    return false;
+  }
 }
 
 export async function resendEmail(emailId) {
@@ -112,6 +125,36 @@ export function sendRegister(email, displayName, url) {
         from: systemEmail.register,
         to: email,
         subject: 'Welcome to YOCTO-ERP',
+        html: emailMsg
+      };
+      if (!DEBUG) {
+        return sendHtml(sendInfo);
+      }
+      return null;
+    });
+  } catch (error) {
+    emailLog.error(error.message);
+    throw error;
+  }
+}
+
+export function sendInviteUser(email, companyName, url) {
+  try {
+    const templatePath = getTemplateFile('invite-user');
+    emailLog.info(`Template Path: ${templatePath}`);
+    fs.readFile(templatePath, 'utf-8', (err, html) => {
+      if (err) {
+        emailLog.info(err.message);
+        throw err;
+      }
+
+      const emailMsg = html
+        .replace(/{{email_confirm_url}}/g, url)
+        .replaceAll(/{{companyName}}/g, companyName)
+      const sendInfo = {
+        from: systemEmail.register,
+        to: email,
+        subject: `Company ${companyName} invited you as a member.`,
         html: emailMsg
       };
       if (!DEBUG) {

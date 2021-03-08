@@ -1,23 +1,28 @@
 import express from 'express';
 import {hasPermission, isAuthenticated} from '../middleware/permission';
 import {
-  resendEmailActive,
   confirmEmail,
+  createCompanyOnboard,
   register,
-  signIn,
-  createCompanyOnboard
+  resendEmailActive,
+  selectCompany,
+  signIn
 } from '../../service/user/auth.service';
 import {PERMISSION} from "../../db/models/acl/acl-action";
-import {requestResetPassword, isTokenValid, updatePassword} from '../../service/user/user-forgot-password.service';
+import {isTokenValid, requestResetPassword, updatePassword} from '../../service/user/user-forgot-password.service';
 import {sendResetPassword} from '../../service/email/email.service';
-import { authValidator, mailValidator } from '../middleware/validators/auth.validator';
-import { companyValidator } from '../middleware/validators/company.validator';
+import {authValidator, mailValidator} from '../middleware/validators/auth.validator';
+import {companyValidator} from '../middleware/validators/company.validator';
 import {getOrigin} from "../../util/request.util";
 
 const auth = express.Router();
 
 auth.get('/information', isAuthenticated(), (req, res) => {
   return res.status(200).json(req.user);
+});
+
+auth.get('/select-company', isAuthenticated(), (req, res, next) => {
+  return selectCompany(req.user, Number(req.query.id)).then(resp => res.status(200).json(resp)).catch(next);
 });
 
 auth.get('/access-denied', hasPermission(PERMISSION.INVENTORY.READ), (req, res) => {
@@ -92,7 +97,7 @@ auth.post('/forgot-password/reset', authValidator, (req, res, next) => {
   }).catch(next);
 });
 
-auth.post('/createCompanyOnboard', [companyValidator, hasPermission(PERMISSION.CUSTOMER.CREATE)], (req, res, next) => {
+auth.post('/createCompanyOnboard', [companyValidator, isAuthenticated()], (req, res, next) => {
   return createCompanyOnboard(req.user, req.body)
     .then(result => res.status(200).json(result))
     .catch(next);

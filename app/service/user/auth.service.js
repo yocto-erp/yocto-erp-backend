@@ -9,6 +9,7 @@ import {USER_EVENT, userEmitter} from '../../event/user.event';
 import {ALL_PERMISSIONS} from '../../db/models/acl/acl-action';
 import {ACTION_TYPE} from '../../db/models/acl/acl-group-action';
 import * as emailService from '../email/email.service';
+import {USER_INVITE_STATUS} from "../../db/models/user/user-company";
 
 
 const userNameFilter = ['admin', 'www', 'support', 'cryptocash', 'usd', 'ciphercore', 'ciphc', 'peak', 'addfund',
@@ -22,6 +23,79 @@ const userNameFilter = ['admin', 'www', 'support', 'cryptocash', 'usd', 'cipherc
   'shop', 'signup', 'sixpay', 'staff', 'support', 'system', 'takotoshi', 'token', 'transaction', 'transfer',
   'update', 'upload', 'USD', 'wallet', 'webmaster', 'webmaster', 'weboffice', 'Withdraw', 'email'];
 
+async function getUserToken(userInform, selectCompanyId = null) {
+  const userJson = userInform.get({plain: true});
+
+  /**
+   * At the moment only support 1 user had one company, so default choose the first company
+   */
+  const userCompanies = userJson.userCompanies.filter(t => t.userCompany.inviteStatus === USER_INVITE_STATUS.CONFIRMED);
+
+  userJson.userCompanies = userCompanies;
+  userJson.companyId = null;
+  let userCompany = null;
+  let selectCompanyIndex = null;
+
+  if (userCompanies.length === 1) {
+    selectCompanyIndex = 0;
+  } else if (userCompanies.length > 0) {
+    for (let i = 0; i < userCompanies.length; i += 1) {
+      if (userCompanies[i].id === selectCompanyId) {
+        selectCompanyIndex = i;
+      }
+    }
+  }
+
+  if (selectCompanyIndex != null) {
+    userCompany = userCompanies[selectCompanyIndex];
+
+    const {userCompany: {groupId}} = userCompany;
+    const permissions = await db.ACLGroupAction.findAll({
+      where: {
+        groupId
+      }
+    });
+    const userPermission = {};
+    permissions.forEach(perm => {
+      const {actionId, type} = perm;
+      if (!userPermission[`action${actionId}`]) {
+        userPermission[`action${actionId}`] = {type: type};
+      }
+    });
+
+    const shopPermissions = await db.ACLGroupActionShop.findAll({
+      where: {
+        groupId
+      }
+    });
+    shopPermissions.forEach(perm => {
+      const {actionId, shopId} = perm;
+      userPermission[`action${actionId}`].shopId = shopId;
+    });
+
+    userJson.permissions = userPermission;
+    userJson.companyId = userCompany.id;
+    userJson.company = userCompany;
+  }
+
+
+  return {token: jwt.sign(userJson, APP_CONFIG.JWT.secret), user: userJson};
+}
+
+export async function selectCompany(user, companyId) {
+  const existedUser = await db.User.findOne({
+    where: {
+      id: user.id
+    },
+    include: [
+      {
+        model: db.Company, as: 'userCompanies'
+      }
+    ]
+  });
+  return getUserToken(existedUser, companyId);
+}
+
 export async function signIn({email, password}) {
   if (!email || email.length === 0 || !password || password.length === 0) {
     throw badRequest('credential', FIELD_ERROR.INVALID, 'Email or password invalid');
@@ -31,9 +105,9 @@ export async function signIn({email, password}) {
       email: email
     },
     include: [
-      {model: db.ACLGroupAction, as: 'permissions'},
-      {model: db.ACLGroupActionShop, as: 'shopPermissions'},
-      {model: db.Company, as: 'userCompanies'}
+      {
+        model: db.Company, as: 'userCompanies'
+      }
     ]
   });
   if (!user) {
@@ -48,35 +122,8 @@ export async function signIn({email, password}) {
   if (user.status !== USER_STATUS.ACTIVE) {
     throw badRequest('credential', FIELD_ERROR.EMAIL_NOT_ACTIVE, 'User not active');
   }
-  const userJson = user.get({plain: true});
-  appLog.info(userJson);
-  const {permissions, shopPermissions, userCompanies} = userJson;
-  const userPermission = {};
-  permissions.forEach(perm => {
-    const {actionId, type} = perm;
-    if (!userPermission[`action${actionId}`]) {
-      userPermission[`action${actionId}`] = {type: type};
-    }
-  });
-  shopPermissions.forEach(perm => {
-    const {actionId, shopId} = perm;
-    userPermission[`action${actionId}`].shopId = shopId;
-  });
 
-  let userCompany = null;
-  if (userCompanies.length) {
-    userCompany = userCompanies[0].id;
-  }
-
-  userJson.permissions = userPermission;
-  userJson.userCompanies = userCompany;
-  userJson.companyId = userCompany;
-  const token = jwt.sign(userJson, APP_CONFIG.JWT.secret);
-
-  return {
-    token,
-    user: userJson
-  };
+  return getUserToken(user);
 }
 
 export async function register(registerForm) {
@@ -85,7 +132,7 @@ export async function register(registerForm) {
   const currentUsername = await db.User.findOne({
     where: {email: registerForm.email}
   });
-  if (currentUsername) {
+  if (currentUsername && currentUsername.status !== USER_STATUS.INVITED) {
     throw new FormError(
       new FieldError('email',
         FIELD_ERROR.INVALID,
@@ -104,20 +151,6 @@ export async function register(registerForm) {
   return db.sequelize.transaction()
     .then(async (t) => {
       try {
-        const group = await db.ACLGroup.create({
-          name: 'COMPANY_GROUP',
-          remark: 'Default group for master access',
-          createdById: 0
-        }, {transaction: t});
-        const actions = ALL_PERMISSIONS.map(_p => {
-          return {
-            groupId: group.id,
-            actionId: _p,
-            type: ACTION_TYPE.FULL
-          }
-        });
-        await db.ACLGroupAction.bulkCreate(actions, {transaction: t});
-
         const person = await db.Person.create({
           firstName: registerForm.firstName,
           lastName: registerForm.lastName,
@@ -126,19 +159,28 @@ export async function register(registerForm) {
           createdDate: new Date()
         }, {transaction: t});
 
-        const newUser = await db.User.create(
-          {
-            email: registerForm.email,
-            pwd: db.User.hashPassword(registerForm.password),
-            displayName: `${registerForm.firstName} ${registerForm.lastName}`,
-            status: USER_STATUS.ACTIVE,
-            createdDate: new Date(),
-            email_active: false,
-            groupId: group.id,
-            personId: person.id
-          },
-          {transaction: t}
-        );
+        let newUser;
+        if (!currentUsername) {
+          newUser = await db.User.create(
+            {
+              email: registerForm.email,
+              pwd: db.User.hashPassword(registerForm.password),
+              displayName: `${registerForm.firstName} ${registerForm.lastName}`,
+              status: USER_STATUS.ACTIVE,
+              createdDate: new Date(),
+              email_active: false,
+              personId: person.id
+            },
+            {transaction: t}
+          );
+        } else {
+          currentUsername.pwd = db.User.hashPassword(registerForm.password);
+          currentUsername.displayName = `${registerForm.firstName} ${registerForm.lastName}`;
+          currentUsername.status = USER_STATUS.ACTIVE;
+          currentUsername.personId = person.id;
+          await currentUsername.save({transaction: t});
+          newUser = currentUsername;
+        }
 
         await t.commit();
         appLog.info(`Send event user:register ${JSON.stringify(newUser)}`);
@@ -255,9 +297,25 @@ export async function createCompanyOnboard(user, createForm) {
       }, {transaction}
     );
 
+    const group = await db.ACLGroup.create({
+      name: 'COMPANY_GROUP',
+      remark: 'Default group for master access',
+      createdById: 0,
+      totalPermission: ALL_PERMISSIONS.length
+    }, {transaction});
+    const actions = ALL_PERMISSIONS.map(_p => {
+      return {
+        groupId: group.id,
+        actionId: _p,
+        type: ACTION_TYPE.FULL
+      }
+    });
+    await db.ACLGroupAction.bulkCreate(actions, {transaction});
+
     await db.UserCompany.create({
       userId: user.id,
-      companyId: company.id
+      companyId: company.id,
+      groupId: group.id
     }, {transaction});
 
     await transaction.commit();
@@ -267,35 +325,13 @@ export async function createCompanyOnboard(user, createForm) {
         id: user.id
       },
       include: [
-        {model: db.ACLGroupAction, as: 'permissions'},
-        {model: db.ACLGroupActionShop, as: 'shopPermissions'},
-        {model: db.Company, as: 'userCompanies'}
+        {
+          model: db.Company, as: 'userCompanies'
+        }
       ]
     });
-    const userJson = userInform.get({plain: true});
-    appLog.info(userJson);
-    const {permissions, shopPermissions, userCompanies} = userJson;
-    const userPermission = {};
-    permissions.forEach(perm => {
-      const {actionId, type} = perm;
-      if (!userPermission[`action${actionId}`]) {
-        userPermission[`action${actionId}`] = {type: type};
-      }
-    });
-    shopPermissions.forEach(perm => {
-      const {actionId, shopId} = perm;
-      userPermission[`action${actionId}`].shopId = shopId;
-    });
 
-    let userCompany = null;
-    if (userCompanies.length) {
-      userCompany = userCompanies[0].id;
-    }
-    userJson.permissions = userPermission;
-    userJson.userCompanies = userCompany;
-    userJson.companyId = userCompany;
-    const token = jwt.sign(userJson, APP_CONFIG.JWT.secret);
-    return {token};
+    return getUserToken(userInform);
   } catch (e) {
     await transaction.rollback();
     throw e;

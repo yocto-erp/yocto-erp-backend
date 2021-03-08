@@ -5,7 +5,8 @@ const saltRounds = 10;
 
 export const USER_STATUS = Object.freeze({
   ACTIVE: 1,
-  BLOCKED: 2
+  BLOCKED: 2,
+  INVITED: 3
 });
 
 export const USER_SEX = Object.freeze({
@@ -50,23 +51,9 @@ export default class User extends Model {
   }
 
   static associate(models) {
-    this.belongsTo(models.ACLGroup, {
-      foreignKey: 'groupId',
-      as: 'group'
-    });
     this.belongsTo(models.Person, {
       foreignKey: 'personId',
       as: 'person'
-    });
-    this.hasMany(models.ACLGroupAction, {
-      foreignKey: 'groupId',
-      sourceKey: 'groupId',
-      as: 'permissions'
-    });
-    this.hasMany(models.ACLGroupActionShop, {
-      foreignKey: 'groupId',
-      sourceKey: 'groupId',
-      as: 'shopPermissions'
     });
     this.belongsToMany(models.Company, {
       through: models.UserCompany,

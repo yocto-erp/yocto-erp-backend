@@ -4,7 +4,7 @@ import {badRequest, FIELD_ERROR} from '../../config/error';
 const {Op} = db.Sequelize;
 
 export function students(query, order, offset, limit, user) {
-  const {search} = query;
+  const {search, class: studentClass} = query;
   const where = {};
   let wherePerson = {};
   if (search && search.length) {
@@ -31,8 +31,21 @@ export function students(query, order, offset, limit, user) {
     };
   }
   where.companyId = user.companyId;
+  if (studentClass && studentClass.length) {
+    wherePerson.class = studentClass;
+  }
+  console.log(order);
+  const _order = order.map(t => {
+    const [name, dir] = t;
+    if (name === 'name') {
+      return [{
+        model: db.Person, as: 'child'
+      }, 'lastName', dir]
+    }
+    return t;
+  });
   return db.Student.findAndCountAll({
-    order,
+    order: _order,
     where: {...where, ...wherePerson},
     include: [
       {

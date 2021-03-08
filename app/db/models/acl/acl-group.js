@@ -13,7 +13,8 @@ export default class ACLGroup extends Sequelize.Model {
         },
         name: {type: DataTypes.STRING(255)},
         remark: {type: DataTypes.TEXT},
-        createdById: {type: DataTypes.BIGINT}
+        createdById: {type: DataTypes.BIGINT},
+        totalPermission: {type: DataTypes.INTEGER}
       },
       {
         tableName: 'acl_group',

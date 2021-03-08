@@ -4,10 +4,9 @@ import {eventLog} from "../config/winston";
 import db from '../db/models';
 import * as emailService from '../service/email/email.service';
 
-
-
 export const USER_EVENT = Object.freeze({
-  REGISTER: 'user:register'
+  REGISTER: 'user:register',
+  INVITE: 'user:invite'
 });
 export const userEmitter = new EventEmitter();
 
@@ -32,9 +31,35 @@ function emailRegister(user) {
   }
 }
 
+function emailUserInvited(origin, user, company) {
+  try {
+    const token = md5(`${user.email}-${new Date()}`);
+    const url = `${origin || process.env.WEB_URL}/invite-confirm?email=${user.email}&token=${token}&companyId=${company.id}`;
+    db.UserActivate.create({
+      user_id: user.id,
+      active_code: token,
+      date_inserted: new Date()
+    })
+      .then(async () => {
+        await emailService.sendInviteUser(user.email, company.name, url);
+      })
+      .catch((reason) => {
+        eventLog.error(reason);
+      });
+  } catch (e) {
+    eventLog.error(e);
+  }
+}
+
 userEmitter.on(USER_EVENT.REGISTER, (user) => {
   eventLog.info(`Event user:register ${JSON.stringify(user)}`);
   setImmediate(async () => {
     emailRegister(user);
+  });
+});
+
+userEmitter.on(USER_EVENT.INVITE, (origin, user, company) => {
+  setImmediate(async () => {
+    emailUserInvited(origin, user, company);
   });
 });

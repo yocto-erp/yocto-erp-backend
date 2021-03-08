@@ -20,4 +20,11 @@ export default class UserActivate extends Sequelize.Model {
       }
     );
   }
+
+  static associate(models) {
+    this.belongsTo(models.User, {
+      foreignKey: 'user_id',
+      as: 'user'
+    });
+  }
 }

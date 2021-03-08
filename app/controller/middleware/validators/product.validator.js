@@ -9,7 +9,7 @@ export const productUnitValidator = validator(yup.array().of(yup.object({
 
 export const productValidator = validator(yup.object().shape({
   name: yup.string().max(250, 'Name max string 250').required('This field is required.'),
-  priceBaseUnit: yup.number().moreThan(0,'PriceBaseUnit must larger than 0').required('This field is required.'),
+  priceBaseUnit: yup.number().nullable(),
   units: yup.array().of(yup.object({
     name: yup.string().max(50).required('This field is required.'),
     rate: yup.number().moreThan(0,'Rate must larger than 0').required('This field is required.')
