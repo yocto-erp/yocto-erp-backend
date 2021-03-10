@@ -33,7 +33,7 @@ export async function initIPFS() {
       }
     }
   });
-  await new HttpApi(node).start();
+  // await new HttpApi(node).start();
   // await new HttpGateway(node).start();
 }
 
