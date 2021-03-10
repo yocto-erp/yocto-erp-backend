@@ -2,13 +2,10 @@ import IPFS from 'ipfs'
 import HttpApi from 'ipfs-http-server'
 import HttpGateway from 'ipfs-http-gateway'
 
-const os = require('os')
-
 let node;
 
 export async function initIPFS() {
   node = await IPFS.create({
-    repo: `${os.homedir()}/.jsipfs2`,
     config: {
       "Addresses": {
         "Swarm": [
@@ -33,8 +30,8 @@ export async function initIPFS() {
       }
     }
   });
-  // await new HttpApi(node).start();
-  // await new HttpGateway(node).start();
+  await new HttpApi(node).start();
+  await new HttpGateway(node).start();
 }
 
 export async function addIPFS(data) {
