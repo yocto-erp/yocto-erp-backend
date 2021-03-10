@@ -34,7 +34,7 @@ export async function initIPFS() {
     }
   });
   await new HttpApi(node).start();
-  await new HttpGateway(node).start();
+  // await new HttpGateway(node).start();
 }
 
 export async function addIPFS(data) {
