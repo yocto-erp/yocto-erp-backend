@@ -1,4 +1,7 @@
-const IPFS = require('ipfs')
+import IPFS from 'ipfs'
+import HttpApi from 'ipfs-http-server'
+import HttpGateway from 'ipfs-http-gateway'
+
 const os = require('os')
 
 let node;
@@ -7,24 +10,22 @@ export async function initIPFS() {
   node = await IPFS.create({
     repo: `${os.homedir()}/.jsipfs2`,
     config: {
-      Addresses: {
-        Swarm: [
-          `/ip4/0.0.0.0/tcp/4001`,
-          `/ip4/127.0.0.1/tcp/4003/ws`
-        ],
-        API: '/ip4/127.0.0.1/tcp/5001',
-        Gateway: `/ip4/127.0.0.1/tcp/0`
-      },
-      Bootstrap: [],
-      "API": {
-        "HTTPHeaders": {
+      API: {
+        HTTPHeaders: {
+          "Access-Control-Allow-Methods": [
+            "PUT", "POST"
+          ],
           "Access-Control-Allow-Origin": [
-            "http://127.0.0.1:3000"
+            "http://localhost:3000",
+            "https://app.yoctoerp.com",
+            "https://webui.ipfs.io"
           ]
         }
       }
     }
-  })
+  });
+  await new HttpApi(node).start();
+  await new HttpGateway(node).start();
 }
 
 export async function addIPFS(data) {

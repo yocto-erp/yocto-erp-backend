@@ -36,6 +36,8 @@
     "fs": "^0.0.2",
     "google-libphonenumber": "^3.2.10",
     "ipfs": "^0.54.2",
+    "ipfs-http-server": "^0.3.2",
+    "ipfs-http-gateway": "^0.3.2",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.19",
     "lodash.merge": ">=4.6.2",

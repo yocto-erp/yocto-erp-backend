@@ -34,11 +34,10 @@
 //
 
 import {every5secondSendEmail} from "./email";
-import {every5secondUploadBlockChain} from "./sync-blockchain";
 import {every15minUpdateHourlyCost} from "./report/report-cost";
 
 export function initCronTasks() {
   every5secondSendEmail.start();
-  every5secondUploadBlockChain.start();
+  // every5secondUploadBlockChain.start();
   every15minUpdateHourlyCost.start();
 }
