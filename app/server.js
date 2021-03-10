@@ -64,6 +64,6 @@ server.listen(PORT, appConf.hostname, async () => {
     appLog.info(`System Configure Load: ${JSON.stringify(systemConfigure)}`)
   });
   initCronTasks();
-  initIPFS().then();
+  // initIPFS().then();
   appLog.info(`Server running at http://${appConf.hostname}:${PORT}/`);
 });
