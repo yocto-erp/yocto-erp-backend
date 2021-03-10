@@ -10,6 +10,15 @@ export async function initIPFS() {
   node = await IPFS.create({
     repo: `${os.homedir()}/.jsipfs2`,
     config: {
+      "Addresses": {
+        "Swarm": [
+          "/ip4/0.0.0.0/tcp/4012",
+          "/ip4/127.0.0.1/tcp/4013/ws"
+        ],
+        "Announce": [],
+        "API": "/ip4/127.0.0.1/tcp/5001",
+        "Gateway": "/ip4/127.0.0.1/tcp/9191"
+      },
       API: {
         HTTPHeaders: {
           "Access-Control-Allow-Methods": [
