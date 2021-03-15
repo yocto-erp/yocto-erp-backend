@@ -14,7 +14,7 @@ import {initMobileController} from "./controller/mobile";
 import service from './service/passport';
 import {initCronTasks} from "./cron";
 import {initSwagger} from "./swagger";
-import {initIPFS} from "./service/ipfs.service";
+import {initSocket} from "./event/socket";
 
 service(passport);
 export const app = express();
@@ -57,6 +57,8 @@ app.use((err, req, res, next) => {
 
 // setup express application
 const server = http.createServer(app);
+
+initSocket(server);
 
 const PORT = process.env.PORT || appConf.port;
 server.listen(PORT, appConf.hostname, async () => {
