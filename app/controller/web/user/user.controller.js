@@ -3,7 +3,7 @@ import {pagingParse} from '../../middleware/paging.middleware';
 import {hasPermission} from '../../middleware/permission';
 import {PERMISSION} from '../../../db/models/acl/acl-action';
 import {
-  confirmInvitation,
+  confirmInvitation, editUser,
   getUser,
   inviteUser,
   removeUser,
@@ -33,6 +33,11 @@ user.post('/', hasPermission(PERMISSION.USER.CREATE), (req, res, next) => {
     .then(result => res.status(200).json(result)).catch(next);
 });
 
+user.post('/:id(\\d+)', hasPermission(PERMISSION.USER.UPDATE), (req, res, next) => {
+  return editUser(req.user, req.params.id, req.body)
+    .then(result => res.status(200).json(result)).catch(next);
+});
+
 user.get('/invite/verify', (req, res, next) => {
   return verifyInvite(req.query)
     .then(result => res.status(200).json(result)).catch(next);
@@ -42,12 +47,6 @@ user.post('/invite/verify', (req, res, next) => {
   return confirmInvitation(req.body)
     .then(result => res.status(200).json(result)).catch(next);
 });
-
-// user.post('/:id(\\d+)', hasPermission(PERMISSION.PRODUCT.UPDATE), (req, res, next) => {
-//   return updateUser(req.params.id, req.user, req.body)
-//     .then(result => res.status(200).json(result))
-//     .catch(next);
-// });
 
 user.delete('/:id(\\d+)', hasPermission(PERMISSION.USER.DELETE), (req, res, next) => {
   return removeUser(req.user, req.params.id)

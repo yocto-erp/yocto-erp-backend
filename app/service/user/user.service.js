@@ -84,6 +84,36 @@ export async function getUser(user, uId) {
   };
 }
 
+export async function editUser(user, uId, permissions) {
+  const rs = await getUser(user, uId);
+  if (!rs || !rs.user || !rs.group) {
+    throw badRequest('permission', FIELD_ERROR.INVALID, 'permission not found');
+  }
+  const transaction = await db.sequelize.transaction();
+  try {
+    await db.ACLGroupAction.destroy({
+      where: {
+        groupId: rs.group.id
+      }
+    },{transaction});
+    const permissionsForm = [];
+    for (let index = 0; index < permissions.length; index += 1) {
+      const result = permissions[index];
+      permissionsForm.push({
+        groupId: rs.group.id,
+        type: result.type,
+        actionId: result.actionId ? result.actionId : result.id
+      });
+    }
+    const details = await db.ACLGroupAction.bulkCreate(permissionsForm, {transaction});
+    await transaction.commit();
+    return details;
+  } catch (e) {
+    await transaction.rollback();
+    throw e;
+  }
+}
+
 export async function removeUser(user, uId) {
   const userCompany = await db.UserCompany.findOne({
     userId: uId, companyId: user.companyId
@@ -207,7 +237,7 @@ export async function verifyInvite({email, token, companyId}) {
       inviteStatus: USER_INVITE_STATUS.INVITED
     },
     include: [
-      {model: db.Company, as: 'company'},
+      {model: db.Company, as: 'company'}
     ]
   });
   console.log(userActive.user, companyId, invitation)
