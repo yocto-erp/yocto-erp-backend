@@ -315,7 +315,8 @@ export async function createCompanyOnboard(user, createForm) {
     await db.UserCompany.create({
       userId: user.id,
       companyId: company.id,
-      groupId: group.id
+      groupId: group.id,
+      inviteStatus: USER_INVITE_STATUS.CONFIRMED
     }, {transaction});
 
     await transaction.commit();
