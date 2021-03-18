@@ -10,10 +10,10 @@ export const USER_EVENT = Object.freeze({
 });
 export const userEmitter = new EventEmitter();
 
-function emailRegister(user) {
+function emailRegister(user, origin) {
   try {
     const token = md5(`${user.email}-${new Date()}`);
-    const url = `${process.env.WEB_URL || 'http://php.local:3000'}/email-activate?email=${user.email}&token=${token}`;
+    const url = `${origin || process.env.WEB_URL}/email-activate?email=${user.email}&token=${token}`;
     eventLog.info(`Build url: ${url}`);
     db.UserActivate.create({
       user_id: user.id,
@@ -51,10 +51,10 @@ function emailUserInvited(origin, user, company) {
   }
 }
 
-userEmitter.on(USER_EVENT.REGISTER, (user) => {
+userEmitter.on(USER_EVENT.REGISTER, (user, origin) => {
   eventLog.info(`Event user:register ${JSON.stringify(user)}`);
   setImmediate(async () => {
-    emailRegister(user);
+    emailRegister(user, origin);
   });
 });
 

@@ -40,9 +40,14 @@ auth.get('/resendEmailActive', (req, res, next) => {
     .catch(next);
 });
 
-auth.post('/register', (req, res, next) => {
-  return register(req.body)
-    .then(result => res.status(200).json(result)).catch(next);
+auth.post('/register', async (req, res, next) => {
+  try {
+    const origin = getOrigin(req);
+    const registerResp = register(req.body, origin);
+    res.status(200).json(registerResp);
+  } catch (err) {
+    next(err);
+  }
 });
 
 auth.post('/sign-in', async (req, res, next) => {

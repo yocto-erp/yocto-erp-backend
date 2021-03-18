@@ -126,7 +126,7 @@ export async function signIn({email, password}) {
   return getUserToken(user);
 }
 
-export async function register(registerForm) {
+export async function register(registerForm, origin) {
   appLog.info(`${JSON.stringify(registerForm)}`);
 
   const currentUsername = await db.User.findOne({
@@ -186,7 +186,7 @@ export async function register(registerForm) {
         appLog.info(`Send event user:register ${JSON.stringify(newUser)}`);
 
         if (process.env.NODE_ENV !== 'test') {
-          userEmitter.emit(USER_EVENT.REGISTER, newUser);
+          userEmitter.emit(USER_EVENT.REGISTER, newUser, origin);
         }
 
         return newUser;
