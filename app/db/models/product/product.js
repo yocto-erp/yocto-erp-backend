@@ -13,6 +13,7 @@ export default class Product extends Sequelize.Model{
         remark: {type: DataTypes.TEXT},
         companyId: {type: DataTypes.BIGINT},
         createdById: {type: DataTypes.INTEGER},
+        productDocumentId: {type: DataTypes.STRING},
         createdDate: {type: DataTypes.DATE},
         lastModifiedDate: {type: DataTypes.DATE},
         lastModifiedById: {type: DataTypes.BIGINT}
@@ -35,5 +36,9 @@ export default class Product extends Sequelize.Model{
       as: 'assets'
     });
     this.hasMany(models.ProductUnit, { foreignKey: 'productId', as: 'units' });
+    this.hasMany(models.TaggingItem, {
+      foreignKey: 'itemId',
+      as: 'taggingItems'
+    });
   }
 }

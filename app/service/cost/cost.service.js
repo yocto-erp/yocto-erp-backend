@@ -187,7 +187,7 @@ export async function updateCost(cId, user, updateForm) {
           itemType: {
             [Op.in]: [TAGGING_TYPE.PAYMENT_VOUCHER, TAGGING_TYPE.RECEIPT_VOUCHER]
           }
-        },
+        }
       }]
   });
   if (!existedCost) {

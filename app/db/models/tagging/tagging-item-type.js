@@ -11,6 +11,7 @@ export const TAGGING_TYPE = {
   PAYMENT_VOUCHER: 6,
   PERSON: 7,
   COMPANY: 8,
+  PRODUCT: 9,
   OTHER: 100
 };
 
