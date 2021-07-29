@@ -31,3 +31,7 @@ export function binary2hex(obj) {
 export function hex2binary(obj) {
   return Buffer.from(obj, 'hex');
 }
+
+export function hasText(str){
+  return str && str.length && str.trim().length
+}

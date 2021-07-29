@@ -49,3 +49,21 @@ export function getHourRangeFromLastMin(minutes) {
   date.setMinutes(date.getMinutes() - minutes);
   return getHourRange(date)
 }
+
+export const beginningDateStr = (dateStr) => {
+  const rs = new Date(dateStr);
+  rs.setHours(0)
+  rs.setMinutes(0)
+  rs.setMinutes(0)
+  rs.setMilliseconds(0)
+  return rs;
+}
+
+export const endDateStr = (dateStr) => {
+  const rs = new Date(dateStr);
+  rs.setHours(23)
+  rs.setMinutes(59)
+  rs.setMinutes(59)
+  rs.setMilliseconds(999)
+  return rs;
+}

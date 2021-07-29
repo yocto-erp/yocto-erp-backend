@@ -6,6 +6,8 @@ import User from '../../db/models/user/user';
 import { TAGGING_TYPE } from '../../db/models/tagging/tagging-item-type';
 import { updateItemTags } from '../tagging/tagging.service';
 import { ORDER_TYPE } from '../../db/models/order/order';
+import { hasText } from '../../util/string.util';
+import { beginningDateStr, endDateStr } from '../../util/date.util';
 
 const { Op } = db.Sequelize;
 
@@ -16,40 +18,36 @@ export function sumTotalProduct(orderDetailsForm) {
 const mapping = (item) => ({
   ...item,
   tagging: item.taggingItems.map(t => t.tagging)
-})
+});
 
 
 export function orders(type, search, order, offset, limit, user) {
   const where = { type };
+  console.log(search);
   if (search) {
     if (search.search && search.search.length) {
       where.name = {
         [Op.like]: `%${search.search}%`
       };
     }
-    if (search.partnerCompanyId) {
-      where.partnerCompanyId = search.partnerCompanyId;
+    if (search.company && search.company.id) {
+      where.partnerCompanyId = search.company.id;
     }
-    if (search.partnerPersonId) {
-      where.partnerPersonId = search.partnerPersonId;
+    if (search.customer && search.customer.id) {
+      where.partnerPersonId = search.customer.id;
     }
-    if (search.startDate && search.startDate.length
-      && search.endDate && search.endDate.length) {
-      const dateObjEndDate = new Date(search.endDate);
-      dateObjEndDate.setHours(dateObjEndDate.getHours() + 24);
+    if (hasText(search.startDate) && hasText(search.endDate)) {
       where.processedDate = {
-        [Op.lt]: dateObjEndDate,
-        [Op.gte]: new Date(search.startDate)
+        [Op.lte]: endDateStr(search.endDate),
+        [Op.gte]: beginningDateStr(search.startDate)
       };
-    } else if (search.endDate && search.endDate.length) {
-      const dateObjEndDate = new Date(search.endDate);
-      dateObjEndDate.setHours(dateObjEndDate.getHours() + 24);
+    } else if (hasText(search.endDate)) {
       where.processedDate = {
-        [Op.lt]: dateObjEndDate
+        [Op.lte]: endDateStr(search.endDate)
       };
-    } else if (search.startDate && search.startDate.length) {
+    } else if (hasText(search.startDate)) {
       where.processedDate = {
-        [Op.gte]: new Date(search.startDate)
+        [Op.gte]: beginningDateStr(search.startDate)
       };
     }
   }
@@ -75,14 +73,14 @@ export function orders(type, search, order, offset, limit, user) {
           }
         },
         include: [
-          {model: db.Tagging, as: 'tagging'}
+          { model: db.Tagging, as: 'tagging' }
         ]
       }
     ],
     where,
     offset,
     limit
-  }).then(resp => ({...resp, rows: resp.rows.map(item => mapping(item.get({ plain: true })))}));
+  }).then(resp => ({ ...resp, rows: resp.rows.map(item => mapping(item.get({ plain: true }))) }));
 }
 
 export async function getOrder(oId, user) {
@@ -119,7 +117,7 @@ export async function getOrder(oId, user) {
           }
         },
         include: [
-          {model: db.Tagging, as: 'tagging'}
+          { model: db.Tagging, as: 'tagging' }
         ]
       }
     ]
@@ -151,7 +149,7 @@ export async function createOrder(user, type, createForm) {
       await createOrderDetail(order.id, createForm.details, transaction);
     }
 
-    if (createForm.partnerCompanyId && createForm.partnerCompanyId) {
+    if (createForm.partnerCompanyId && createForm.partnerPersonId) {
       await db.PartnerCompanyPerson.findOrCreate({
         where: {
           partnerCompanyId: createForm.partnerCompanyId,
@@ -170,7 +168,7 @@ export async function createOrder(user, type, createForm) {
         type: type === ORDER_TYPE.PURCHASE ? TAGGING_TYPE.PURCHASE_ORDER : TAGGING_TYPE.SALE_ORDER,
         transaction,
         newTags: createForm.tagging
-      })
+      });
     }
     await transaction.commit();
     return order;
@@ -233,7 +231,7 @@ export async function updateOrder(oId, user, type, updateForm) {
         type: type === ORDER_TYPE.PURCHASE ? TAGGING_TYPE.PURCHASE_ORDER : TAGGING_TYPE.SALE_ORDER,
         transaction,
         newTags: updateForm.tagging
-      })
+      });
     }
     await transaction.commit();
     return existedOrder;
