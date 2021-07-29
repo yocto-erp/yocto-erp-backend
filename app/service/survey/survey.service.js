@@ -1,21 +1,21 @@
 import db from '../../db/models';
-import {badRequest, FIELD_ERROR} from "../../config/error";
-import {SURVEY_TYPE} from "../../db/models/survey/survey";
-import {generateCode, isValidCode, sendSurveyEmailOtp} from "../otp.service";
-import {OTP_TARGET_TYPE} from "../../db/models/otp";
-import {isArray} from "../../util/func.util";
-import {SURVEY_QUESTION_TYPE} from "../../db/models/survey/survey-question";
-import {addIPFS} from "../ipfs.service";
-import {sign} from "../ethereum/vote-manager.service";
-import {getGenderStr} from "../../db/models/person";
-import {formatDateTime} from "../template/template.util";
+import { badRequest, FIELD_ERROR } from '../../config/error';
+import { SURVEY_TYPE } from '../../db/models/survey/survey';
+import { generateCode, isValidCode, sendSurveyEmailOtp } from '../otp.service';
+import { OTP_TARGET_TYPE } from '../../db/models/otp';
+import { isArray } from '../../util/func.util';
+import { SURVEY_QUESTION_TYPE } from '../../db/models/survey/survey-question';
+// import {addIPFS} from "../ipfs.service";
+import { sign } from '../ethereum/vote-manager.service';
+import { getGenderStr } from '../../db/models/person';
+import { formatDateTime } from '../template/template.util';
 
 const Stream = require('stream');
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
-export async function createSurvey({name, remark, type, languages}, user = {}) {
-  const {companyId = 0, id = 0} = user;
+export async function createSurvey({ name, remark, type, languages }, user = {}) {
+  const { companyId = 0, id = 0 } = user;
   const transaction = await db.sequelize.transaction();
   try {
     const survey = await db.Survey.create({
@@ -26,25 +26,25 @@ export async function createSurvey({name, remark, type, languages}, user = {}) {
       createdById: id,
       createdDate: new Date(),
       totalAnswer: 0
-    }, {transaction});
+    }, { transaction });
     if (languages && languages.length) {
       await db.SurveyI18N.bulkCreate(languages.map(t => ({
         surveyId: survey.id,
         languageId: t.languageId,
         name: t.name,
         remark: t.remark
-      })), {transaction});
+      })), { transaction });
     }
     await transaction.commit();
     return survey;
   } catch (e) {
     await transaction.rollback();
-    throw e
+    throw e;
   }
 }
 
 export async function getQuestionSummary(questionId, search) {
-  const {fromDate, toDate, questions} = search;
+  const { fromDate, toDate, questions } = search;
 
   let filterSurvey = [];
   const surveyPersonAnswerWhere = {
@@ -74,11 +74,11 @@ export async function getQuestionSummary(questionId, search) {
     if (questions && questions.length) {
       const filterQuestion = questions.filter(t => t.key && t.key.length);
       personAnswerSearch[Op.or] = filterQuestion.filter(t => t.key && t.key.length).map(t => {
-        const {questionId: searchQuestionId, key} = t;
+        const { questionId: searchQuestionId, key } = t;
         return {
           questionId: searchQuestionId, answer: key
-        }
-      })
+        };
+      });
       havingWhere.total = filterQuestion.length;
     }
 
@@ -86,7 +86,7 @@ export async function getQuestionSummary(questionId, search) {
       attributes: ['surveyPersonId', [db.Sequelize.fn('count', db.Sequelize.col('SurveyPersonAnswer.id')), 'total']],
       where: personAnswerSearch,
       include: [
-        {model: db.SurveyPerson, required: true, where: personSearch, attributes: []}
+        { model: db.SurveyPerson, required: true, where: personSearch, attributes: [] }
       ],
       group: ['surveyPersonId'],
       having: havingWhere
@@ -95,12 +95,12 @@ export async function getQuestionSummary(questionId, search) {
     filterSurvey = personFilter.map(t => t.surveyPersonId);
     surveyPersonAnswerWhere.surveyPersonId = {
       [Op.in]: filterSurvey
-    }
+    };
   }
 
   const question = await db.SurveyQuestion.findByPk(questionId, {
     include: [
-      {model: db.SurveyQuestionAnswer, as: 'questionAnswers'}
+      { model: db.SurveyQuestionAnswer, as: 'questionAnswers' }
     ],
     order: [
       ['id', 'asc'],
@@ -109,7 +109,7 @@ export async function getQuestionSummary(questionId, search) {
         as: 'questionAnswers'
       }, 'id', 'asc']
     ]
-  })
+  });
   const answers = await db.SurveyPersonAnswer.findAll({
     attributes: ['answer', [db.Sequelize.fn('count', db.Sequelize.col('id')), 'total']],
     group: ['answer'],
@@ -117,12 +117,12 @@ export async function getQuestionSummary(questionId, search) {
     raw: true
   });
 
-  const {content, type, questionAnswers} = question;
+  const { content, type, questionAnswers } = question;
   const answerContents = [];
   const answerTotals = [];
 
   for (let i = 0; i < questionAnswers.length; i += 1) {
-    const {content: answerContent, key} = questionAnswers[i];
+    const { content: answerContent, key } = questionAnswers[i];
     let total = 0;
     for (let j = 0; j < answers.length; j += 1) {
       if (key === answers[j].answer) {
@@ -135,7 +135,7 @@ export async function getQuestionSummary(questionId, search) {
     answerTotals.push(total);
   }
 
-  return {content, type, answers: answerContents, totals: answerTotals};
+  return { content, type, answers: answerContents, totals: answerTotals };
 }
 
 async function getSurveyWithLanguageId(surveyId, languageId) {
@@ -145,7 +145,7 @@ async function getSurveyWithLanguageId(surveyId, languageId) {
       languageId
     },
     include: [
-      {model: db.Survey, as: 'survey'}
+      { model: db.Survey, as: 'survey' }
     ]
   }).then(t => {
     if (!t) {
@@ -176,7 +176,7 @@ export async function getSurvey(id, language) {
   let rs;
   if (language) {
     const lang = await db.Language.findOne({
-      where: {code: language}
+      where: { code: language }
     });
     if (lang) {
       try {
@@ -211,9 +211,9 @@ export async function getSurvey(id, language) {
 }
 
 export function listSurveyResults(id, paging, query) {
-  const {search} = query;
+  const { search } = query;
   let wherePerson = {};
-  const surveyPersonWhere = {surveyId: id};
+  const surveyPersonWhere = { surveyId: id };
   if (search && search.length) {
     wherePerson = {
       [Op.or]: [
@@ -251,7 +251,7 @@ export function listSurveyResults(id, paging, query) {
 }
 
 export async function sendSurveyCode(id, form, origin) {
-  const {target, clientId} = form;
+  const { target, clientId } = form;
   const survey = await getSurvey(id);
   let otpType = OTP_TARGET_TYPE.EMAIL;
   if (!survey) {
@@ -302,7 +302,7 @@ export async function getSurveyQuestions(surveyId, language = '') {
   let languageId = 0;
   if (language) {
     const lang = await db.Language.findOne({
-      where: {code: language}
+      where: { code: language }
     });
     if (lang) {
       languageId = lang.id;
@@ -321,15 +321,15 @@ export async function getSurveyQuestions(surveyId, language = '') {
         }
       ],
       order: [
-        [{model: db.SurveyQuestion, as: 'surveyQuestion'}, 'id', 'asc']
+        [{ model: db.SurveyQuestion, as: 'surveyQuestion' }, 'id', 'asc']
       ]
     }).then(t => {
       return t.map(item => {
-        const {surveyQuestion: {type, introduction, data, id, content}, content: contentI18N} = item;
+        const { surveyQuestion: { type, introduction, data, id, content }, content: contentI18N } = item;
         return {
           content: contentI18N || content, type, introduction, data, id
         };
-      })
+      });
     });
   }
   if (!questions.length) {
@@ -342,12 +342,12 @@ export async function getSurveyQuestions(surveyId, language = '') {
       ]
     }).then(t => {
       return t.map(item => {
-        const {type, introduction, data, content, id} = item;
+        const { type, introduction, data, content, id } = item;
         return {
           type, introduction, data, content, id
-        }
-      })
-    })
+        };
+      });
+    });
   }
 
   for (let i = 0; i < questions.length; i += 1) {
@@ -368,14 +368,14 @@ export async function getSurveyQuestions(surveyId, language = '') {
           }
         ],
         order: [
-          [{model: db.SurveyQuestionAnswer, as: 'surveyQuestionAnswer'}, 'id', 'asc']
+          [{ model: db.SurveyQuestionAnswer, as: 'surveyQuestionAnswer' }, 'id', 'asc']
         ]
       }).then(t => {
         return t.map(item => {
-          const {content: contentI18N, surveyQuestionAnswer: [{id, key, content}]} = item;
-          return {content: contentI18N || content, id, key};
-        })
-      })
+          const { content: contentI18N, surveyQuestionAnswer: [{ id, key, content }] } = item;
+          return { content: contentI18N || content, id, key };
+        });
+      });
     }
     if (!answers.length) {
       // eslint-disable-next-line no-await-in-loop
@@ -388,10 +388,10 @@ export async function getSurveyQuestions(surveyId, language = '') {
         ]
       }).then(t => {
         return t.map(item => {
-          const {content, id, key} = item;
-          return {content, id, key}
-        })
-      })
+          const { content, id, key } = item;
+          return { content, id, key };
+        });
+      });
     }
     question.questionAnswers = answers;
   }
@@ -495,7 +495,7 @@ export async function postAnswerQuestion(surveyId, clientId, target, code, form,
 
   const transaction = await db.sequelize.transaction();
   try {
-    const {firstName, lastName, address, email, age, gender} = form.formPerson;
+    const { firstName, lastName, address, email, age, gender } = form.formPerson;
     const createPerson = await db.Person.create(
       {
         firstName,
@@ -505,7 +505,7 @@ export async function postAnswerQuestion(surveyId, clientId, target, code, form,
         address,
         createdById: 0,
         createdDate: new Date()
-      }, {transaction}
+      }, { transaction }
     );
 
     const createSurveyPerson = await db.SurveyPerson.create({
@@ -520,30 +520,30 @@ export async function postAnswerQuestion(surveyId, clientId, target, code, form,
       clientAgent
     }, transaction);
     const personAnswers = [];
-    const {formAnswer} = form;
+    const { formAnswer } = form;
 
     for (let i = 0; i < formAnswer.length; i += 1) {
       const item = formAnswer[i];
-      const {questionId, answer} = item;
+      const { questionId, answer } = item;
       if (isArray(answer)) {
         answer.forEach(t => {
           personAnswers.push({
             surveyPersonId: createSurveyPerson.id,
             questionId,
             answer: t
-          })
-        })
+          });
+        });
       } else {
         personAnswers.push({
           surveyPersonId: createSurveyPerson.id,
           questionId,
           answer: answer || ''
-        })
+        });
       }
     }
     const createSurveyQuestion = await db.SurveyPersonAnswer.bulkCreate(
       personAnswers,
-      {transaction}
+      { transaction }
     );
     await transaction.commit();
     return createSurveyQuestion;
@@ -562,7 +562,7 @@ async function getQuestionWithLangId(questionId, languageId) {
         surveyQuestionId: questionId
       },
       include: [
-        {model: db.SurveyQuestion, as: 'surveyQuestion'},
+        { model: db.SurveyQuestion, as: 'surveyQuestion' },
         {
           model: db.SurveyQuestionAnswerI18N, as: 'questionAnswersI18N', where: {
             languageId
@@ -600,12 +600,12 @@ async function getQuestionWithLangId(questionId, languageId) {
           priority,
           data,
           answers: questionAnswersI18N.map(aItem => {
-            const {content: answerContent, surveyQuestionAnswer: [{id: answerId, key}]} = aItem;
-            return {content: answerContent, id: answerId, key};
+            const { content: answerContent, surveyQuestionAnswer: [{ id: answerId, key }] } = aItem;
+            return { content: answerContent, id: answerId, key };
           })
         };
       }
-    )
+    );
   }
   if (!question) {
     question = await db.SurveyQuestion.findByPk(questionId, {
@@ -638,8 +638,8 @@ async function getQuestionWithLangId(questionId, languageId) {
         priority,
         data,
         answers: questionAnswers.map(aItem => {
-          const {content: answerContent, id: answerId, key} = aItem;
-          return {content: answerContent, id: answerId, key};
+          const { content: answerContent, id: answerId, key } = aItem;
+          return { content: answerContent, id: answerId, key };
         })
       };
     });
@@ -670,7 +670,7 @@ async function mapSurveyPersonData(surveyPerson) {
 
   const answers = [];
   for (let i = 0; i < surveyPersonAnswers.length; i += 1) {
-    const {questionId, answer} = surveyPersonAnswers[i];
+    const { questionId, answer } = surveyPersonAnswers[i];
     // eslint-disable-next-line no-await-in-loop
     const question = await getQuestionWithLangId(questionId, languageId);
     let existedQuestion = null;
@@ -696,7 +696,7 @@ async function mapSurveyPersonData(surveyPerson) {
       } else {
         userAnswers = userAnswerObj?.key || '';
       }
-      existedQuestion = {question, answer: userAnswers};
+      existedQuestion = { question, answer: userAnswers };
       answers.push(existedQuestion);
     }
   }
@@ -714,12 +714,12 @@ async function mapSurveyPersonData(surveyPerson) {
   };
 }
 
-export async function getResultQuestion({surveyId, target}) {
+export async function getResultQuestion({ surveyId, target }) {
   const survey = await getSurvey(surveyId);
   if (!survey) {
     throw badRequest('survey', 'INVALID', 'Invalid survey id');
   }
-  const surveyPersonWhere = {surveyId};
+  const surveyPersonWhere = { surveyId };
   const personWhere = {};
   if (survey.type === SURVEY_TYPE.EMAIL_VERIFY) {
     personWhere.email = target;
@@ -740,7 +740,7 @@ export async function getResultQuestion({surveyId, target}) {
       }
     ],
     order: [
-      [{model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers'}, 'id', 'asc']
+      [{ model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers' }, 'id', 'asc']
     ]
   });
   if (!surveyPerson) {
@@ -750,6 +750,7 @@ export async function getResultQuestion({surveyId, target}) {
   return mapSurveyPersonData(surveyPerson);
 }
 
+// eslint-disable-next-line no-unused-vars
 function mapSurveyForIPFS(survey) {
   const {
     IP,
@@ -768,14 +769,15 @@ function mapSurveyForIPFS(survey) {
     submittedDate,
     survey: item,
     answers
-  }
+  };
 }
 
 async function syncSurveyPerson(surveyPerson) {
   const surveyPersonId = surveyPerson.id;
-  const survey = await mapSurveyPersonData(surveyPerson);
+  // const survey = await mapSurveyPersonData(surveyPerson);
   // eslint-disable-next-line prefer-const
-  let {ipfsId, blockchainId} = surveyPerson;
+  let { ipfsId, blockchainId } = surveyPerson;
+  /*
   if (!ipfsId) {
     ipfsId = await addIPFS(mapSurveyForIPFS(survey));
     await db.SurveyPerson.update({
@@ -790,7 +792,7 @@ async function syncSurveyPerson(surveyPerson) {
     }, (err) => {
       console.log('Update err', err);
     });
-  }
+  } */
 
   if (!blockchainId) {
     await sign(ipfsId, surveyPersonId, async (txId) => {
@@ -801,7 +803,7 @@ async function syncSurveyPerson(surveyPerson) {
       console.log('Success', resp);
     }, (err) => {
       console.error('Error', err);
-    })
+    });
   }
 }
 
@@ -827,7 +829,7 @@ export async function getAllSurveyNotYetSync() {
       {
         model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers',
         include: [
-          {model: db.SurveyQuestion, as: 'question'}
+          { model: db.SurveyQuestion, as: 'question' }
         ]
       },
       {
@@ -835,7 +837,7 @@ export async function getAllSurveyNotYetSync() {
       }
     ],
     order: [
-      [{model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers'}, 'id', 'asc']
+      [{ model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers' }, 'id', 'asc']
     ],
     limit: 3
   });
@@ -850,9 +852,9 @@ export async function getAllSurveyNotYetSync() {
 }
 
 export function listSurveyPersonAnswer(id, order, offset, limit, query) {
-  const {search, age, address, gender} = query;
+  const { search, age, address, gender } = query;
   let wherePerson = {};
-  const whereSurveyPerson = {surveyId: id};
+  const whereSurveyPerson = { surveyId: id };
   if (search && search.length) {
     wherePerson = {
       [Op.or]: [
@@ -883,7 +885,7 @@ export function listSurveyPersonAnswer(id, order, offset, limit, query) {
     wherePerson = {
       ...wherePerson,
       address
-    }
+    };
   }
   if (gender) {
     wherePerson.sex = gender;
@@ -903,7 +905,7 @@ export function listSurveyPersonAnswer(id, order, offset, limit, query) {
     ],
     order: [
       [...order],
-      [{model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers'}, 'questionId', 'asc']
+      [{ model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers' }, 'questionId', 'asc']
     ],
     offset,
     limit
@@ -916,11 +918,11 @@ export async function getAllQuestions(surveyId) {
       surveyId: surveyId
     },
     include: [
-      {model: db.SurveyQuestionAnswer, as: 'questionAnswers'}
+      { model: db.SurveyQuestionAnswer, as: 'questionAnswers' }
     ],
     order: [
-      [{model: db.SurveyQuestionAnswer, as: 'questionAnswers'}, 'questionId', 'asc'],
-      [{model: db.SurveyQuestionAnswer, as: 'questionAnswers'}, 'id', 'asc']
+      [{ model: db.SurveyQuestionAnswer, as: 'questionAnswers' }, 'questionId', 'asc'],
+      [{ model: db.SurveyQuestionAnswer, as: 'questionAnswers' }, 'id', 'asc']
     ]
   });
 }
@@ -931,7 +933,7 @@ export async function exportSurveyAnswerRaw(id, res) {
     }
   });
 
-  const whereSurveyPerson = {surveyId: id};
+  const whereSurveyPerson = { surveyId: id };
   const questions = await getAllQuestions(id);
 
   const survey = await getSurvey(id);
@@ -949,15 +951,15 @@ export async function exportSurveyAnswerRaw(id, res) {
       }
     ],
     order: [
-      [{model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers'}, 'questionId', 'asc'],
-      [{model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers'}, 'id', 'asc']
+      [{ model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers' }, 'questionId', 'asc'],
+      [{ model: db.SurveyPersonAnswer, as: 'surveyPersonAnswers' }, 'id', 'asc']
     ]
   });
   const newLine = '\r\n';
   readableStream.pipe(res);
   const headers = ['ClientId'];
   for (let i = 0; i < questions.length; i += 1) {
-    const {questionAnswers, type} = questions[i];
+    const { questionAnswers, type } = questions[i];
     const questionIndex = i + 1;
     if (type === SURVEY_QUESTION_TYPE.CHECKBOX) {
       for (let j = 0; j < questionAnswers.length; j += 1) {
@@ -967,13 +969,13 @@ export async function exportSurveyAnswerRaw(id, res) {
       headers.push(`Q${questionIndex}`);
     }
   }
-  headers.push('First Name', 'Last Name', 'Gender', 'Age Range', 'Email', 'City', 'Submitted Date')
+  headers.push('First Name', 'Last Name', 'Gender', 'Age Range', 'Email', 'City', 'Submitted Date');
   console.log(headers);
   readableStream.push(`${headers.join(',')}${newLine}`);
 
   for (let spI = 0; spI < surveyPerson.length; spI += 1) {
     const {
-      person: {firstName, lastName, email, sex, address},
+      person: { firstName, lastName, email, sex, address },
       surveyPersonAnswers,
       submittedDate,
       clientId,
@@ -981,13 +983,13 @@ export async function exportSurveyAnswerRaw(id, res) {
     } = surveyPerson[spI];
     const row = [clientId];
     for (let i = 0; i < questions.length; i += 1) {
-      const {questionAnswers, type, id: questionId} = questions[i];
+      const { questionAnswers, type, id: questionId } = questions[i];
       const userAnswerQuestions = surveyPersonAnswers.filter(t => t.questionId === questionId);
       // console.log('Question', questions[i].get({plain: true}));
       // console.log('UserAnswers', userAnswerQuestions.map(t => t.get({plain: true})));
       if (type === SURVEY_QUESTION_TYPE.CHECKBOX) {
         for (let j = 0; j < questionAnswers.length; j += 1) {
-          const {key} = questionAnswers[j];
+          const { key } = questionAnswers[j];
           const isUserHasAnswer = userAnswerQuestions.find(t => t.answer === key);
           console.log('Question', questionId, 'answer', key, 'userAnswer', isUserHasAnswer);
           if (isUserHasAnswer) {
@@ -1002,7 +1004,7 @@ export async function exportSurveyAnswerRaw(id, res) {
         row.push(indexAnswer + 1);
       }
     }
-    row.push(firstName, lastName, getGenderStr(sex), ageRange, email, address, formatDateTime(submittedDate))
+    row.push(firstName, lastName, getGenderStr(sex), ageRange, email, address, formatDateTime(submittedDate));
     readableStream.push(`${row.join(',')}${newLine}`);
   }
   readableStream.push(null);
@@ -1025,11 +1027,11 @@ export async function getSurveySummary(surveyId) {
   });
 
   const location = await db.sequelize.query(`select count(sp.id) as total, address
-  from survey_person sp INNER JOIN person p on sp.personId = p.id where sp.surveyId = ${surveyId} group by address order by address ASC`, {type: db.Sequelize.QueryTypes.SELECT});
+  from survey_person sp INNER JOIN person p on sp.personId = p.id where sp.surveyId = ${surveyId} group by address order by address ASC`, { type: db.Sequelize.QueryTypes.SELECT });
 
   const gender = await db.sequelize.query(`select count(sp.id) as total, p.sex
-  from survey_person sp INNER JOIN person p on sp.personId = p.id where sp.surveyId = ${surveyId} group by p.sex`, {type: db.Sequelize.QueryTypes.SELECT});
+  from survey_person sp INNER JOIN person p on sp.personId = p.id where sp.surveyId = ${surveyId} group by p.sex`, { type: db.Sequelize.QueryTypes.SELECT });
   return {
     total, age, location, gender
-  }
+  };
 }
