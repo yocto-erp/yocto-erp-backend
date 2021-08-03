@@ -8,7 +8,7 @@ export default class Product extends Sequelize.Model{
       {
         id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
         name: {type: DataTypes.STRING(250)},
-        imageId: {type: DataTypes.BIGINT},
+        thumbnail: {type: DataTypes.TEXT},
         priceBaseUnit: {type: DataTypes.DECIMAL(16,2)},
         remark: {type: DataTypes.TEXT},
         companyId: {type: DataTypes.BIGINT},
@@ -40,5 +40,6 @@ export default class Product extends Sequelize.Model{
       foreignKey: 'itemId',
       as: 'taggingItems'
     });
+    this.hasMany(models.ProductAsset, {foreignKey: 'productId', as: 'productAssets'})
   }
 }

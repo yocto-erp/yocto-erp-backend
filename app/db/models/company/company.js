@@ -12,7 +12,9 @@ export default class Company extends Sequelize.Model{
         address: {type: DataTypes.STRING(250)},
         remark: {type: DataTypes.TEXT},
         createdDate: {type: DataTypes.DATE},
-        createdById: {type: DataTypes.BIGINT}
+        createdById: {type: DataTypes.BIGINT},
+        domain: {type: DataTypes.STRING(64)},
+        publicId: {type: DataTypes.STRING(64)}
       },
       {
         tableName: 'company',

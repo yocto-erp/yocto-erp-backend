@@ -62,4 +62,3 @@ export function saveStudentConfigure(companyId, configure) {
     type: VALUE_TYPE.JSON
   })
 }
-

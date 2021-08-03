@@ -1,23 +1,17 @@
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
 import fs from 'fs';
+import md5 from 'md5';
+import sharp from 'sharp';
 import db from '../../db/models';
 import ProductAsset from '../../db/models/product/product-asset';
-import {badRequest, FIELD_ERROR} from '../../config/error';
+import { badRequest, FIELD_ERROR } from '../../config/error';
 import CostAsset from '../../db/models/cost/cost-asset';
+import { SYSTEM_CONFIG } from '../../config/system';
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
-export const ASSET_STORE_FOLDER = './uploads';
-export const ASSET_STORE_FOLDER_TEST = './uploadsTest';
-
-if (!fs.existsSync(`${ASSET_STORE_FOLDER}/`)) {
-  fs.mkdirSync(`${ASSET_STORE_FOLDER}/`);
-}
-
-if (!fs.existsSync(`${ASSET_STORE_FOLDER_TEST}/`)) {
-  fs.mkdirSync(`${ASSET_STORE_FOLDER_TEST}/`);
-}
+export const ASSET_STORE_FOLDER = SYSTEM_CONFIG.UPLOAD_FOLDER;
 
 export async function storeFileFromBase64(baseImage) {
   const ext = baseImage.substring(
@@ -29,23 +23,23 @@ export async function storeFileFromBase64(baseImage) {
   const base64Data = baseImage.replace(regex, '');
   const filename = uuidv4();
 
-  if (process.env.NODE_ENV !== 'test') {
-    fs.writeFileSync(`${ASSET_STORE_FOLDER}/${filename}`, base64Data, 'base64');
-  } else {
-    fs.writeFileSync(
-      `${ASSET_STORE_FOLDER_TEST}/${filename}`,
-      base64Data,
-      'base64'
-    );
-  }
+  fs.writeFileSync(`${ASSET_STORE_FOLDER}/${filename}`, base64Data, 'base64');
+
   return filename;
 }
 
-export function deleteFile(fileId) {
-  let folder = ASSET_STORE_FOLDER;
-  if (process.env.NODE_ENV === 'test') {
-    folder = ASSET_STORE_FOLDER_TEST;
+export function deletePublicFile(filename) {
+  const folder = SYSTEM_CONFIG.UPLOAD_FOLDER;
+
+  if (fs.existsSync(`${folder}/${filename}`)) {
+    fs.unlinkSync(
+      `${folder}/${filename}`
+    );
   }
+}
+
+export function deleteFile(fileId) {
+  const folder = ASSET_STORE_FOLDER;
 
   if (fs.existsSync(`${folder}/${fileId}`)) {
     fs.unlinkSync(
@@ -54,24 +48,38 @@ export function deleteFile(fileId) {
   }
 }
 
-export async function mergeAssets(oldFormAssets, newFormAsset, companyId) {
+export async function mergeAssets(oldFormAssets, newFormAsset, companyId, transaction) {
   const listMergeAssets = [];
   if (newFormAsset && newFormAsset.length) {
     for (let i = 0; i < newFormAsset.length; i += 1) {
-      if (!newFormAsset[i].fileId) {
-        // eslint-disable-next-line no-await-in-loop
-        const fileId = await storeFileFromBase64(newFormAsset[i].data);
-        listMergeAssets.push({
-          name: newFormAsset[i].name,
-          type: newFormAsset[i].type,
-          size: newFormAsset[i].size,
-          fileId: fileId,
-          companyId: companyId,
-          createdDate: new Date()
-        });
+      const { fileId, data, id, name, type, size } = newFormAsset[i];
+      let newAssetId = id;
+      if (!fileId) {
+        /**
+         * New Upload File
+         * @type {*|string}
+         */
+          // eslint-disable-next-line no-await-in-loop
+        const newAsset = await db.Asset.create({
+            name,
+            type,
+            size,
+            // eslint-disable-next-line no-await-in-loop
+            fileId: await storeFileFromBase64(data),
+            companyId: companyId,
+            createdDate: new Date()
+          });
+        newAssetId = newAsset.id;
       } else {
-        _.remove(oldFormAssets, val => val.fileId === newFormAsset[i].fileId);
+        /**
+         * File existed on server, now we remove file from old list
+         */
+        _.remove(oldFormAssets, val => val.fileId === fileId);
       }
+      listMergeAssets.push({
+        assetId: newAssetId,
+        priority: i
+      });
     }
   }
   if (oldFormAssets && oldFormAssets.length) {
@@ -79,8 +87,43 @@ export async function mergeAssets(oldFormAssets, newFormAsset, companyId) {
       // eslint-disable-next-line no-await-in-loop
       await deleteFile(oldFormAssets[j].fileId);
     }
+    oldFormAssets.destroy({ transaction });
   }
   return listMergeAssets;
+}
+
+export async function generateProductThumbnail(productId) {
+  const asset = await db.ProductAsset.findOne({
+    where: {
+      productId
+    },
+    include: [
+      { model: db.Asset, as: 'asset', required: true }
+    ],
+    order: [['priority', 'asc']],
+    limit: 1
+  });
+
+  const product = await db.Product.findByPk(productId);
+  if (asset && product) {
+    const { fileId } = asset.asset;
+    const filename = md5(`${productId}_${fileId}`);
+    console.log('generateProductThumbnail', productId, fileId, product.thumbnail);
+    const newThumbnailUrl = `${filename}.png`;
+    if (newThumbnailUrl !== product.thumbnail) {
+      deletePublicFile(product.thumbnail)
+      sharp(`${ASSET_STORE_FOLDER}/${fileId}`)
+        .resize(200, 200, {
+          fit: sharp.fit.contain,
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        })
+        .toFile(`${SYSTEM_CONFIG.PUBLIC_FOLDER}/${newThumbnailUrl}`)
+        .then(async () => {
+          product.thumbnail = newThumbnailUrl;
+          await product.save();
+        });
+    }
+  }
 }
 
 export async function createProductAsset(
@@ -102,46 +145,36 @@ export async function createProductAsset(
       createdDate: new Date()
     });
   }
-  const assetModels = await db.Asset.bulkCreate(assets, {transaction});
-  return ProductAsset.bulkCreate(
-    assetModels.map((t) => {
+  const assetModels = await db.Asset.bulkCreate(assets, { transaction });
+  await ProductAsset.bulkCreate(
+    assetModels.map((t, i) => {
       return {
         assetId: t.id,
-        productId: productId
+        productId: productId,
+        priority: i
       };
     }),
-    {transaction}
+    { transaction }
   );
+  return assetModels;
 }
 
-export async function updateProductAssets(arrayDelete, arrayCreate, productId, transaction) {
-  if (arrayCreate && arrayCreate.length) {
-    const assetModels = await db.Asset.bulkCreate(arrayCreate, {transaction});
+export async function updateProductAssets(newAssets, productId, transaction) {
+  await db.ProductAsset.destroy({
+    where: {
+      productId: productId
+    }
+  }, { transaction });
+  if (newAssets && newAssets.length) {
     await ProductAsset.bulkCreate(
-      assetModels.map((t) => {
+      newAssets.map((t) => {
         return {
-          assetId: t.id,
+          ...t,
           productId: productId
         };
       }),
-      {transaction}
+      { transaction }
     );
-  }
-
-  if (arrayDelete && arrayDelete.length) {
-    const assetId = await arrayDelete.map(result => result.id);
-    await db.Asset.destroy({
-      where: {id: {[Op.in]: assetId}}
-    }, {transaction});
-
-    await db.ProductAsset.destroy({
-      where: {
-        productId: productId,
-        assetId: {
-          [Op.in]: assetId
-        }
-      }
-    }, {transaction});
   }
 }
 
@@ -152,8 +185,8 @@ export async function removeProductAssets(product, transaction) {
   }
   const assetId = await product.assets.map(result => result.id);
   await db.Asset.destroy({
-    where: {id: {[Op.in]: assetId}}
-  }, {transaction});
+    where: { id: { [Op.in]: assetId } }
+  }, { transaction });
 
   return db.ProductAsset.destroy({
     where: {
@@ -162,7 +195,7 @@ export async function removeProductAssets(product, transaction) {
         [Op.in]: assetId
       }
     }
-  }, {transaction});
+  }, { transaction });
 }
 
 export async function getAssetByUUID(uuid) {
@@ -198,7 +231,7 @@ export async function createCostAsset(
       createdDate: new Date()
     });
   }
-  const assetModels = await db.Asset.bulkCreate(assets, {transaction});
+  const assetModels = await db.Asset.bulkCreate(assets, { transaction });
   return CostAsset.bulkCreate(
     assetModels.map((t) => {
       return {
@@ -206,13 +239,13 @@ export async function createCostAsset(
         costId: costId
       };
     }),
-    {transaction}
+    { transaction }
   );
 }
 
 export async function updateCostAssets(arrayDelete, arrayCreate, costId, transaction) {
   if (arrayCreate && arrayCreate.length) {
-    const assetModels = await db.Asset.bulkCreate(arrayCreate, {transaction});
+    const assetModels = await db.Asset.bulkCreate(arrayCreate, { transaction });
     await CostAsset.bulkCreate(
       assetModels.map((t) => {
         return {
@@ -220,15 +253,15 @@ export async function updateCostAssets(arrayDelete, arrayCreate, costId, transac
           costId: costId
         };
       }),
-      {transaction}
+      { transaction }
     );
   }
 
   if (arrayDelete && arrayDelete.length) {
     const assetId = await arrayDelete.map(result => result.id);
     await db.Asset.destroy({
-      where: {id: {[Op.in]: assetId}}
-    }, {transaction});
+      where: { id: { [Op.in]: assetId } }
+    }, { transaction });
 
     await db.CostAsset.destroy({
       where: {
@@ -237,7 +270,7 @@ export async function updateCostAssets(arrayDelete, arrayCreate, costId, transac
           [Op.in]: assetId
         }
       }
-    }, {transaction});
+    }, { transaction });
   }
 }
 
@@ -248,8 +281,8 @@ export async function removeCostAssets(cost, transaction) {
   }
   const assetId = await cost.assets.map(result => result.id);
   await db.Asset.destroy({
-    where: {id: {[Op.in]: assetId}}
-  }, {transaction});
+    where: { id: { [Op.in]: assetId } }
+  }, { transaction });
 
   return db.CostAsset.destroy({
     where: {
@@ -258,6 +291,6 @@ export async function removeCostAssets(cost, transaction) {
         [Op.in]: assetId
       }
     }
-  }, {transaction});
+  }, { transaction });
 }
 

@@ -2,6 +2,7 @@ import express from 'express';
 import { pagingParse } from '../../middleware/paging.middleware';
 import {
   createProduct,
+  getAssets,
   getProduct,
   products,
   removeProduct,
@@ -14,8 +15,8 @@ import { productUnitValidator, productValidator } from '../../middleware/validat
 
 const product = express.Router();
 
-product.get('/',  hasPermission(PERMISSION.PRODUCT.READ),
-  pagingParse({column: 'id', dir: 'asc'}),
+product.get('/', hasPermission(PERMISSION.PRODUCT.READ),
+  pagingParse({ column: 'id', dir: 'asc' }),
   (req, res, next) => {
     return products(req.user, req.query, req.paging.order, req.paging.offset, req.paging.size)
       .then(result => res.status(200).json(result)).catch(next);
@@ -41,12 +42,19 @@ product.post('/:id(\\d+)', hasPermission(PERMISSION.PRODUCT.UPDATE), (req, res, 
 
 product.post('/:id(\\d+)/units',
   [productUnitValidator, hasPermission(PERMISSION.PRODUCT.UPDATE)], (req, res, next) => {
-  return updateUnit(req.params.id, req.body)
-    .then(result => res.status(200).json(result))
-    .catch(next);
-});
+    return updateUnit(req.params.id, req.body)
+      .then(result => res.status(200).json(result))
+      .catch(next);
+  });
 
-product.delete('/:id(\\d+)',  hasPermission(PERMISSION.PRODUCT.DELETE),  (req, res, next) => {
+product.get('/:id(\\d+)/assets',
+  hasPermission(PERMISSION.PRODUCT.READ), (req, res, next) => {
+    return getAssets(req.params.id)
+      .then(result => res.status(200).json(result))
+      .catch(next);
+  });
+
+product.delete('/:id(\\d+)', hasPermission(PERMISSION.PRODUCT.DELETE), (req, res, next) => {
   return removeProduct(req.params.id)
     .then(result => res.status(200).json(result))
     .catch(next);

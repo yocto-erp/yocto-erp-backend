@@ -11,7 +11,6 @@ import {initWebOrderSaleController} from './order/sale.controller';
 import {initWebCostController} from './cost/cost.controller';
 import {initWebAssetController} from './asset.controller';
 import {initWebPersonController} from './person/person.controller';
-import {initEmailConfigurationController} from "./configuration/email.controller";
 import {initWebStudentController} from './student/student.controller';
 import {initWebStudentMonthlyFeeController} from './student/student-monthly-fee.controller';
 import {initTemplateController} from "./template/template.controller";
@@ -27,6 +26,8 @@ import {initManualController} from "./manual/manual.controller";
 import {initTaggingController} from "./tagging/tagging.controller";
 import {initAuditController} from "./audit/audit.controller";
 import { initWebUserController } from './user/user.controller';
+import { initEcommerceController } from './ecommerce';
+import { initConfigureController } from './configuration';
 
 
 export function initWebController(app) {
@@ -43,7 +44,7 @@ export function initWebController(app) {
   initWebCostController(app);
   initWebPersonController(app);
   initWebAssetController(app);
-  initEmailConfigurationController(app);
+  initConfigureController(app);
   initWebStudentController(app);
   initWebStudentMonthlyFeeController(app);
   initTemplateController(app);
@@ -59,4 +60,5 @@ export function initWebController(app) {
   initTaggingController(app);
   initAuditController(app);
   initWebUserController(app);
+  initEcommerceController(app)
 }

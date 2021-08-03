@@ -1,13 +1,13 @@
 import Sequelize from 'sequelize';
 import User from './user/user';
-import EmailSend from "./email/email-send";
-import ACLAction from "./acl/acl-action";
-import ACLGroup from "./acl/acl-group";
-import ACLGroupAction from "./acl/acl-group-action";
-import ACLGroupActionShop from "./acl/acl-group-action-shop";
-import ACLModule from "./acl/acl-module";
-import UserActivate from "./user/user-activate";
-import SystemProperty from "./system-property";
+import EmailSend from './email/email-send';
+import ACLAction from './acl/acl-action';
+import ACLGroup from './acl/acl-group';
+import ACLGroupAction from './acl/acl-group-action';
+import ACLGroupActionShop from './acl/acl-group-action-shop';
+import ACLModule from './acl/acl-module';
+import UserActivate from './user/user-activate';
+import SystemProperty from './system-property';
 import databaseConfig from '../../config/database';
 import UserResetPassword from './user/user-reset-password';
 import Asset from './asset';
@@ -43,25 +43,27 @@ import TaggingItem from './tagging/tagging-item';
 import TaggingItemType from './tagging/tagging-item-type';
 import Student from './student/student';
 import StudentMonthlyFee from './student/student-monthly-fee';
-import CompanyConfigure from "./company/company-configure";
-import Template from "./template/template";
-import TemplateType from "./template/template-type";
-import TemplateTypePlugin from "./template/template-type-plugin";
-import TemplatePluginVariables from "./template/template-plugin-variables";
-import EmailCompany from "./email/email-company";
-import EmailAttachment from "./email/email-attachment";
-import Survey from "./survey/survey";
-import SurveyPerson from "./survey/survey-person";
-import SurveyPersonAnswer from "./survey/survey-person-answer";
-import SurveyQuestion from "./survey/survey-question";
-import SurveyQuestionAnswer from "./survey/survey-question-answer";
-import OTP from "./otp";
-import SurveyI18N from "./survey/survey_i18n";
-import SurveyQuestionI18N from "./survey/survey-question-i18n";
-import SurveyQuestionAnswerI18N from "./survey/survey-question-answer-i18n";
-import Language from "./language";
-import EmailTemplate from "./email/email-template";
-import ReportCostDaily from "./cost/report-cost-daily";
+import CompanyConfigure from './company/company-configure';
+import Template from './template/template';
+import TemplateType from './template/template-type';
+import TemplateTypePlugin from './template/template-type-plugin';
+import TemplatePluginVariables from './template/template-plugin-variables';
+import EmailCompany from './email/email-company';
+import EmailAttachment from './email/email-attachment';
+import Survey from './survey/survey';
+import SurveyPerson from './survey/survey-person';
+import SurveyPersonAnswer from './survey/survey-person-answer';
+import SurveyQuestion from './survey/survey-question';
+import SurveyQuestionAnswer from './survey/survey-question-answer';
+import OTP from './otp';
+import SurveyI18N from './survey/survey_i18n';
+import SurveyQuestionI18N from './survey/survey-question-i18n';
+import SurveyQuestionAnswerI18N from './survey/survey-question-answer-i18n';
+import Language from './language';
+import EmailTemplate from './email/email-template';
+import ReportCostDaily from './cost/report-cost-daily';
+import EcommerceProduct from './ecommerce/ecommerce-product';
+import EcommerceOrder from './ecommerce/ecommerce-order';
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -179,7 +181,11 @@ const models = {
   // OTP
   OTP: OTP.init(sequelize),
 
-  Language: Language.init(sequelize)
+  Language: Language.init(sequelize),
+
+  // ECOMMERCE
+  EcommerceProduct: EcommerceProduct.init(sequelize),
+  EcommerceOrder: EcommerceOrder.init(sequelize)
 };
 
 Object.values(models)

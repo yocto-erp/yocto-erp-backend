@@ -7,7 +7,7 @@ import {appLog, httpStream} from './config/winston';
 import appConf from './config/application';
 
 import {FormError, HttpError, isSystemError} from './config/error';
-import {loadConfigure} from "./config/system";
+import { loadConfigure, SYSTEM_CONFIG } from './config/system';
 import {initWebController} from './controller/web';
 import {initMobileController} from "./controller/mobile";
 
@@ -64,6 +64,7 @@ const PORT = process.env.PORT || appConf.port;
 server.listen(PORT, appConf.hostname, async () => {
   await loadConfigure().then(systemConfigure => {
     appLog.info(`System Configure Load: ${JSON.stringify(systemConfigure)}`)
+    app.use('/public', express.static(SYSTEM_CONFIG.PUBLIC_FOLDER));
   });
   initCronTasks();
   // initIPFS().then();

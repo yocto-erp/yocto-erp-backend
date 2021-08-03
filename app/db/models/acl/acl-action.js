@@ -1,6 +1,6 @@
 import Sequelize from 'sequelize';
 
-const {DataTypes} = Sequelize;
+const { DataTypes } = Sequelize;
 export const PERMISSION = {
   PRODUCT: {
     CREATE: 1,
@@ -94,6 +94,23 @@ export const PERMISSION = {
     READ: 57,
     UPDATE: 58,
     DELETE: 59
+  },
+  ECOMMERCE: {
+    PRODUCT: {
+      CREATE: 60,
+      READ: 61,
+      UPDATE: 62,
+      DELETE: 63
+    },
+    ORDER: {
+      READ: 64,
+      UPDATE: 65,
+      DELETE: 66
+    },
+    SETTING: 67
+  },
+  SETTING: {
+    COMPANY: 68
   }
 };
 
@@ -115,7 +132,10 @@ export const ALL_PERMISSIONS = [
   PERMISSION.TEMPLATE.CREATE, PERMISSION.TEMPLATE.READ, PERMISSION.TEMPLATE.UPDATE, PERMISSION.TEMPLATE.DELETE,
   PERMISSION.EMAIL.SEND, PERMISSION.EMAIL.READ, PERMISSION.AUDIT,
   PERMISSION.USER.CREATE, PERMISSION.USER.READ, PERMISSION.USER.UPDATE, PERMISSION.USER.DELETE,
-  PERMISSION.SURVEY.CREATE, PERMISSION.SURVEY.READ, PERMISSION.SURVEY.UPDATE, PERMISSION.SURVEY.DELETE
+  PERMISSION.SURVEY.CREATE, PERMISSION.SURVEY.READ, PERMISSION.SURVEY.UPDATE, PERMISSION.SURVEY.DELETE,
+  PERMISSION.ECOMMERCE.PRODUCT.CREATE, PERMISSION.ECOMMERCE.PRODUCT.DELETE, PERMISSION.ECOMMERCE.PRODUCT.UPDATE, PERMISSION.ECOMMERCE.PRODUCT.DELETE,
+  PERMISSION.ECOMMERCE.ORDER.UPDATE, PERMISSION.ECOMMERCE.ORDER.READ, PERMISSION.ECOMMERCE.ORDER.DELETE,
+  PERMISSION.ECOMMERCE.SETTING
 ];
 
 export default class ACLAction extends Sequelize.Model {
@@ -127,9 +147,9 @@ export default class ACLAction extends Sequelize.Model {
           primaryKey: true,
           autoIncrement: true
         },
-        moduleId: {type: DataTypes.INTEGER},
-        name: {type: DataTypes.STRING(255)},
-        remark: {type: DataTypes.TEXT}
+        moduleId: { type: DataTypes.INTEGER },
+        name: { type: DataTypes.STRING(255) },
+        remark: { type: DataTypes.TEXT }
       },
       {
         tableName: 'acl_action',
@@ -146,6 +166,6 @@ export default class ACLAction extends Sequelize.Model {
       foreignKey: 'actionId',
       otherKey: 'groupId'
     });
-    this.belongsTo(models.ACLModule, {foreignKey: 'moduleId', as: 'modules'});
+    this.belongsTo(models.ACLModule, { foreignKey: 'moduleId', as: 'modules' });
   }
 }
