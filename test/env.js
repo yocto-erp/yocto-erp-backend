@@ -7,7 +7,7 @@ if (process.env.TRAVIS_ENV === '1') {
 } else if (process.env.LE_ENV) {
   process.env.DB_PASSWORD = "12345678";
 } else {
-  process.env.DB_PASSWORD = "tanduy899";
+  process.env.DB_PASSWORD = "12345678";
 }
 process.env.DB_NAME = "yocto_erp";
 process.env.WEB_URL = "http://localhost:4201";

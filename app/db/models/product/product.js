@@ -40,6 +40,12 @@ export default class Product extends Sequelize.Model{
       foreignKey: 'itemId',
       as: 'taggingItems'
     });
+    this.belongsToMany(models.Tagging, {
+      through: models.TaggingItem,
+      foreignKey: 'itemId',
+      otherKey: 'taggingId',
+      as: 'tagging'
+    });
     this.hasMany(models.ProductAsset, {foreignKey: 'productId', as: 'productAssets'})
   }
 }

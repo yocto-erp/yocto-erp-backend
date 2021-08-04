@@ -3,7 +3,7 @@ import { pagingParse } from '../../middleware/paging.middleware';
 import {
   createProduct,
   getAssets,
-  getProduct,
+  getProduct, listProduct,
   products,
   removeProduct,
   updateProduct
@@ -18,7 +18,7 @@ const product = express.Router();
 product.get('/', hasPermission(PERMISSION.PRODUCT.READ),
   pagingParse({ column: 'id', dir: 'asc' }),
   (req, res, next) => {
-    return products(req.user, req.query, req.paging.order, req.paging.offset, req.paging.size)
+    return listProduct(req.user, req.query, req.paging)
       .then(result => res.status(200).json(result)).catch(next);
   });
 

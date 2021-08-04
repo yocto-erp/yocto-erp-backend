@@ -1,15 +1,7 @@
-import db from '../../app/db/models';
+import { listProduct } from '../../app/service/product/product.service';
 
-export async function beforeTestProduct() {
-
-  const transaction = await db.sequelize.transaction();
-  try {
-    await db.ProductAsset.truncate({transaction});
-    await db.ProductUnit.truncate({transaction});
-    await db.Product.truncate({transaction});
-    await transaction.commit();
-  } catch (e) {
-    await transaction.rollback();
-    throw e;
-  }
-}
+describe('product.service', () => {
+  it('list', async function renderTemplate() {
+    console.log(JSON.stringify(await listProduct({companyId: 3}, {  }, { limit: 2, offset: 0, order: [['name', 'desc']] })));
+  });
+});
