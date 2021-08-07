@@ -28,5 +28,15 @@ export default class EcommerceOrder extends Sequelize.Model {
       foreignKey: 'orderId',
       as: 'order'
     });
+    this.hasOne(models.EcommerceOrderPayment, {
+      foreignKey: 'ecommerceOrderId',
+      sourceKey: 'orderId',
+      as: 'payment'
+    });
+    this.hasOne(models.EcommerceOrderShipping, {
+      foreignKey: 'ecommerceOrderId',
+      sourceKey: 'orderId',
+      as: 'shipping'
+    });
   }
 }
