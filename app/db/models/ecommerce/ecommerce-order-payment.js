@@ -7,7 +7,7 @@ export default class EcommerceOrderPayment extends Sequelize.Model {
     return super.init(
       {
         ecommerceOrderId: { type: DataTypes.BIGINT, primaryKey: true },
-        status: { type: DataTypes.TINY(4) },
+        status: { type: DataTypes.TINYINT(4) },
         userSubmittedDate: { type: DataTypes.DATE },
         userRemark: { type: DataTypes.TEXT },
         partnerTransactionId: { type: DataTypes.STRING(64) },

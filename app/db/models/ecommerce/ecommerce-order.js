@@ -8,7 +8,6 @@ export default class EcommerceOrder extends Sequelize.Model {
       {
         orderId: { type: DataTypes.BIGINT, primaryKey: true },
         customerOrderId: { type: DataTypes.STRING(64) },
-        customerId: { type: DataTypes.BIGINT },
         remark: { type: DataTypes.TEXT },
         userAgent: { type: DataTypes.TEXT },
         confirmCode: { type: DataTypes.STRING(10) },

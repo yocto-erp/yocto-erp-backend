@@ -62,8 +62,8 @@ import SurveyQuestionAnswerI18N from './survey/survey-question-answer-i18n';
 import Language from './language';
 import EmailTemplate from './email/email-template';
 import ReportCostDaily from './cost/report-cost-daily';
-import EcommerceProduct from './ecommerce/ecommerce-product';
-import EcommerceOrder from './ecommerce/ecommerce-order';
+import { initEcommerceModel } from './ecommerce';
+import { initDebtModel } from './debt';
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -184,8 +184,9 @@ const models = {
   Language: Language.init(sequelize),
 
   // ECOMMERCE
-  EcommerceProduct: EcommerceProduct.init(sequelize),
-  EcommerceOrder: EcommerceOrder.init(sequelize)
+  ...initEcommerceModel(sequelize),
+  // Debt
+  ...initDebtModel(sequelize)
 };
 
 Object.values(models)

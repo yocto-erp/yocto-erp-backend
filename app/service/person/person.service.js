@@ -23,6 +23,11 @@ export function persons(query, order, offset, limit, user) {
           email: {
             [Op.like]: `%${search}%`
           }
+        },
+        {
+          gsm: {
+            [Op.like]: `%${search}%`
+          }
         }
       ]
     };
