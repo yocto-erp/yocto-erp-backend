@@ -15,6 +15,8 @@ export default class EcommerceProduct extends Sequelize.Model {
         price: { type: DataTypes.DECIMAL(12, 2) },
         description: { type: DataTypes.TEXT },
         otherParams: { type: DataTypes.JSON },
+        isWarehouse: { type: DataTypes.BOOLEAN },
+        fromWarehouseId: { type: DataTypes.BIGINT },
         lastUpdatedById: { type: DataTypes.BIGINT },
         lastUpdatedDate: { type: DataTypes.DATE }
       },
@@ -30,6 +32,10 @@ export default class EcommerceProduct extends Sequelize.Model {
     this.belongsTo(models.User, {
       foreignKey: 'lastUpdatedById',
       as: 'lastUpdatedBy'
+    });
+    this.belongsTo(models.WareHouse, {
+      foreignKey: 'fromWarehouseId',
+      as: 'warehouse'
     });
     this.belongsTo(models.Product, {
       foreignKey: 'productId',

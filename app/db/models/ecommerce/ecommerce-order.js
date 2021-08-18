@@ -8,7 +8,6 @@ export default class EcommerceOrder extends Sequelize.Model {
       {
         orderId: { type: DataTypes.BIGINT, primaryKey: true },
         customerOrderId: { type: DataTypes.STRING(64) },
-        customerId: { type: DataTypes.BIGINT },
         remark: { type: DataTypes.TEXT },
         userAgent: { type: DataTypes.TEXT },
         confirmCode: { type: DataTypes.STRING(10) },
@@ -27,6 +26,16 @@ export default class EcommerceOrder extends Sequelize.Model {
     this.belongsTo(models.Order, {
       foreignKey: 'orderId',
       as: 'order'
+    });
+    this.hasOne(models.EcommerceOrderPayment, {
+      foreignKey: 'ecommerceOrderId',
+      sourceKey: 'orderId',
+      as: 'payment'
+    });
+    this.hasOne(models.EcommerceOrderShipping, {
+      foreignKey: 'ecommerceOrderId',
+      sourceKey: 'orderId',
+      as: 'shipping'
     });
   }
 }
