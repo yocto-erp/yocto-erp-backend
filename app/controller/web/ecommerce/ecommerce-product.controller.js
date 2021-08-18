@@ -1,6 +1,6 @@
 import express from 'express';
 import { pagingParse } from '../../middleware/paging.middleware';
-import { removeProduct, updateProduct } from '../../../service/product/product.service';
+import { removeProduct } from '../../../service/product/product.service';
 import { hasPermission } from '../../middleware/permission';
 import { PERMISSION } from '../../../db/models/acl/acl-action';
 import { ecommerceProductValidator } from '../../middleware/validators/ecommerc-product.validator';

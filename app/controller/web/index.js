@@ -28,6 +28,7 @@ import {initAuditController} from "./audit/audit.controller";
 import { initWebUserController } from './user/user.controller';
 import { initEcommerceController } from './ecommerce';
 import { initConfigureController } from './configuration';
+import { initWebEcommerceShopController } from './public/ecommerce-shop.controller';
 
 
 export function initWebController(app) {
@@ -61,4 +62,5 @@ export function initWebController(app) {
   initAuditController(app);
   initWebUserController(app);
   initEcommerceController(app)
+  initWebEcommerceShopController(app)
 }
