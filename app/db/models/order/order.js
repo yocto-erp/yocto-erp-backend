@@ -2,11 +2,12 @@ import Sequelize from 'sequelize';
 
 const {DataTypes} = Sequelize;
 
-
 export const ORDER_TYPE  = {
   SALE: 1,
   PURCHASE: 2
 };
+
+export const ORDER_STATUS  = {}
 
 export default class Order extends Sequelize.Model{
   static init(sequelize, opts) {
@@ -25,7 +26,11 @@ export default class Order extends Sequelize.Model{
         lastModifiedDate: {type: DataTypes.DATE},
         lastModifiedById: {type: DataTypes.BIGINT},
         createdById: {type: DataTypes.BIGINT},
-        createdDate: {type: DataTypes.DATE}
+        createdDate: {type: DataTypes.DATE},
+        paymentStatus: {type: DataTypes.INTEGER},
+        status: {type: DataTypes.INTEGER},
+        source: {type: DataTypes.INTEGER},
+        ip: {type: DataTypes.STRING(100)}
       },
       {
         tableName: 'order',

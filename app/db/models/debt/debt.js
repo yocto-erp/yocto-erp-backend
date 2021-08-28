@@ -6,7 +6,7 @@ export default class Debt extends Sequelize.Model {
   static init(sequelize, opts) {
     return super.init(
       {
-        id: { type: DataTypes.BIGINT, primaryKey: true },
+        id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
         personId: { type: DataTypes.BIGINT },
         relateCompanyId: { type: DataTypes.BIGINT },
         companyId: { type: DataTypes.BIGINT },

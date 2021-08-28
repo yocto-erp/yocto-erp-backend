@@ -107,6 +107,9 @@ export const PERMISSION = {
       UPDATE: 65,
       DELETE: 66
     },
+    POS: {
+      CREATE: 49
+    },
     SETTING: 67
   },
   SETTING: {
