@@ -49,7 +49,7 @@ export function deleteFile(fileId) {
 }
 
 export async function mergeAssets(oldFormAssets, newFormAsset, companyId, transaction) {
-  console.log(oldFormAssets)
+  console.log(oldFormAssets);
   const listMergeAssets = [];
   if (newFormAsset && newFormAsset.length) {
     for (let i = 0; i < newFormAsset.length; i += 1) {
@@ -88,7 +88,7 @@ export async function mergeAssets(oldFormAssets, newFormAsset, companyId, transa
       // eslint-disable-next-line no-await-in-loop
       await deleteFile(oldFormAssets[j].fileId);
       // eslint-disable-next-line no-await-in-loop
-      await oldFormAssets[j].destroy({transaction})
+      await oldFormAssets[j].destroy({ transaction });
     }
     // oldFormAssets.destroy({ transaction });
   }
@@ -114,7 +114,7 @@ export async function generateProductThumbnail(productId) {
     console.log('generateProductThumbnail', productId, fileId, product.thumbnail);
     const newThumbnailUrl = `${filename}.png`;
     if (newThumbnailUrl !== product.thumbnail) {
-      deletePublicFile(product.thumbnail)
+      deletePublicFile(product.thumbnail);
       sharp(`${ASSET_STORE_FOLDER}/${fileId}`)
         .resize(200, 200, {
           fit: sharp.fit.contain,
