@@ -29,6 +29,7 @@ import { initWebUserController } from './user/user.controller';
 import { initEcommerceController } from './ecommerce';
 import { initConfigureController } from './configuration';
 import { initWebEcommerceShopController } from './public/ecommerce-shop.controller';
+import { initWebShopController } from './shop/shop.controller';
 
 
 export function initWebController(app) {
@@ -61,6 +62,7 @@ export function initWebController(app) {
   initTaggingController(app);
   initAuditController(app);
   initWebUserController(app);
-  initEcommerceController(app)
-  initWebEcommerceShopController(app)
+  initEcommerceController(app);
+  initWebEcommerceShopController(app);
+  initWebShopController(app)
 }
