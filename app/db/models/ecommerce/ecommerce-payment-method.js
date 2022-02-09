@@ -3,7 +3,8 @@ import Sequelize from 'sequelize';
 const { DataTypes } = Sequelize;
 
 export const ECOMMERCE_PAYMENT_METHOD = {
-  DIRECT_TRANSFER: 1
+  CASH: 1,
+  BANK: 2
 };
 
 export default class EcommercePaymentMethod extends Sequelize.Model {

@@ -30,7 +30,7 @@ async function getNextId(user) {
 
 export async function createEcommercePaymentSetting(user, formData) {
   console.log(formData);
-  const { paymentMethodId, setting } = formData;
+  const { paymentMethodId, setting, name } = formData;
   let settingStr = '';
   if (paymentMethodId === ECOMMERCE_PAYMENT_METHOD.DIRECT_TRANSFER) {
     settingStr = setting;
@@ -39,22 +39,24 @@ export async function createEcommercePaymentSetting(user, formData) {
   }
   return db.EcommercePaymentMethodSetting.create({
     id: await getNextId(user),
+    name,
     paymentMethodId, setting: settingStr, companyId: user.companyId
   });
 }
 
 export async function updateEcommercePaymentSetting(user, id, formData) {
-  const { paymentMethodId, setting } = formData;
+  const { paymentMethodId, setting, name } = formData;
   const item = await getEcommercePaymentSetting(user, id);
   if (!item) {
     throw badRequest('paymentMethod', FIELD_ERROR.INVALID, 'Invalid Payment Method');
   }
   let settingStr = '';
-  if (paymentMethodId === ECOMMERCE_PAYMENT_METHOD.DIRECT_TRANSFER) {
+  if (paymentMethodId === ECOMMERCE_PAYMENT_METHOD.BANK) {
     settingStr = setting;
   } else {
     settingStr = JSON.stringify(setting);
   }
+  item.name = name;
   item.setting = settingStr;
   item.paymentMethodId = paymentMethodId;
   return item.save();
