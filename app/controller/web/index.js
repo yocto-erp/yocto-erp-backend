@@ -11,8 +11,6 @@ import {initWebOrderSaleController} from './order/sale.controller';
 import {initWebCostController} from './cost/cost.controller';
 import {initWebAssetController} from './asset.controller';
 import {initWebPersonController} from './person/person.controller';
-import {initWebStudentController} from './student/student.controller';
-import {initWebStudentMonthlyFeeController} from './student/student-monthly-fee.controller';
 import {initTemplateController} from "./template/template.controller";
 import {initTemplateTypeController} from "./template/template-type.controller";
 import {initSurveyController} from "./survey/survey.controller";
@@ -25,11 +23,12 @@ import {initSummaryController} from "./summary/summary.controller";
 import {initManualController} from "./manual/manual.controller";
 import {initTaggingController} from "./tagging/tagging.controller";
 import {initAuditController} from "./audit/audit.controller";
-import { initWebUserController } from './user/user.controller';
-import { initEcommerceController } from './ecommerce';
-import { initConfigureController } from './configuration';
-import { initWebEcommerceShopController } from './public/ecommerce-shop.controller';
-import { initWebShopController } from './shop/shop.controller';
+import {initWebUserController} from './user/user.controller';
+import {initEcommerceController} from './ecommerce';
+import {initConfigureController} from './configuration';
+import {initWebEcommerceShopController} from './public/ecommerce-shop.controller';
+import {initWebShopController} from './shop/shop.controller';
+import {initStudentController} from "./student";
 
 
 export function initWebController(app) {
@@ -47,8 +46,7 @@ export function initWebController(app) {
   initWebPersonController(app);
   initWebAssetController(app);
   initConfigureController(app);
-  initWebStudentController(app);
-  initWebStudentMonthlyFeeController(app);
+  initStudentController(app)
   initTemplateController(app);
   initTemplateTypeController(app);
   initSurveyController(app);

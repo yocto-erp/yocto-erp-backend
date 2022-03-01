@@ -24,7 +24,9 @@ export default class Student extends Sequelize.Model {
       lastModifiedDate: {type: DataTypes.DATE},
       lastModifiedById: {type: DataTypes.BIGINT},
       createdById: {type: DataTypes.BIGINT},
-      createdDate: {type: DataTypes.DATE}
+      createdDate: {type: DataTypes.DATE},
+      busStopId: {type: DataTypes.BIGINT},
+      classId: {type: DataTypes.BIGINT}
     }, {
       tableName: 'student',
       modelName: 'student',
@@ -33,11 +35,11 @@ export default class Student extends Sequelize.Model {
     })
   }
 
-  static associate (models) {
-    this.belongsTo(models.User, { foreignKey: 'createdById', as: 'createdBy'});
-    this.belongsTo(models.User, { foreignKey: 'lastModifiedById', as: 'lastModifiedBy' });
-    this.belongsTo(models.Person, { foreignKey: 'personId', as: 'child' });
-    this.belongsTo(models.Person, { foreignKey: 'fatherId', as: 'father' });
-    this.belongsTo(models.Person, { foreignKey: 'motherId', as: 'mother' });
+  static associate(models) {
+    this.belongsTo(models.User, {foreignKey: 'createdById', as: 'createdBy'});
+    this.belongsTo(models.User, {foreignKey: 'lastModifiedById', as: 'lastModifiedBy'});
+    this.belongsTo(models.Person, {foreignKey: 'personId', as: 'child'});
+    this.belongsTo(models.Person, {foreignKey: 'fatherId', as: 'father'});
+    this.belongsTo(models.Person, {foreignKey: 'motherId', as: 'mother'});
   }
 }

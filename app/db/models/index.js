@@ -41,8 +41,6 @@ import InventorySummarySerial from './inventory/inventory-summary-serial';
 import Tagging from './tagging/tagging';
 import TaggingItem from './tagging/tagging-item';
 import TaggingItemType from './tagging/tagging-item-type';
-import Student from './student/student';
-import StudentMonthlyFee from './student/student-monthly-fee';
 import CompanyConfigure from './company/company-configure';
 import Template from './template/template';
 import TemplateType from './template/template-type';
@@ -62,8 +60,9 @@ import SurveyQuestionAnswerI18N from './survey/survey-question-answer-i18n';
 import Language from './language';
 import EmailTemplate from './email/email-template';
 import ReportCostDaily from './cost/report-cost-daily';
-import { initEcommerceModel } from './ecommerce';
-import { initDebtModel } from './debt';
+import {initEcommerceModel} from './ecommerce';
+import {initDebtModel} from './debt';
+import {initStudentModel} from "./student";
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -156,8 +155,7 @@ const models = {
   TaggingItemType: TaggingItemType.init(sequelize),
 
   // Student
-  Student: Student.init(sequelize),
-  StudentMonthlyFee: StudentMonthlyFee.init(sequelize),
+  ...initStudentModel(sequelize),
 
   // WareHouse
   WareHouse: WareHouse.init(sequelize),
