@@ -111,6 +111,9 @@ export async function getStudentMonthlyFee(sId, user) {
           {
             model: db.Person, as: 'child',
             attributes: ['id', 'firstName', 'lastName', 'name']
+          },
+          {
+            model: db.StudentClass, as: 'class'
           }
         ]
       }
