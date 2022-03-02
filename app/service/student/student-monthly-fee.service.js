@@ -70,7 +70,10 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
         model: db.Student, as: 'student',
         required: true,
         include: [
-          {model: db.Person, as: 'child', required: true}
+          {model: db.Person, as: 'child', required: true},
+          {
+            model: db.StudentClass, as: 'class'
+          },
         ]
       }
     ],
