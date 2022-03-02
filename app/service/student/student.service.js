@@ -1,10 +1,11 @@
 import db from '../../db/models';
 import {badRequest, FIELD_ERROR} from '../../config/error';
+import {hasText} from "../../util/string.util";
 
 const {Op} = db.Sequelize;
 
 export function students(query, order, offset, limit, user) {
-  const {search, class: studentClass} = query;
+  const {search, class: studentClass, status} = query;
   const where = {};
   let wherePerson = {};
   if (search && search.length) {
@@ -31,8 +32,12 @@ export function students(query, order, offset, limit, user) {
     };
   }
   where.companyId = user.companyId;
-  if (studentClass && studentClass.length) {
-    wherePerson.class = studentClass;
+  if (studentClass) {
+    console.log('StudentClass', studentClass)
+    wherePerson.classId = Number(studentClass.id);
+  }
+  if (hasText(status)) {
+    where.status = Number(status)
   }
   console.log(order);
   const _order = order.map(t => {
@@ -51,6 +56,15 @@ export function students(query, order, offset, limit, user) {
       {
         model: db.User, as: 'createdBy',
         attributes: ['id', 'displayName']
+      },
+      {
+        model: db.StudentBusStop, as: 'toSchoolBusStop'
+      },
+      {
+        model: db.StudentBusStop, as: 'toHomeBusStop'
+      },
+      {
+        model: db.StudentClass, as: 'class'
       },
       {
         model: db.Person, as: 'child'
@@ -78,6 +92,15 @@ export async function getStudent(sId, user) {
     include: [
       {
         model: db.Person, as: 'child'
+      },
+      {
+        model: db.StudentBusStop, as: 'toSchoolBusStop'
+      },
+      {
+        model: db.StudentBusStop, as: 'toHomeBusStop'
+      },
+      {
+        model: db.StudentClass, as: 'class'
       },
       {
         model: db.Person, as: 'father',
@@ -133,17 +156,18 @@ export async function createStudent(user, createForm) {
         alias: createForm.alias,
         joinDate: createForm.joinDate,
         status: createForm.status ? createForm.status : null,
-        fatherId: createForm.fatherId,
-        motherId: createForm.motherId,
+        fatherId: createForm.father?.id,
+        motherId: createForm.mother?.id,
         feePackage: createForm.feePackage ? createForm.feePackage : null,
         enableBus: createForm.enableBus ? createForm.enableBus : false,
+        toSchoolBusStopId: createForm.toSchoolBusStop?.id,
+        toHomeBusStopId: createForm.toHomeBusStop?.id,
         toSchoolBusRoute: createForm.toSchoolBusRoute,
         toHomeBusRoute: createForm.toHomeBusRoute,
         enableMeal: createForm.enableMeal ? createForm.enableMeal : false,
-        class: createForm.class,
+        classId: createForm.class?.id,
         createdById: user.id,
         createdDate: new Date()
-
       }, {transaction}
     );
     await transaction.commit();
@@ -199,14 +223,16 @@ export async function updateStudent(sId, updateForm, user) {
       alias: updateForm.alias,
       joinDate: updateForm.joinDate,
       status: updateForm.status ? updateForm.status : null,
-      fatherId: updateForm.fatherId,
-      motherId: updateForm.motherId,
+      fatherId: updateForm.father?.id,
+      motherId: updateForm.mother?.id,
       feePackage: updateForm.feePackage ? updateForm.feePackage : null,
       enableBus: updateForm.enableBus ? updateForm.enableBus : false,
+      toSchoolBusStopId: updateForm.toSchoolBusStop?.id,
+      toHomeBusStopId: updateForm.toHomeBusStop?.id,
       toSchoolBusRoute: updateForm.toSchoolBusRoute,
       toHomeBusRoute: updateForm.toHomeBusRoute,
       enableMeal: updateForm.enableMeal ? updateForm.enableMeal : false,
-      class: updateForm.class,
+      classId: updateForm.class?.id,
       lastModifiedById: user.id,
       lastModifiedDate: new Date()
     }, {where: {id: sId}}, {transaction});

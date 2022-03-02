@@ -18,14 +18,14 @@ export default class Student extends Sequelize.Model {
       toSchoolBusRoute: {type: DataTypes.STRING(100)},
       toHomeBusRoute: {type: DataTypes.STRING(100)},
       enableMeal: {type: DataTypes.BOOLEAN},
-      class: {type: DataTypes.STRING(100)},
       joinDate: {type: DataTypes.DATE},
       status: {type: DataTypes.TINYINT},
       lastModifiedDate: {type: DataTypes.DATE},
       lastModifiedById: {type: DataTypes.BIGINT},
       createdById: {type: DataTypes.BIGINT},
       createdDate: {type: DataTypes.DATE},
-      busStopId: {type: DataTypes.BIGINT},
+      toSchoolBusStopId: {type: DataTypes.BIGINT},
+      toHomeBusStopId: {type: DataTypes.BIGINT},
       classId: {type: DataTypes.BIGINT}
     }, {
       tableName: 'student',
@@ -36,6 +36,9 @@ export default class Student extends Sequelize.Model {
   }
 
   static associate(models) {
+    this.belongsTo(models.StudentClass, {foreignKey: 'classId', as: 'class'});
+    this.belongsTo(models.StudentBusStop, {foreignKey: 'toSchoolBusStopId', as: 'toSchoolBusStop'});
+    this.belongsTo(models.StudentBusStop, {foreignKey: 'toHomeBusStopId', as: 'toHomeBusStop'});
     this.belongsTo(models.User, {foreignKey: 'createdById', as: 'createdBy'});
     this.belongsTo(models.User, {foreignKey: 'lastModifiedById', as: 'lastModifiedBy'});
     this.belongsTo(models.Person, {foreignKey: 'personId', as: 'child'});

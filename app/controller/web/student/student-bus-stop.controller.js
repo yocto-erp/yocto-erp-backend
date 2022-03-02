@@ -3,12 +3,12 @@ import express from 'express';
 import {hasPermission} from '../../middleware/permission';
 import {PERMISSION} from "../../../db/models/acl/acl-action";
 import {pagingParse} from '../../middleware/paging.middleware';
-import {studentClassValidator} from "../../middleware/validators/student/student-class.validator";
 import {
   createStudentBusStop,
   getStudentBusStop,
   listStudentBusStop, removeStudentBusStop, updateStudentBusStop
 } from "../../../service/student/student-bus-stop.service";
+import {studentBusStopValidator} from "../../middleware/validators/student/student-bus-stop.validator";
 
 const router = express.Router();
 
@@ -27,14 +27,14 @@ router.get('/:id(\\d+)', hasPermission(PERMISSION.CUSTOMER.READ), (req, res, nex
     .catch(next);
 });
 
-router.post('/', [hasPermission(PERMISSION.CUSTOMER.CREATE), studentClassValidator],
+router.post('/', [hasPermission(PERMISSION.CUSTOMER.CREATE), studentBusStopValidator],
   (req, res, next) => {
     return createStudentBusStop(req.user, req.body)
       .then(result => res.status(200).json(result))
       .catch(next);
   });
 
-router.post('/:id(\\d+)', [hasPermission(PERMISSION.CUSTOMER.UPDATE), studentClassValidator], (req, res, next) => {
+router.post('/:id(\\d+)', [hasPermission(PERMISSION.CUSTOMER.UPDATE), studentBusStopValidator], (req, res, next) => {
   return updateStudentBusStop(req.params.id, req.user, req.body)
     .then(result => res.status(200).json(result))
     .catch(next);

@@ -18,7 +18,13 @@ alter table student
     add classId bigint null;
 
 alter table student
-  add busStopId bigint null;
+  add toSchoolBusStopId bigint null;
+
+alter table student
+    add toHomeBusStopId bigint null;
+
+alter table student_monthly_fee
+    add isPaid bit null;
 
 create table student_bus_stop
 (

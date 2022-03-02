@@ -23,6 +23,7 @@ export default class StudentMonthlyFee extends Sequelize.Model {
       debt: {type: DataTypes.DECIMAL(12, 2)},
       remark: {type: DataTypes.TEXT},
       status: {type: DataTypes.TINYINT},
+      isPaid: {type: DataTypes.BOOLEAN},
       paidDate: {type: DataTypes.DATE},
       paidInformation: {type: DataTypes.TEXT},
       paidAmount: {type: DataTypes.DECIMAL(12, 2)},
