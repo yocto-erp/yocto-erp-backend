@@ -37,7 +37,10 @@ export default class StudentMonthlyFee extends Sequelize.Model {
       lastUpdatedById: {type: DataTypes.INTEGER},
       studentAbsentDay: {type: DataTypes.INTEGER},
       studentAbsentDayFee: {type: DataTypes.DECIMAL(12, 2)},
-      costId: {type: DataTypes.BIGINT}
+      costId: {type: DataTypes.BIGINT},
+      toMonth: {type: DataTypes.INTEGER},
+      toYear: {type: DataTypes.INTEGER},
+      numberOfMonths: {type: DataTypes.INTEGER}
     }, {
       tableName: 'student_monthly_fee',
       modelName: 'studentMonthlyFee',

@@ -73,7 +73,7 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
           {model: db.Person, as: 'child', required: true},
           {
             model: db.StudentClass, as: 'class'
-          },
+          }
         ]
       }
     ],
@@ -131,34 +131,15 @@ export async function createStudentMonthlyFee(user, createForm) {
   try {
     if (createForm && createForm.details) {
       for (let i = 0; i < createForm.details.length; i += 1) {
-        const {monthYear: {month, year}} = createForm.details[i];
+        const {monthYear: {from, to, numberOfMonths}} = createForm.details[i];
 
         const uuidS = hex2binary(uuidv4());
-        // eslint-disable-next-line no-await-in-loop
-        const studentFee = await db.StudentMonthlyFee.findOne({
-          where: {
-            studentId: +createForm.details[i].studentId,
-            companyId: user.companyId,
-            monthFee: month,
-            yearFee: year
-          },
-          include: [
-            {
-              model: db.Student, as: 'student',
-              include: [
-                {model: db.Person, as: 'child'}
-              ]
-            }
-          ]
-        });
-        if (studentFee) {
-          throw badRequest('student', FIELD_ERROR.INVALID, `student ${studentFee.student.child.fistName} ${studentFee.student.child.lastName} exist`);
-        }
+
         // eslint-disable-next-line no-await-in-loop
         await db.StudentMonthlyFee.create({
           id: uuidS,
-          monthFee: month,
-          yearFee: year,
+          monthFee: from.month,
+          yearFee: from.year,
           scholarShip: createForm.details[i].scholarShip,
           scholarFee: createForm.details[i].scholarFee,
           studentId: createForm.details[i].studentId,
@@ -177,6 +158,9 @@ export async function createStudentMonthlyFee(user, createForm) {
           totalAmount: createForm.details[i].totalAmount,
           studentAbsentDay: createForm.details[i].studentAbsentDay,
           studentAbsentDayFee: createForm.details[i].studentAbsentDayFee,
+          toMonth: to?.month,
+          toYear: to?.year,
+          numberOfMonths,
           lastUpdatedDate: new Date(),
           lastUpdatedById: user.id
         });
@@ -195,7 +179,7 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
     const transaction = await db.sequelize.transaction();
     try {
       for (let i = 0; i < updateForm.details.length; i += 1) {
-        const {monthYear: {month, year}} = updateForm.details[i];
+        const {monthYear: {from, to, numberOfMonths}} = updateForm.details[i];
 
         // eslint-disable-next-line no-await-in-loop
         const studentFee = await db.StudentMonthlyFee.findOne({
@@ -209,8 +193,8 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
         }
         // eslint-disable-next-line no-await-in-loop
         await studentFee.update({
-          monthFee: month,
-          yearFee: year,
+          monthFee: from.month,
+          yearFee: from.year,
           scholarShip: updateForm.details[i].scholarShip,
           scholarFee: updateForm.details[i].scholarFee,
           studentId: updateForm.details[i].studentId,
@@ -229,6 +213,9 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
           studentAbsentDayFee: updateForm.details[i].studentAbsentDayFee,
           feePerMonth: updateForm.details[i].feePerMonth,
           totalAmount: updateForm.details[i].totalAmount,
+          toMonth: to?.month,
+          toYear: to?.year,
+          numberOfMonths,
           lastUpdatedDate: new Date(), lastUpdatedById: user.id
         }, {transaction});
       }
