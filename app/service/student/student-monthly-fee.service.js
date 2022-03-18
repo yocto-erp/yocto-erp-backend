@@ -9,6 +9,9 @@ import {getEmailTemplate} from "../template/template-email.service";
 import {EMAIL_ATTACHMENT_TYPE} from "../../db/models/email/email-attachment";
 import {addEmailQueue} from "../email/company-email.service";
 import {COST_TYPE} from "../../db/models/cost/cost";
+import {updateItemTags} from "../tagging/tagging.service";
+import {TAGGING_TYPE} from "../../db/models/tagging/tagging-item-type";
+import {addTaggingQueue} from "../../queue/tagging.queue";
 
 const {Op} = db.Sequelize;
 
@@ -401,9 +404,11 @@ export async function paidMonthlyFee(feeId, form, user) {
     from,
     remark,
     sendEmailConfirm,
-    storeCashIn,
-    subject,
-    name
+    storeCashIn, storeCashInName, storeCashInAmount, storeCashInTagging,
+    storeCashInMeal, storeCashInMealName, storeCashInMealAmount, storeCashInMealTagging,
+    storeCashInBus, storeCashInBusName, storeCashInBusAmount, storeCashInBusTagging,
+    storeOtherCashIn, storeOtherCashInName, storeOtherCashInAmount, storeOtherCashInTagging,
+    subject
   } = form;
   const {companyId} = user;
   const fee = await getStudentMonthlyFeeItem(feeId, user.companyId);
@@ -417,17 +422,90 @@ export async function paidMonthlyFee(feeId, form, user) {
     fee.paidInformation = remark;
     if (storeCashIn) {
       const cost = await db.Cost.create({
-        name: name,
+        name: storeCashInName,
         remark: remark,
         companyId: companyId,
         type: COST_TYPE.RECEIPT,
         processedDate: new Date(),
-        amount: amount,
+        amount: storeCashInAmount,
         createdById: user.id,
         createdDate: new Date()
       }, {transaction});
 
+      if (storeCashInTagging && storeCashInTagging.length) {
+        await updateItemTags({
+          id: cost.id,
+          type: TAGGING_TYPE.RECEIPT_VOUCHER,
+          transaction,
+          newTags: storeCashInTagging
+        });
+        addTaggingQueue(storeCashInTagging.map(t => t.id));
+      }
+
       fee.costId = cost.id;
+    }
+    if (storeCashInMeal) {
+      const mealCost = await db.Cost.create({
+        name: storeCashInMealName,
+        companyId: companyId,
+        type: COST_TYPE.RECEIPT,
+        processedDate: new Date(),
+        amount: storeCashInMealAmount,
+        createdById: user.id,
+        createdDate: new Date()
+      }, {transaction});
+
+      if (storeCashInMealTagging && storeCashInMealTagging.length) {
+        await updateItemTags({
+          id: mealCost.id,
+          type: TAGGING_TYPE.RECEIPT_VOUCHER,
+          transaction,
+          newTags: storeCashInMealTagging
+        });
+        addTaggingQueue(storeCashInMealTagging.map(t => t.id));
+      }
+    }
+    if (storeCashInBus) {
+      const busCost = await db.Cost.create({
+        name: storeCashInBusName,
+        companyId: companyId,
+        type: COST_TYPE.RECEIPT,
+        processedDate: new Date(),
+        amount: storeCashInBusAmount,
+        createdById: user.id,
+        createdDate: new Date()
+      }, {transaction});
+
+      if (storeCashInBusTagging && storeCashInBusTagging.length) {
+        await updateItemTags({
+          id: busCost.id,
+          type: TAGGING_TYPE.RECEIPT_VOUCHER,
+          transaction,
+          newTags: storeCashInBusTagging
+        });
+        addTaggingQueue(storeCashInBusTagging.map(t => t.id));
+      }
+    }
+    if (storeOtherCashIn) {
+      const otherCost = await db.Cost.create({
+        name: storeOtherCashInName,
+        companyId: companyId,
+        type: COST_TYPE.RECEIPT,
+        processedDate: new Date(),
+        amount: storeOtherCashInAmount,
+        createdById: user.id,
+        createdDate: new Date()
+      }, {transaction});
+
+      if (storeOtherCashInTagging && storeOtherCashInTagging.length) {
+        await updateItemTags({
+          id: otherCost.id,
+          type: TAGGING_TYPE.RECEIPT_VOUCHER,
+          transaction,
+          newTags: storeOtherCashInTagging
+        });
+        addTaggingQueue(storeOtherCashInTagging.map(t => t.id));
+      }
     }
     await fee.save({transaction});
     await transaction.commit();
