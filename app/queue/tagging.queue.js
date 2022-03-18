@@ -4,7 +4,7 @@ import {eventLog} from "../config/winston";
 import {sendErrorMessage} from "../service/partner/telegram";
 
 async function worker(tagging, cb) {
-  console.log(tagging)
+  console.log('Update counting tagging', tagging)
   const where = {};
   if (tagging && tagging.length) {
     where.taggingId = {
