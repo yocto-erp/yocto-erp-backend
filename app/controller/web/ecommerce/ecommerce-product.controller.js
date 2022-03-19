@@ -1,9 +1,9 @@
 import express from 'express';
-import { pagingParse } from '../../middleware/paging.middleware';
-import { removeProduct } from '../../../service/product/product.service';
-import { hasPermission } from '../../middleware/permission';
-import { PERMISSION } from '../../../db/models/acl/acl-action';
-import { ecommerceProductValidator } from '../../middleware/validators/ecommerc-product.validator';
+import {pagingParse} from '../../middleware/paging.middleware';
+import {removeProduct} from '../../../service/product/product.service';
+import {hasPermission} from '../../middleware/permission';
+import {PERMISSION} from '../../../db/models/acl/acl-action';
+import {ecommerceProductValidator} from '../../middleware/validators/ecommerc-product.validator';
 import {
   createEcommerceProduct,
   getEcommerceProduct,
@@ -12,10 +12,10 @@ import {
 
 const product = express.Router();
 
-product.get('/', hasPermission(PERMISSION.ECOMMERCE.PRODUCT.READ),
-  pagingParse({ column: 'id', dir: 'asc' }),
+product.get('/', [hasPermission(PERMISSION.ECOMMERCE.PRODUCT.READ),
+    pagingParse({column: 'id', dir: 'asc'})],
   (req, res, next) => {
-    return listECommerceProducts(req.user, req.query, req.paging.order, req.paging.offset, req.paging.size)
+    return listECommerceProducts(req.user, req.query, req.paging)
       .then(result => res.status(200).json(result)).catch(next);
   });
 

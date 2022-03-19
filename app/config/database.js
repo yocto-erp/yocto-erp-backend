@@ -12,7 +12,7 @@ const dialectOptions = {
 };
 
 function dbLogging(str, time) {
-  // dbLog.info(str, time);
+  dbLog.info(str, time);
   // dbLog.info(`Timed: ${time} ms`);
 }
 
