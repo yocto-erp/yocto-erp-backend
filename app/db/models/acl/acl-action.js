@@ -108,7 +108,7 @@ export const PERMISSION = {
       DELETE: 66
     },
     POS: {
-      CREATE: 49
+      CREATE: 77
     },
     SETTING: 67
   },
@@ -120,6 +120,12 @@ export const PERMISSION = {
     CREATE: 70,
     UPDATE: 71,
     DELETE: 72
+  },
+  PAYMENT: {
+    READ: 73,
+    CREATE: 74,
+    UPDATE: 75,
+    DELETE: 76
   }
 };
 

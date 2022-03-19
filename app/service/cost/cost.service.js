@@ -1,20 +1,20 @@
 import db from '../../db/models';
-import { createCostPurpose, removeCostPurpose, updateCostPurpose } from './cost-purpose.service';
-import { badRequest, FIELD_ERROR } from '../../config/error';
-import { createCostAsset, mergeAssets, removeCostAssets, updateCostAssets } from '../asset/asset.service';
+import {createCostPurpose, removeCostPurpose, updateCostPurpose} from './cost-purpose.service';
+import {badRequest, FIELD_ERROR} from '../../config/error';
+import {createCostAsset, mergeAssets, removeCostAssets, updateCostAssets} from '../asset/asset.service';
 import User from '../../db/models/user/user';
-import { updateItemTags } from '../tagging/tagging.service';
-import { TAGGING_TYPE } from '../../db/models/tagging/tagging-item-type';
-import { COST_TYPE } from '../../db/models/cost/cost';
-import { auditAction } from '../audit/audit.service';
-import { PERMISSION } from '../../db/models/acl/acl-action';
-import { addTaggingQueue } from '../../queue/tagging.queue';
-import { hasText } from '../../util/string.util';
-import { beginningDateStr, endDateStr } from '../../util/date.util';
-import { isGt0 } from '../../util/number.util';
-import { isArray } from '../../util/func.util';
+import {updateItemTags} from '../tagging/tagging.service';
+import {TAGGING_TYPE} from '../../db/models/tagging/tagging-item-type';
+import {COST_TYPE} from '../../db/models/cost/cost';
+import {auditAction} from '../audit/audit.service';
+import {PERMISSION} from '../../db/models/acl/acl-action';
+import {addTaggingQueue} from '../../queue/tagging.queue';
+import {hasText} from '../../util/string.util';
+import {beginningDateStr, endDateStr} from '../../util/date.util';
+import {isGt0} from '../../util/number.util';
+import {isArray} from '../../util/func.util';
 
-const { Op } = db.Sequelize;
+const {Op} = db.Sequelize;
 
 const mapping = (item) => ({
   ...item,
@@ -29,14 +29,18 @@ function getCostTagging(costId) {
         [Op.in]: [TAGGING_TYPE.PAYMENT_VOUCHER, TAGGING_TYPE.RECEIPT_VOUCHER]
       }
     },
-    include: [{ model: db.Tagging, as: 'tagging' }]
+    include: [{model: db.Tagging, as: 'tagging'}]
   }).then((list) => list.map((t) => t.tagging));
 }
 
 export async function costs(query, order, offset, limit, user) {
-  const { tagging, search, partnerCompany, partnerPerson, startDate, endDate, type } = query;
-  const where = { companyId: user.companyId };
-  const whereTagging = {};
+  const {tagging, search, partnerCompany, partnerPerson, startDate, endDate, type} = query;
+  const where = {companyId: user.companyId};
+  const whereTagging = {
+    itemType: {
+      [Op.in]: [TAGGING_TYPE.PAYMENT_VOUCHER, TAGGING_TYPE.RECEIPT_VOUCHER]
+    }
+  };
   let isTaggingRequired = false;
   if (hasText(search)) {
     where.name = {
@@ -81,9 +85,9 @@ export async function costs(query, order, offset, limit, user) {
         model: User, as: 'createdBy',
         attributes: ['id', 'displayName', 'email']
       },
-      { model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name'] },
-      { model: db.PaymentMethodSetting, as: 'paymentMethod'},
-      { model: db.Company, as: 'partnerCompany', attributes: ['id', 'name'] },
+      {model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name']},
+      {model: db.PaymentMethodSetting, as: 'paymentMethod'},
+      {model: db.Company, as: 'partnerCompany', attributes: ['id', 'name']},
       {
         model: db.TaggingItem, as: 'taggingItems',
         required: isTaggingRequired,
@@ -98,7 +102,7 @@ export async function costs(query, order, offset, limit, user) {
     for (let i = 0; i < resp.rows.length; i += 1) {
       const item = resp.rows[i];
       newRows.push({
-        ...item.get({ plain: true }),
+        ...item.get({plain: true}),
         // eslint-disable-next-line no-await-in-loop
         tagging: await getCostTagging(item.id)
       });
@@ -126,7 +130,7 @@ export async function createCost(user, createForm) {
       amount: createForm.amount,
       createdById: user.id,
       createdDate: new Date()
-    }, { transaction });
+    }, {transaction});
 
     if (createForm.assets && createForm.assets.length) {
       await createCostAsset(cost.id, user.companyId, createForm.assets, transaction);
@@ -161,21 +165,21 @@ export async function getCost(cId, user) {
   const cost = await db.Cost.findOne({
     where: {
       [Op.and]: [
-        { id: cId },
-        { companyId: user.companyId }
+        {id: cId},
+        {companyId: user.companyId}
       ]
     },
     include: [
-      { model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name'] },
-      { model: db.PaymentMethodSetting, as: 'paymentMethod'},
-      { model: db.Company, as: 'partnerCompany', attributes: ['id', 'name'] },
+      {model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name']},
+      {model: db.PaymentMethodSetting, as: 'paymentMethod'},
+      {model: db.Company, as: 'partnerCompany', attributes: ['id', 'name']},
       {
         model: db.Asset,
         as: 'assets',
         attributes: ['id', 'name', 'type', 'ext', 'size', 'fileId', 'source'],
-        through: { attributes: [] }
+        through: {attributes: []}
       },
-      { model: db.CostPurpose, as: 'costPurpose', attributes: ['purposeId', 'relativeId'] },
+      {model: db.CostPurpose, as: 'costPurpose', attributes: ['purposeId', 'relativeId']},
       {
         model: db.TaggingItem, as: 'taggingItems',
         required: false,
@@ -185,7 +189,7 @@ export async function getCost(cId, user) {
           }
         },
         include: [
-          { model: db.Tagging, as: 'tagging' }
+          {model: db.Tagging, as: 'tagging'}
         ]
       }
     ]
@@ -193,7 +197,7 @@ export async function getCost(cId, user) {
   if (!cost) {
     throw badRequest('cost', FIELD_ERROR.INVALID, 'cost not found');
   }
-  return mapping(cost.get({ plain: true }));
+  return mapping(cost.get({plain: true}));
 }
 
 export async function updateCost(cId, user, updateForm) {
@@ -201,12 +205,12 @@ export async function updateCost(cId, user, updateForm) {
   const existedCost = await db.Cost.findOne({
     where: {
       [Op.and]: [
-        { id: cId },
-        { companyId: user.companyId }
+        {id: cId},
+        {companyId: user.companyId}
       ]
     },
     include: [
-      { model: db.Asset, as: 'assets' },
+      {model: db.Asset, as: 'assets'},
       {
         model: db.TaggingItem, as: 'taggingItems',
         required: false,
@@ -276,11 +280,11 @@ export async function removeCost(cId, user) {
   const checkCost = await db.Cost.findOne({
     where: {
       [Op.and]: [
-        { id: cId },
-        { companyId: user.companyId }
+        {id: cId},
+        {companyId: user.companyId}
       ]
     },
-    include: [{ model: db.Asset, as: 'assets' }]
+    include: [{model: db.Asset, as: 'assets'}]
   });
   if (!checkCost) {
     throw badRequest('cost', FIELD_ERROR.INVALID, 'cost not found');
@@ -292,8 +296,8 @@ export async function removeCost(cId, user) {
     }
     await removeCostPurpose(checkCost.id, transaction);
     const cost = db.Cost.destroy({
-      where: { id: checkCost.id }
-    }, { transaction });
+      where: {id: checkCost.id}
+    }, {transaction});
     await transaction.commit();
     return cost;
   } catch (error) {
