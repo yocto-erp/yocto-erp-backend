@@ -23,7 +23,8 @@ export default class Cost extends Sequelize.Model {
         lastModifiedById: {type: DataTypes.BIGINT},
         partnerCompanyId: {type: DataTypes.BIGINT},
         partnerPersonId: {type: DataTypes.BIGINT},
-        remark: {type: DataTypes.TEXT}
+        remark: {type: DataTypes.TEXT},
+        paymentMethodId: {type: DataTypes.BIGINT}
       },
       {
         tableName: 'cost',
@@ -51,5 +52,6 @@ export default class Cost extends Sequelize.Model {
       foreignKey: 'costId',
       as: 'costPurpose'
     });
+    this.belongsTo(models.PaymentMethodSetting, {foreignKey: 'paymentMethodId', as: 'paymentMethod'});
   }
 }

@@ -63,6 +63,7 @@ import ReportCostDaily from './cost/report-cost-daily';
 import {initEcommerceModel} from './ecommerce';
 import {initDebtModel} from './debt';
 import {initStudentModel} from "./student";
+import {initPaymentModel} from "./payment";
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -184,7 +185,9 @@ const models = {
   // ECOMMERCE
   ...initEcommerceModel(sequelize),
   // Debt
-  ...initDebtModel(sequelize)
+  ...initDebtModel(sequelize),
+  // Payment
+  ...initPaymentModel(sequelize)
 };
 
 Object.values(models)

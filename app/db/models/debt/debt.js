@@ -31,5 +31,9 @@ export default class Debt extends Sequelize.Model {
       foreignKey: 'personId',
       as: 'person'
     });
+    this.belongsTo(models.Company, {
+      foreignKey: 'companyId',
+      as: 'company'
+    });
   }
 }

@@ -82,6 +82,7 @@ export async function costs(query, order, offset, limit, user) {
         attributes: ['id', 'displayName', 'email']
       },
       { model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name'] },
+      { model: db.PaymentMethodSetting, as: 'paymentMethod'},
       { model: db.Company, as: 'partnerCompany', attributes: ['id', 'name'] },
       {
         model: db.TaggingItem, as: 'taggingItems',
@@ -118,6 +119,7 @@ export async function createCost(user, createForm) {
       remark: createForm.remark,
       companyId: user.companyId,
       type: createForm.type,
+      paymentMethodId: createForm.paymentMethod?.id,
       partnerCompanyId: createForm.partnerCompanyId,
       partnerPersonId: createForm.partnerPersonId,
       processedDate: new Date(),
@@ -165,6 +167,7 @@ export async function getCost(cId, user) {
     },
     include: [
       { model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name'] },
+      { model: db.PaymentMethodSetting, as: 'paymentMethod'},
       { model: db.Company, as: 'partnerCompany', attributes: ['id', 'name'] },
       {
         model: db.Asset,
@@ -218,12 +221,14 @@ export async function updateCost(cId, user, updateForm) {
     throw badRequest('cost', FIELD_ERROR.INVALID, 'cost not found');
   }
   const transaction = await db.sequelize.transaction();
+  const type = Number(updateForm.type)
   try {
     await existedCost.update({
       name: updateForm.name,
       remark: updateForm.remark,
-      type: updateForm.type,
+      type,
       companyId: user.companyId,
+      paymentMethodId: updateForm.paymentMethod?.id,
       partnerCompanyId: updateForm.partnerCompanyId,
       partnerPersonId: updateForm.partnerPersonId,
       processedDate: updateForm.processedDate,
@@ -243,7 +248,7 @@ export async function updateCost(cId, user, updateForm) {
     if ((updateForm.tagging && updateForm.tagging.length) || (existedCost.taggingItems && existedCost.taggingItems.length)) {
       await updateItemTags({
         id: cId,
-        type: updateForm.type === COST_TYPE.RECEIPT ? TAGGING_TYPE.RECEIPT_VOUCHER : TAGGING_TYPE.PAYMENT_VOUCHER,
+        type: type === COST_TYPE.RECEIPT ? TAGGING_TYPE.RECEIPT_VOUCHER : TAGGING_TYPE.PAYMENT_VOUCHER,
         transaction,
         newTags: updateForm.tagging
       });

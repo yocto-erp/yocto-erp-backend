@@ -1,16 +1,16 @@
 import db from '../../db/models';
-import { badRequest, FIELD_ERROR } from '../../config/error';
-import { ECOMMERCE_PAYMENT_METHOD } from '../../db/models/ecommerce/ecommerce-payment-method';
+import {badRequest, FIELD_ERROR} from '../../config/error';
+import {PAYMENT_TYPE} from '../../db/models/payment/payment-type';
 
 export async function listECommercePayment(user) {
-  const where = { companyId: user.companyId };
-  return db.EcommercePaymentMethodSetting.findAll({
+  const where = {companyId: user.companyId};
+  return db.PaymentMethodSetting.findAll({
     where
   });
 }
 
 export function getEcommercePaymentSetting(user, id) {
-  return db.EcommercePaymentMethodSetting.findOne({
+  return db.PaymentMethodSetting.findOne({
     where: {
       companyId: user.companyId,
       id
@@ -18,47 +18,36 @@ export function getEcommercePaymentSetting(user, id) {
   });
 }
 
-async function getNextId(user) {
-  const lastId = await db.EcommercePaymentMethodSetting.max('id', {
-    where: {
-      companyId: user.companyId
-    }
-  });
-
-  return (lastId || 0) + 1;
-}
-
 export async function createEcommercePaymentSetting(user, formData) {
   console.log(formData);
-  const { paymentMethodId, setting, name } = formData;
+  const {paymentTypeId, setting, name} = formData;
   let settingStr = '';
-  if (paymentMethodId === ECOMMERCE_PAYMENT_METHOD.DIRECT_TRANSFER) {
+  if (paymentTypeId === PAYMENT_TYPE.CASH || paymentTypeId === PAYMENT_TYPE.BANK) {
     settingStr = setting;
   } else {
     settingStr = JSON.stringify(setting);
   }
-  return db.EcommercePaymentMethodSetting.create({
-    id: await getNextId(user),
+  return db.PaymentMethodSetting.create({
     name,
-    paymentMethodId, setting: settingStr, companyId: user.companyId
+    paymentTypeId, setting: settingStr, companyId: user.companyId
   });
 }
 
 export async function updateEcommercePaymentSetting(user, id, formData) {
-  const { paymentMethodId, setting, name } = formData;
+  const {paymentTypeId, setting, name} = formData;
   const item = await getEcommercePaymentSetting(user, id);
   if (!item) {
     throw badRequest('paymentMethod', FIELD_ERROR.INVALID, 'Invalid Payment Method');
   }
   let settingStr = '';
-  if (paymentMethodId === ECOMMERCE_PAYMENT_METHOD.BANK) {
+  if (paymentTypeId === PAYMENT_TYPE.BANK || paymentTypeId === PAYMENT_TYPE.CASH) {
     settingStr = setting;
   } else {
     settingStr = JSON.stringify(setting);
   }
   item.name = name;
   item.setting = settingStr;
-  item.paymentMethodId = paymentMethodId;
+  item.paymentMethodId = paymentTypeId;
   return item.save();
 }
 

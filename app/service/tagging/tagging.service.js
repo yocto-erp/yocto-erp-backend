@@ -44,6 +44,7 @@ export function createTag({label, color}, user) {
 
 // eslint-disable-next-line no-unused-vars
 export async function updateItemTags({id, type, newTags, oldTags, transaction}) {
+  console.log('updateItemTags', newTags, type, id)
   await db.TaggingItem.destroy({
     where: {
       itemType: type,

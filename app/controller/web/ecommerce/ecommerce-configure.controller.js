@@ -1,20 +1,20 @@
 import express from 'express';
-import { pagingParse } from '../../middleware/paging.middleware';
-import { hasPermission } from '../../middleware/permission';
-import { PERMISSION } from '../../../db/models/acl/acl-action';
-import { ecommerceSettingValidator } from '../../middleware/validators/ecommerc-product.validator';
+import {pagingParse} from '../../middleware/paging.middleware';
+import {hasPermission} from '../../middleware/permission';
+import {PERMISSION} from '../../../db/models/acl/acl-action';
+import {ecommerceSettingValidator} from '../../middleware/validators/ecommerc-product.validator';
 import {
   createEcommercePaymentSetting,
   getEcommercePaymentSetting,
   listECommercePayment,
   removeEcommercePaymentSetting,
   updateEcommercePaymentSetting
-} from '../../../service/ecommerce/ecommerce-setting.service';
+} from '../../../service/payment/ecommerce-setting.service';
 
 const ecommerceSetting = express.Router();
 
-ecommerceSetting.get('/', hasPermission(PERMISSION.ECOMMERCE.SETTING),
-  pagingParse({ column: 'id', dir: 'asc' }),
+ecommerceSetting.get('/', [hasPermission(PERMISSION.ECOMMERCE.SETTING),
+    pagingParse({column: 'id', dir: 'asc'})],
   (req, res, next) => {
     return listECommercePayment(req.user, req.query, req.paging.order, req.paging.offset, req.paging.size)
       .then(result => res.status(200).json(result)).catch(next);

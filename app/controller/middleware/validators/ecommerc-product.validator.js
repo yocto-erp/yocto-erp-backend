@@ -1,6 +1,6 @@
 import * as yup from 'yup';
-import { validator, validatorType } from '../validation.middleware';
-import { ECOMMERCE_PAYMENT_METHOD } from '../../../db/models/ecommerce/ecommerce-payment-method';
+import {validator, validatorType} from '../validation.middleware';
+import {PAYMENT_TYPE} from '../../../db/models/payment/payment-type';
 
 export const ecommerceProductValidator = validator(yup.object().shape({
   product: yup.object().required('Product is required.'),
@@ -11,11 +11,11 @@ export const ecommerceProductValidator = validator(yup.object().shape({
 }), validatorType.BODY);
 
 export const ecommerceSettingValidator = validator(yup.object().shape({
-  paymentMethodId: yup.number().required('Payment Method is required'),
+  paymentTypeId: yup.number().required('Payment Method is required'),
   setting: yup.mixed().test('isValid', 'Invalid Setting', (value, ctx) => {
     console.log(ctx)
-    const { paymentMethodId } = ctx.parent;
-    if (paymentMethodId === ECOMMERCE_PAYMENT_METHOD.DIRECT_TRANSFER) {
+    const {paymentMethodId} = ctx.parent;
+    if (paymentMethodId === PAYMENT_TYPE.BANK) {
       if (!value || !value.trim().length) return false;
     }
     return true;
