@@ -7,5 +7,5 @@ export const initEcommerceModel = sequelize => ({
   EcommerceProduct: EcommerceProduct.init(sequelize),
   EcommerceOrder: EcommerceOrder.init(sequelize),
   EcommerceOrderPayment: EcommerceOrderPayment.init(sequelize),
-  EcommerceOrderShipping: EcommerceOrderShipping.init(sequelize),
+  EcommerceOrderShipping: EcommerceOrderShipping.init(sequelize)
 });

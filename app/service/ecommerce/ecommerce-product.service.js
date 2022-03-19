@@ -17,7 +17,7 @@ export async function listECommerceProducts(user, { search }, paging) {
       { model: db.Product, as: 'product' },
       { model: db.WareHouse, as: 'warehouse' },
       { model: db.User, as: 'lastUpdatedBy' },
-      { model: db.ProductUnit, as: 'unit', where: { productId: { [Op.col]: 'EcommerceProduct.productId' } } }
+      { model: db.ProductUnit, as: 'unit', where: { productId: { [Op.col]: 'ecommerceProduct.productId' } } }
     ],
     ...paging
   });

@@ -7,7 +7,7 @@ export default class EcommerceProduct extends Sequelize.Model {
     return super.init(
       {
         id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
-        productId: { type: DataTypes.INTEGER },
+        productId: { type: DataTypes.BIGINT },
         unitId: { type: DataTypes.INTEGER },
         companyId: { type: DataTypes.BIGINT },
         webDisplayName: { type: DataTypes.STRING(250) },
