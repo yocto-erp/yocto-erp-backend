@@ -64,6 +64,7 @@ import {initEcommerceModel} from './ecommerce';
 import {initDebtModel} from './debt';
 import {initStudentModel} from "./student";
 import {initPaymentModel} from "./payment";
+import {initSaleModel} from "./sale";
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -181,6 +182,9 @@ const models = {
   OTP: OTP.init(sequelize),
 
   Language: Language.init(sequelize),
+
+  // SALE
+  ...initSaleModel(sequelize),
 
   // ECOMMERCE
   ...initEcommerceModel(sequelize),

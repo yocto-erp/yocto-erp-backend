@@ -6,18 +6,18 @@ import {
   updateShop,
   removeShop
 } from '../../../service/shop/shop.service';
-import { hasPermission } from '../../middleware/permission';
+import {hasPermission} from '../../middleware/permission';
 import {PERMISSION} from "../../../db/models/acl/acl-action";
-import { pagingParse } from '../../middleware/paging.middleware';
-import { shopValidator } from '../../middleware/validators/shop.validator';
+import {pagingParse} from '../../middleware/paging.middleware';
+import {shopValidator} from '../../middleware/validators/shop.validator';
 
 const shop = express.Router();
 
-shop.get('/', hasPermission(PERMISSION.PRODUCT.READ), pagingParse({column: 'id', dir: 'asc'}), (req, res, next) => {
-    return shops(req.user, req.query, req.paging.order, req.paging.offset, req.paging.size)
-      .then(result => res.status(200).json(result))
-      .catch(next);
-  });
+shop.get('/', [hasPermission(PERMISSION.PRODUCT.READ), pagingParse({column: 'id', dir: 'asc'})], (req, res, next) => {
+  return shops(req.user, req.query, req.paging.order, req.paging.offset, req.paging.size)
+    .then(result => res.status(200).json(result))
+    .catch(next);
+});
 
 shop.get('/:id(\\d+)', hasPermission(PERMISSION.PRODUCT.READ), (req, res, next) => {
   return getShop(req.user, req.params.id)

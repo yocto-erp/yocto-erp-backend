@@ -195,6 +195,7 @@ export async function getProduct(user, pId) {
 
 export async function createProduct(user, createForm) {
   if (
+    createForm.productDocumentId &&
     createForm.productDocumentId.length &&
     createForm.productDocumentId?.trim()
   ) {

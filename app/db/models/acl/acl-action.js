@@ -1,6 +1,6 @@
 import Sequelize from 'sequelize';
 
-const { DataTypes } = Sequelize;
+const {DataTypes} = Sequelize;
 export const PERMISSION = {
   PRODUCT: {
     CREATE: 1,
@@ -107,9 +107,6 @@ export const PERMISSION = {
       UPDATE: 65,
       DELETE: 66
     },
-    POS: {
-      CREATE: 77
-    },
     SETTING: 67
   },
   SETTING: {
@@ -126,6 +123,13 @@ export const PERMISSION = {
     CREATE: 74,
     UPDATE: 75,
     DELETE: 76
+  },
+  POS: {
+    READ: 77,
+    CREATE: 78,
+    UPDATE: 79,
+    DELETE: 80,
+    ORDER: 81
   }
 };
 
@@ -150,7 +154,12 @@ export const ALL_PERMISSIONS = [
   PERMISSION.SURVEY.CREATE, PERMISSION.SURVEY.READ, PERMISSION.SURVEY.UPDATE, PERMISSION.SURVEY.DELETE,
   PERMISSION.ECOMMERCE.PRODUCT.CREATE, PERMISSION.ECOMMERCE.PRODUCT.DELETE, PERMISSION.ECOMMERCE.PRODUCT.UPDATE, PERMISSION.ECOMMERCE.PRODUCT.DELETE,
   PERMISSION.ECOMMERCE.ORDER.UPDATE, PERMISSION.ECOMMERCE.ORDER.READ, PERMISSION.ECOMMERCE.ORDER.DELETE,
-  PERMISSION.ECOMMERCE.SETTING, PERMISSION.SHOP.CREATE, PERMISSION.SHOP.UPDATE, PERMISSION.SHOP.READ, PERMISSION.SHOP.DELETE
+  PERMISSION.ECOMMERCE.SETTING,
+  // SHOP
+  PERMISSION.SHOP.CREATE, PERMISSION.SHOP.UPDATE, PERMISSION.SHOP.READ, PERMISSION.SHOP.DELETE,
+
+  PERMISSION.PAYMENT.CREATE, PERMISSION.PAYMENT.UPDATE, PERMISSION.PAYMENT.READ, PERMISSION.PAYMENT.DELETE,
+  PERMISSION.POS.CREATE, PERMISSION.POS.UPDATE, PERMISSION.POS.READ, PERMISSION.POS.DELETE, PERMISSION.POS.ORDER
 ];
 
 export default class ACLAction extends Sequelize.Model {
@@ -162,9 +171,9 @@ export default class ACLAction extends Sequelize.Model {
           primaryKey: true,
           autoIncrement: true
         },
-        moduleId: { type: DataTypes.INTEGER },
-        name: { type: DataTypes.STRING(255) },
-        remark: { type: DataTypes.TEXT }
+        moduleId: {type: DataTypes.INTEGER},
+        name: {type: DataTypes.STRING(255)},
+        remark: {type: DataTypes.TEXT}
       },
       {
         tableName: 'acl_action',
@@ -181,6 +190,6 @@ export default class ACLAction extends Sequelize.Model {
       foreignKey: 'actionId',
       otherKey: 'groupId'
     });
-    this.belongsTo(models.ACLModule, { foreignKey: 'moduleId', as: 'modules' });
+    this.belongsTo(models.ACLModule, {foreignKey: 'moduleId', as: 'modules'});
   }
 }

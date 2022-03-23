@@ -9,8 +9,8 @@ import {
 
 const inventory = express.Router();
 
-inventory.get('/', hasPermission([PERMISSION.INVENTORY.GOODS_RECEIPT.READ, PERMISSION.INVENTORY.GOODS_ISSUE.READ]),
-  pagingParse({column: 'id', dir: 'asc'}),
+inventory.get('/', [hasPermission([PERMISSION.INVENTORY.GOODS_RECEIPT.READ, PERMISSION.INVENTORY.GOODS_ISSUE.READ]),
+    pagingParse({column: 'id', dir: 'asc'})],
   (req, res, next) => {
     return inventories(req.query, req.paging.order, req.paging.offset, req.paging.size, req.user)
       .then(result => res.status(200).json(result)).catch(next);

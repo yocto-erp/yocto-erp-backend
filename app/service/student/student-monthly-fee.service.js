@@ -299,9 +299,13 @@ export async function toPrintData(id, companyId) {
   });
 
   const monthStr = `0${fee.monthFee + 1}`;
+  const toMonthStr = `${fee.toMonth + 1}`;
   const studentFee = {
     monthFee: monthStr.substr(monthStr.length - 2, 2),
     yearFee: fee.yearFee,
+    toMonth: toMonthStr.substr(toMonthStr.length - 2, 2),
+    toYear: fee.toYear,
+    numberOfMonths: fee.numberOfMonths || 1,
     scholarShip: formatTemplateMoney(fee.scholarFee),
     scholarShipPercent: `${fee.scholarShip} %`,
     tuitionFee: formatTemplateMoney(fee.feePerMonth),
@@ -385,7 +389,7 @@ export async function sendEmails({listId, emailTemplateId, isPDFAttached, printT
   for (let i = 0; i < listId.length; i += 1) {
     try {
       // eslint-disable-next-line no-await-in-loop,no-unused-vars
-      const email = await processSendEmailForFee(listId[i], emailTemplate, printTemplateId, isPDFAttached, user, from, cc, bcc);
+      await processSendEmailForFee(listId[i], emailTemplate, printTemplateId, isPDFAttached, user, from, cc, bcc);
       rs.success.push(listId[i]);
     } catch (e) {
       console.error(e);

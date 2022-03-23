@@ -249,6 +249,7 @@ export async function updateCost(cId, user, updateForm) {
     if ((listMerge && listMerge.length) || (existedCost.assets && existedCost.assets.length)) {
       await updateCostAssets(existedCost.assets, listMerge, cId, transaction);
     }
+    let listUpdateTags = []
     if ((updateForm.tagging && updateForm.tagging.length) || (existedCost.taggingItems && existedCost.taggingItems.length)) {
       await updateItemTags({
         id: cId,
@@ -257,10 +258,8 @@ export async function updateCost(cId, user, updateForm) {
         newTags: updateForm.tagging
       });
 
-      addTaggingQueue([
-        ...((updateForm.tagging || []).map(t => t.id)),
-        ...((existedCost.taggingItems || []).map(t => t.taggingId))]
-      );
+      listUpdateTags = [... new Set([...((updateForm.tagging || []).map(t => t.id)),
+        ...((existedCost.taggingItems || []).map(t => t.taggingId))])]
     }
 
     auditAction({
@@ -269,6 +268,9 @@ export async function updateCost(cId, user, updateForm) {
       relativeId: String(cId)
     }).then();
     await transaction.commit();
+    if(listUpdateTags.length){
+      addTaggingQueue(listUpdateTags);
+    }
     return existedCost;
   } catch (error) {
     await transaction.rollback();

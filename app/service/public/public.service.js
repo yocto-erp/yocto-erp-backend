@@ -1,16 +1,16 @@
 import db from '../../db/models';
-import { badRequest, FIELD_ERROR } from '../../config/error';
-import { isArray } from '../../util/func.util';
+import {badRequest, FIELD_ERROR} from '../../config/error';
+import {isArray} from '../../util/func.util';
 
 const {Op} = db.Sequelize;
 
 export async function listPublicECommerceProducts(query, order, offset, limit) {
-  const { tagging, search, publicId } = query;
-  const company = await db.Company.findOne({ where: { publicId } });
+  const {tagging, search, publicId} = query;
+  const company = await db.Company.findOne({where: {publicId}});
   if (!company) {
     throw badRequest('company', FIELD_ERROR.INVALID, 'company not found');
   }
-  const where = { companyId: company.id };
+  const where = {companyId: company.id};
   if (search && search.length) {
     where[Op.or] = [
       {
@@ -29,20 +29,21 @@ export async function listPublicECommerceProducts(query, order, offset, limit) {
   let isTaggingRequired = false;
   if (tagging && tagging.id) {
     whereTagging.taggingId = {
-      [Op.in]: isArray(tagging.id)  ? tagging.id : [tagging.id]
+      [Op.in]: isArray(tagging.id) ? tagging.id : [tagging.id]
     };
     isTaggingRequired = true;
   }
   return db.EcommerceProduct.findAndCountAll({
     order,
-      where,
+    where,
     include: [
-      { model: db.Product, as: 'product', required: true,
+      {
+        model: db.Product, as: 'product', required: true,
         include: [{
-            model: db.TaggingItem,
-            required: isTaggingRequired,
-            as: 'taggingItems',
-            where: whereTagging
+          model: db.TaggingItem,
+          required: isTaggingRequired,
+          as: 'taggingItems',
+          where: whereTagging
         }]
       }
     ],
