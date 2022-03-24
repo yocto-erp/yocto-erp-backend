@@ -5,7 +5,11 @@ import {
   getInventory
 } from '../../../service/inventory/inventory.service';
 import {inventoryValidator} from '../../middleware/validators/inventory.validator';
-import {createInventoryIn, removeInventoryIn, updateInventoryIn} from "../../../service/inventory/inventory-in.service";
+import {
+  createInventoryOut,
+  removeInventoryOut,
+  updateInventoryOut
+} from "../../../service/inventory/inventory-out.service";
 
 const goodsIssue = express.Router();
 
@@ -16,18 +20,18 @@ goodsIssue.get('/:id(\\d+)', hasPermission(PERMISSION.INVENTORY.GOODS_ISSUE.READ
 });
 
 goodsIssue.post('/', [hasPermission(PERMISSION.INVENTORY.GOODS_ISSUE.CREATE), inventoryValidator], (req, res, next) => {
-  return createInventoryIn(req.user, req.body)
+  return createInventoryOut(req.user, req.body)
     .then(result => res.status(200).json(result)).catch(next);
 });
 
 goodsIssue.post('/:id(\\d+)', [hasPermission(PERMISSION.INVENTORY.GOODS_ISSUE.UPDATE), inventoryValidator], (req, res, next) => {
-  return updateInventoryIn(req.user, req.params.id, req.body)
+  return updateInventoryOut(req.user, req.params.id, req.body)
     .then(result => res.status(200).json(result))
     .catch(next);
 });
 
 goodsIssue.delete('/:id(\\d+)', hasPermission(PERMISSION.INVENTORY.GOODS_ISSUE.DELETE), (req, res, next) => {
-  return removeInventoryIn(req.user, req.params.id)
+  return removeInventoryOut(req.user, req.params.id)
     .then(result => res.status(200).json(result))
     .catch(next);
 });

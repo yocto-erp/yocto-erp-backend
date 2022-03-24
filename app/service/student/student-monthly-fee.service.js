@@ -308,7 +308,7 @@ export async function toPrintData(id, companyId) {
     numberOfMonths: fee.numberOfMonths || 1,
     scholarShip: formatTemplateMoney(fee.scholarFee),
     scholarShipPercent: `${fee.scholarShip} %`,
-    tuitionFee: formatTemplateMoney(fee.feePerMonth),
+    tuitionFee: formatTemplateMoney(fee.feePerMonth * (fee.numberOfMonths || 1)),
     mealFee: formatTemplateMoney(fee.mealFee),
     absentDay: fee.absentDay,
     absentDayFee: fee.absentDayFee,

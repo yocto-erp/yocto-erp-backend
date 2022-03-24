@@ -14,15 +14,15 @@ const {Op} = db.Sequelize;
  * @param removeDetails list detail product need to remove from inventory
  * @param addDetails list detail product need to add to inventory
  */
-function mergeListUpdateInventory(removeDetails, addDetails) {
+export function mergeListUpdateInventory(removeDetails, addDetails) {
   const rs = [];
   if (removeDetails && removeDetails.length) {
     for (let i = 0; i < removeDetails.length; i += 1) {
-      const {productId, unitId, quantity, serialCode} = removeDetails[i];
+      const {productId, unitId, quantity, serialCode, product} = removeDetails[i];
       let existItem = rs.find(t => t.productId === productId && t.unitId === unitId);
       if (!existItem) {
         existItem = {
-          productId, unitId, serials: [], quantity: 0
+          productId, unitId, serials: [], quantity: 0, product
         }
         rs.push(existItem)
       }
@@ -39,11 +39,11 @@ function mergeListUpdateInventory(removeDetails, addDetails) {
   }
   if (addDetails && addDetails.length) {
     for (let i = 0; i < addDetails.length; i += 1) {
-      const {productId, unitId, quantity, serialCode} = addDetails[i];
+      const {productId, unitId, quantity, serialCode, product} = addDetails[i];
       let existItem = rs.find(t => t.productId === productId && t.unitId === unitId);
       if (!existItem) {
         existItem = {
-          productId, unitId, serials: [], quantity: 0
+          productId, unitId, serials: [], quantity: 0, product
         }
         rs.push(existItem)
       }
@@ -62,9 +62,9 @@ function mergeListUpdateInventory(removeDetails, addDetails) {
   return rs;
 }
 
-async function updateInventory(companyId, warehouseId, userId, listUpdateDetails, transaction) {
+export async function updateInventory(companyId, warehouseId, userId, listUpdateDetails, transaction) {
   for (let i = 0; i < listUpdateDetails.length; i += 1) {
-    const {productId, unitId, quantity, serials} = listUpdateDetails[i];
+    const {productId, unitId, quantity, serials, product} = listUpdateDetails[i];
     if (quantity !== 0 || serials.find(s => s.quantity !== 0)) {
       // eslint-disable-next-line no-await-in-loop
       let inventorySummary = await db.InventorySummary.findOne({
@@ -86,6 +86,9 @@ async function updateInventory(companyId, warehouseId, userId, listUpdateDetails
       }
       inventorySummary.quantity += quantity;
       // TODO: check if quantity negative then throw exception
+      if (inventorySummary.quantity < 0) {
+        throw badRequest('product', FIELD_ERROR.INVALID, `Product ${product.name} had invalid stock.`)
+      }
       inventorySummary.lastModifiedDate = new Date();
       inventorySummary.lastModifiedById = userId;
       // eslint-disable-next-line no-await-in-loop
@@ -108,6 +111,9 @@ async function updateInventory(companyId, warehouseId, userId, listUpdateDetails
           }
           inventorySerial.quantity += qty;
           // TODO: Check if quantity negative then throw exception
+          if (inventorySerial.quantity < 0) {
+            throw badRequest('product', FIELD_ERROR.INVALID, `Product ${product.name} - serial ${serial} had invalid stock.`)
+          }
           inventorySerial.save({transaction})
         }
       }
