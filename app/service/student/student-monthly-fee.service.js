@@ -299,11 +299,16 @@ export async function toPrintData(id, companyId) {
   });
 
   const monthStr = `0${fee.monthFee + 1}`;
-  const toMonthStr = `0${fee.toMonth + 1}`;
+  let toMonthStr = '';
+  if (fee.toMonth > 0) {
+    toMonthStr = `0${fee.toMonth + 1}`;
+    toMonthStr = toMonthStr.substr(toMonthStr.length - 2, 2)
+  }
+
   const studentFee = {
     monthFee: monthStr.substr(monthStr.length - 2, 2),
     yearFee: fee.yearFee,
-    toMonth: toMonthStr.substr(toMonthStr.length - 2, 2),
+    toMonth: toMonthStr,
     toYear: fee.toYear,
     numberOfMonths: fee.numberOfMonths || 1,
     scholarShip: formatTemplateMoney(fee.scholarFee),
