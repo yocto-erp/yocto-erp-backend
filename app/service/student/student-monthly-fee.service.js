@@ -299,7 +299,7 @@ export async function toPrintData(id, companyId) {
   });
 
   const monthStr = `0${fee.monthFee + 1}`;
-  const toMonthStr = `${fee.toMonth + 1}`;
+  const toMonthStr = `0${fee.toMonth + 1}`;
   const studentFee = {
     monthFee: monthStr.substr(monthStr.length - 2, 2),
     yearFee: fee.yearFee,
