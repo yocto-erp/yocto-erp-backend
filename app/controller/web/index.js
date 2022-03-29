@@ -29,6 +29,7 @@ import {initConfigureController} from './configuration';
 import {initWebEcommerceShopController} from './public/ecommerce-shop.controller';
 import {initStudentController} from "./student";
 import {initWebSaleController} from "./sale";
+import {initTaxController} from "./tax";
 
 
 export function initWebController(app) {
@@ -63,4 +64,5 @@ export function initWebController(app) {
   initEcommerceController(app);
   initWebEcommerceShopController(app);
   initWebSaleController(app);
+  initTaxController(app);
 }

@@ -21,8 +21,6 @@ import Inventory from './inventory/inventory';
 import InventoryDetail from './inventory/inventory-detail';
 import InventoryPurpose from './inventory/inventory-purpose';
 import InventorySummary from './inventory/inventory-summary';
-import Order from './order/order';
-import OrderDetail from './order/order-detail';
 import Person from './person';
 import Product from './product/product';
 import ProductAsset from './product/product-asset';
@@ -65,6 +63,8 @@ import {initDebtModel} from './debt';
 import {initStudentModel} from "./student";
 import {initPaymentModel} from "./payment";
 import {initSaleModel} from "./sale";
+import {initTaxModel} from "./tax";
+import {initOrderModel} from "./order";
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -113,8 +113,7 @@ const models = {
   InventoryDetailSerial: InventoryDetailSerial.init(sequelize),
 
   // Order
-  Order: Order.init(sequelize),
-  OrderDetail: OrderDetail.init(sequelize),
+  ...initOrderModel(sequelize),
 
   // Partner
   PartnerCompany: PartnerCompany.init(sequelize),
@@ -191,7 +190,9 @@ const models = {
   // Debt
   ...initDebtModel(sequelize),
   // Payment
-  ...initPaymentModel(sequelize)
+  ...initPaymentModel(sequelize),
+  // Tax
+  ...initTaxModel(sequelize)
 };
 
 Object.values(models)

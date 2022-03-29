@@ -2,6 +2,11 @@ import Sequelize from 'sequelize';
 
 const {DataTypes} = Sequelize;
 
+export const TAX_TYPE = {
+  PERCENT: 1,
+  FIX: 2
+}
+
 export default class Tax extends Sequelize.Model {
   static init(sequelize, opts) {
     return super.init(
@@ -13,7 +18,8 @@ export default class Tax extends Sequelize.Model {
         amount: {type: DataTypes.STRING(64)},
         companyId: {type: DataTypes.BIGINT},
         lastModifiedById: {type: DataTypes.BIGINT},
-        lastModifiedDate: {type: DataTypes.DATE}
+        lastModifiedDate: {type: DataTypes.DATE},
+        remark: {type: DataTypes.TEXT}
       },
       {
         tableName: 'tax',
@@ -21,5 +27,9 @@ export default class Tax extends Sequelize.Model {
         timestamps: false,
         sequelize, ...opts
       })
+  }
+
+  static associate(models) {
+    this.belongsTo(models.User, {foreignKey: 'lastModifiedById', as: 'lastModifiedBy'});
   }
 }

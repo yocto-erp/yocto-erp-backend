@@ -1,11 +1,11 @@
 import db from '../../db/models';
-import { badRequest, FIELD_ERROR } from '../../config/error';
-import { hasText } from '../../util/string.util';
+import {badRequest, FIELD_ERROR} from '../../config/error';
+import {hasText} from '../../util/string.util';
 
-const { Op } = db.Sequelize;
+const {Op} = db.Sequelize;
 
-export async function listECommerceProducts(user, { search }, paging) {
-  const where = { companyId: user.companyId };
+export async function listECommerceProducts(user, {search}, paging) {
+  const where = {companyId: user.companyId};
   if (hasText(search)) {
     where.webDisplayName = {
       [Op.like]: `%${search}%`
@@ -14,10 +14,10 @@ export async function listECommerceProducts(user, { search }, paging) {
   return db.EcommerceProduct.findAndCountAll({
     where,
     include: [
-      { model: db.Product, as: 'product' },
-      { model: db.WareHouse, as: 'warehouse' },
-      { model: db.User, as: 'lastUpdatedBy' },
-      { model: db.ProductUnit, as: 'unit', where: { productId: { [Op.col]: 'ecommerceProduct.productId' } } }
+      {model: db.Product, as: 'product'},
+      {model: db.TaxSet, as: 'taxSet'},
+      {model: db.User, as: 'lastModifiedBy'},
+      {model: db.ProductUnit, as: 'unit', where: {productId: {[Op.col]: 'ecommerceProduct.productId'}}}
     ],
     ...paging
   });
@@ -30,10 +30,9 @@ export async function createEcommerceProduct(user, formData) {
     webDisplayName,
     shortName,
     price,
-    description,
-    otherParams,
-    isWarehouse,
-    warehouse
+    remark,
+    taxSet,
+    otherParams
   } = formData;
   return db.EcommerceProduct.create({
     productId: product.id,
@@ -42,53 +41,59 @@ export async function createEcommerceProduct(user, formData) {
     webDisplayName,
     shortName,
     price,
-    description,
+    remark,
+    taxSetId: taxSet?.id,
     otherParams,
-    isWarehouse,
-    fromWarehouseId: warehouse?.id,
-    lastUpdatedById: user.id,
-    lastUpdatedDate: new Date()
+    lastModifiedById: user.id,
+    lastModifiedDate: new Date()
   });
 }
 
 export async function getEcommerceProduct(user, id) {
-  return db.EcommerceProduct.findOne({
+  const item = await db.EcommerceProduct.findOne({
     where: {
       id, companyId: user.companyId
     },
     include: [
-      { model: db.Product, as: 'product' },
-      { model: db.ProductUnit, as: 'unit' }
+      {model: db.Product, as: 'product'},
+      {model: db.Tax, as: 'taxes'},
+      {model: db.TaxSet, as: 'taxSet'},
+      {model: db.ProductUnit, as: 'unit'}
     ]
   });
+  if (!item) {
+    throw badRequest('product', FIELD_ERROR.INVALID, 'Invalid product');
+  }
+  return item;
 }
 
 export async function updateEcommerceProduct(user, id, formData) {
   const existed = await getEcommerceProduct(user, id);
-  if (!existed) {
-    throw badRequest('product', FIELD_ERROR.INVALID, 'Invalid product');
-  }
+
   const {
     product,
     unit,
     webDisplayName,
     shortName,
     price,
-    description,
-    otherParams,
-    isWarehouse,
-    warehouse
+    taxSet,
+    remark,
+    otherParams
   } = formData;
   existed.productId = product.id;
   existed.unitId = unit.id;
   existed.webDisplayName = webDisplayName;
   existed.shortName = shortName;
+  existed.taxSetId = taxSet?.id;
   existed.price = price;
-  existed.description = description;
+  existed.remark = remark;
   existed.otherParams = otherParams;
-  existed.isWarehouse = isWarehouse;
-  existed.fromWarehouseId = warehouse?.id;
-  existed.lastUpdatedById = user.id;
-  existed.lastUpdatedDate = new Date();
+  existed.lastModifiedById = user.id;
+  existed.lastModifiedDate = new Date();
   return existed.save();
+}
+
+export async function removeEcommerceProduct(user, id) {
+  const existed = await getEcommerceProduct(user, id);
+  return existed.destroy();
 }
