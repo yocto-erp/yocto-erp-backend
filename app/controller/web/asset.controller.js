@@ -1,10 +1,28 @@
 import express from 'express';
 import fs from "fs";
-import {ASSET_STORE_FOLDER, getAssetByUUID} from '../../service/asset/asset.service';
+import {ASSET_STORE_FOLDER, createAssetFolder, getAssetByUUID, listAsset} from '../../service/asset/asset.service';
+import {hasPermission} from "../middleware/permission";
+import {PERMISSION} from "../../db/models/acl/acl-action";
+import {pagingParse} from "../middleware/paging.middleware";
 
-const image = express.Router();
+const imageRouter = express.Router();
 
-image.get('/:uuid', async (req, res, next) => {
+imageRouter.get('/', [hasPermission(PERMISSION.ASSET.READ),
+    pagingParse({column: 'type', dir: 'desc'})],
+  (req, res, next) => {
+    return listAsset(req.user, req.query, req.paging)
+      .then(result => res.status(200).json(result))
+      .catch(next);
+  });
+
+imageRouter.post('/', hasPermission(PERMISSION.ASSET.CREATE),
+  (req, res, next) => {
+    return createAssetFolder(req.user, req.body)
+      .then(result => res.status(200).json(result))
+      .catch(next);
+  });
+
+imageRouter.get('/:uuid', async (req, res, next) => {
   try {
     const asset = await getAssetByUUID(req.params.uuid);
     const s = fs.createReadStream(`${ASSET_STORE_FOLDER}/${asset.fileId}`);
@@ -22,5 +40,5 @@ image.get('/:uuid', async (req, res, next) => {
 });
 
 export function initWebAssetController(app) {
-  app.use('/api/image', image);
+  app.use('/api/image', imageRouter);
 }

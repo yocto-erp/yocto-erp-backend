@@ -1,34 +1,19 @@
 import multer from 'multer';
-import fs from 'fs';
-import appConf from '../../config/application';
-import db from '../../db/models';
-import {appLog} from '../../config/winston';
+import {v4 as uuidv4} from 'uuid';
+import {SYSTEM_CONFIG} from "../../config/system";
 
+const storage = multer.diskStorage({
+  destination: function dest(req, file, cb) {
+    cb(null, SYSTEM_CONFIG.UPLOAD_FOLDER);
+  },
+  filename: function filename(req, file, cb) {
+    cb(null, uuidv4());
+  }
+});
 
-
-export const handleSingleUpload = multer({
-  dest: appConf.fileUploadDir,
+export const handleMultiUpload = multer({
+  storage: storage,
   limits: {
     fileSize: 5242880
   }
-}).single('file');
-
-export const publicUploadHandler = multer({
-  dest: appConf.emailFileUploadDir,
-  limits: {
-    fileSize: 5242880
-  }
-}).single('file');
-
-export async function deleteFile(fileUploadId, {transaction}) {
-  const fileUpload = await db.FileUpload.findByPk(fileUploadId, {transaction});
-  if (fileUpload) {
-    fs.unlink(`${appConf.fileUploadDir}/${fileUpload.filename}`, (err) => {
-      if (err) {
-        appLog.error(err.message, err);
-      }
-    });
-    return fileUpload.destroy({transaction});
-  }
-  return null;
-}
+}).array('files');
