@@ -46,6 +46,31 @@ export function createAssetFolder(user, form) {
   })
 }
 
+export async function storeFiles(user, form, parentId) {
+  const rs = await db.Asset.create({
+    name: form.originalname,
+    size: form.size,
+    fileId: form.filename,
+    type: ASSET_TYPE.FILE,
+    parentId: parentId || null,
+    companyId: user.companyId,
+    createdById: user.id,
+    createdDate: new Date()
+  });
+  sharp(`${ASSET_STORE_FOLDER}/${form.filename}`)
+    .flatten()
+    .resize(200, 200, {
+      fit: sharp.fit.contain,
+      position: 'centre',
+      background: {r: 0, g: 0, b: 0, alpha: 0}
+    })
+    .toFile(`${SYSTEM_CONFIG.PUBLIC_FOLDER}/thumbnail/${form.filename}.png`).then(() => {
+  }, (err) => {
+    console.log('thumbnail error', err)
+  });
+  return rs;
+}
+
 export async function storeFileFromBase64(baseImage) {
   const ext = baseImage.substring(
     baseImage.indexOf('/') + 1,

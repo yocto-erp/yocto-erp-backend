@@ -16,4 +16,4 @@ export const handleMultiUpload = multer({
   limits: {
     fileSize: 5242880
   }
-}).array('files');
+});

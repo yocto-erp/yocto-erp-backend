@@ -1,9 +1,16 @@
 import express from 'express';
 import fs from "fs";
-import {ASSET_STORE_FOLDER, createAssetFolder, getAssetByUUID, listAsset} from '../../service/asset/asset.service';
+import {
+  ASSET_STORE_FOLDER,
+  createAssetFolder,
+  getAssetByUUID,
+  listAsset,
+  storeFiles
+} from '../../service/asset/asset.service';
 import {hasPermission} from "../middleware/permission";
 import {PERMISSION} from "../../db/models/acl/acl-action";
 import {pagingParse} from "../middleware/paging.middleware";
+import {handleMultiUpload} from "../../service/file/storage.service";
 
 const imageRouter = express.Router();
 
@@ -20,6 +27,17 @@ imageRouter.post('/', hasPermission(PERMISSION.ASSET.CREATE),
     return createAssetFolder(req.user, req.body)
       .then(result => res.status(200).json(result))
       .catch(next);
+  });
+
+imageRouter.post("/upload", hasPermission(PERMISSION.ASSET.CREATE),
+  handleMultiUpload.array("files", 3),
+  (req, res, next) => {
+    // req.files is array of `photos` files
+    console.log('Files: ', req.files);
+    // req.body will contain the text fields, if there were any
+    console.log('Body: ', req.body.parentId);
+    storeFiles(req.user, req.files[0], req.body.parentId).then(result => res.status(200).json(result))
+      .catch(next)
   });
 
 imageRouter.get('/:uuid', async (req, res, next) => {
