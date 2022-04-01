@@ -10,12 +10,13 @@ import CostAsset from '../../db/models/cost/cost-asset';
 import {SYSTEM_CONFIG} from '../../config/system';
 import {ASSET_TYPE} from "../../db/models/asset";
 import {hasText} from "../../util/string.util";
+import {isImageMimeType} from "../../util/image.util";
 
 const {Op} = db.Sequelize;
 
 export const ASSET_STORE_FOLDER = SYSTEM_CONFIG.UPLOAD_FOLDER;
 
-export async function listAsset(user, {parentId, search}, paging) {
+export async function listAsset(user, {parentId, search}, {offset, limit, order}) {
   const where = {
     companyId: user.companyId
   }
@@ -27,9 +28,12 @@ export async function listAsset(user, {parentId, search}, paging) {
       [Op.like]: `%${search}%`
     }
   }
+  console.log("listAsset", offset, limit, order)
   return db.Asset.findAndCountAll({
     where,
-    ...paging
+    order,
+    offset,
+    limit
   })
 }
 
@@ -46,28 +50,45 @@ export function createAssetFolder(user, form) {
   })
 }
 
+/**
+ * Generate thumbnail view after upload, only genereate for image file now
+ * {
+ *   originalname, size, mimetype, filename: filename store on harddisk
+ * }
+ * @param file: file after multer process
+ * @returns {Promise<void>}
+ */
+async function generatePreview(file) {
+  if (isImageMimeType(file.mimetype)) {
+    sharp(`${ASSET_STORE_FOLDER}/${file.filename}`)
+      .flatten()
+      .resize(200, 200, {
+        fit: sharp.fit.contain,
+        position: 'centre',
+        background: {r: 0, g: 0, b: 0, alpha: 0}
+      })
+      .toFile(`${SYSTEM_CONFIG.PUBLIC_FOLDER}/thumbnail/${file.filename}.png`).then(() => {
+    }, (err) => {
+      console.log('thumbnail error', err)
+    });
+  } else {
+    console.log("File no need generate preview", file)
+  }
+}
+
 export async function storeFiles(user, form, parentId) {
   const rs = await db.Asset.create({
     name: form.originalname,
     size: form.size,
     fileId: form.filename,
     type: ASSET_TYPE.FILE,
+    mimeType: form.mimetype,
     parentId: parentId || null,
     companyId: user.companyId,
     createdById: user.id,
     createdDate: new Date()
   });
-  sharp(`${ASSET_STORE_FOLDER}/${form.filename}`)
-    .flatten()
-    .resize(200, 200, {
-      fit: sharp.fit.contain,
-      position: 'centre',
-      background: {r: 0, g: 0, b: 0, alpha: 0}
-    })
-    .toFile(`${SYSTEM_CONFIG.PUBLIC_FOLDER}/thumbnail/${form.filename}.png`).then(() => {
-  }, (err) => {
-    console.log('thumbnail error', err)
-  });
+  generatePreview(form).then()
   return rs;
 }
 

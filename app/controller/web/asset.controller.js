@@ -15,7 +15,7 @@ import {handleMultiUpload} from "../../service/file/storage.service";
 const imageRouter = express.Router();
 
 imageRouter.get('/', [hasPermission(PERMISSION.ASSET.READ),
-    pagingParse({column: 'type', dir: 'desc'})],
+    pagingParse([{column: 'type', dir: 'desc'}, {column: 'name', dir: 'asc'}])],
   (req, res, next) => {
     return listAsset(req.user, req.query, req.paging)
       .then(result => res.status(200).json(result))
