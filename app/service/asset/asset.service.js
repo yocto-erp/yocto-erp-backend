@@ -18,7 +18,8 @@ export const ASSET_STORE_FOLDER = SYSTEM_CONFIG.UPLOAD_FOLDER;
 
 export async function listAsset(user, {parentId, search}, {offset, limit, order}) {
   const where = {
-    companyId: user.companyId
+    companyId: user.companyId,
+    parentId: null
   }
   if (hasText(parentId)) {
     where.parentId = parentId
