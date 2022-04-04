@@ -2,6 +2,11 @@ import Sequelize from 'sequelize';
 
 const {DataTypes} = Sequelize;
 
+export const MAIN_CONTACT_TYPE = {
+  MOTHER: 1,
+  FATHER: 2
+}
+
 export default class Student extends Sequelize.Model {
   static init(sequelize, opts) {
     return super.init({
@@ -26,7 +31,9 @@ export default class Student extends Sequelize.Model {
       createdDate: {type: DataTypes.DATE},
       toSchoolBusStopId: {type: DataTypes.BIGINT},
       toHomeBusStopId: {type: DataTypes.BIGINT},
-      classId: {type: DataTypes.BIGINT}
+      classId: {type: DataTypes.BIGINT},
+      mainContact: {type: DataTypes.TINYINT},
+      subjectId: {type: DataTypes.BIGINT}
     }, {
       tableName: 'student',
       modelName: 'student',
@@ -44,5 +51,6 @@ export default class Student extends Sequelize.Model {
     this.belongsTo(models.Person, {foreignKey: 'personId', as: 'child'});
     this.belongsTo(models.Person, {foreignKey: 'fatherId', as: 'father'});
     this.belongsTo(models.Person, {foreignKey: 'motherId', as: 'mother'});
+    this.belongsTo(models.DebtSubjectBalance, {foreignKey: "subjectId", as: "debt"})
   }
 }

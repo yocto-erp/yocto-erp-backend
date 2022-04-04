@@ -89,3 +89,12 @@ export async function removeTagging(id, user) {
   }
 }
 
+/**
+ * Using for mapping tagging from main list
+ * @param item
+ * @returns {*&{tagging: *}}
+ */
+export const taggingMapping = (item) => ({
+  ...item,
+  tagging: item.taggingItems.map(t => t.tagging)
+})

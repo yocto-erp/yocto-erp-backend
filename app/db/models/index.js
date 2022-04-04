@@ -30,9 +30,6 @@ import UserCompany from './user/user-company';
 import UserShop from './user/user-shop';
 import WareHouse from './warehouse';
 import Audit from './audit';
-import PartnerCompany from './partner/partner-company';
-import PartnerCompanyPerson from './partner/partner-company-person';
-import PartnerPerson from './partner/partner-person';
 import InventoryDetailSerial from './inventory/inventory-detail-serial';
 import BusinessAction from './business-action';
 import InventorySummarySerial from './inventory/inventory-summary-serial';
@@ -65,6 +62,7 @@ import {initPaymentModel} from "./payment";
 import {initSaleModel} from "./sale";
 import {initTaxModel} from "./tax";
 import {initOrderModel} from "./order";
+import {initPartnerModel} from "./partner";
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -116,9 +114,7 @@ const models = {
   ...initOrderModel(sequelize),
 
   // Partner
-  PartnerCompany: PartnerCompany.init(sequelize),
-  PartnerCompanyPerson: PartnerCompanyPerson.init(sequelize),
-  PartnerPerson: PartnerPerson.init(sequelize),
+  ...initPartnerModel(sequelize),
 
   // Product
   Product: Product.init(sequelize),

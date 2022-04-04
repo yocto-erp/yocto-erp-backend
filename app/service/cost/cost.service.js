@@ -1,9 +1,9 @@
 import db from '../../db/models';
-import {createCostPurpose, removeCostPurpose, updateCostPurpose} from './cost-purpose.service';
+import {removeCostPurpose} from './cost-purpose.service';
 import {badRequest, FIELD_ERROR} from '../../config/error';
-import {createCostAsset, mergeAssets, removeCostAssets, updateCostAssets} from '../asset/asset.service';
+import {removeCostAssets} from '../asset/asset.service';
 import User from '../../db/models/user/user';
-import {updateItemTags} from '../tagging/tagging.service';
+import {taggingMapping, updateItemTags} from '../tagging/tagging.service';
 import {TAGGING_TYPE} from '../../db/models/tagging/tagging-item-type';
 import {COST_TYPE} from '../../db/models/cost/cost';
 import {auditAction} from '../audit/audit.service';
@@ -13,6 +13,7 @@ import {hasText} from '../../util/string.util';
 import {beginningDateStr, endDateStr} from '../../util/date.util';
 import {isGt0} from '../../util/number.util';
 import {isArray} from '../../util/func.util';
+import CostAsset from "../../db/models/cost/cost-asset";
 
 const {Op} = db.Sequelize;
 
@@ -20,18 +21,6 @@ const mapping = (item) => ({
   ...item,
   tagging: item.taggingItems.map(t => t.tagging)
 });
-
-function getCostTagging(costId) {
-  return db.TaggingItem.findAll({
-    where: {
-      itemId: costId,
-      itemType: {
-        [Op.in]: [TAGGING_TYPE.PAYMENT_VOUCHER, TAGGING_TYPE.RECEIPT_VOUCHER]
-      }
-    },
-    include: [{model: db.Tagging, as: 'tagging'}]
-  }).then((list) => list.map((t) => t.tagging));
-}
 
 export async function costs(query, order, offset, limit, user) {
   const {tagging, search, partnerCompany, partnerPerson, startDate, endDate, type} = query;
@@ -91,25 +80,19 @@ export async function costs(query, order, offset, limit, user) {
       {
         model: db.TaggingItem, as: 'taggingItems',
         required: isTaggingRequired,
-        where: whereTagging
+        where: whereTagging,
+        include: [
+          {model: db.Tagging, as: 'tagging'}
+        ]
       }
     ],
     offset,
     limit,
     group: ['id']
-  }).then(async (resp) => {
-    const newRows = [];
-    for (let i = 0; i < resp.rows.length; i += 1) {
-      const item = resp.rows[i];
-      newRows.push({
-        ...item.get({plain: true}),
-        // eslint-disable-next-line no-await-in-loop
-        tagging: await getCostTagging(item.id)
-      });
-    }
+  }).then((resp) => {
     return ({
       count: resp.count.length,
-      rows: newRows
+      rows: resp.rows.map(item => taggingMapping(item.get({plain: true})))
     });
   });
 }
@@ -133,11 +116,18 @@ export async function createCost(user, createForm) {
     }, {transaction});
 
     if (createForm.assets && createForm.assets.length) {
-      await createCostAsset(cost.id, user.companyId, createForm.assets, transaction);
+      await db.CostAsset.bulkCreate(createForm.assets.map(t => ({
+        costId: cost.id,
+        assetId: t.id
+      })), {transaction})
     }
 
-    if (createForm.purposeId && createForm.purposeId.length > 0 && createForm.relativeId && createForm.relativeId.length > 0) {
-      await createCostPurpose(cost.id, createForm.purposeId, createForm.relativeId, transaction);
+    if (createForm.purposeId && createForm.relativeId) {
+      await db.CostPurpose.create({
+        costId: cost.id,
+        purposeId: createForm.purposeId,
+        relativeId: createForm.relativeId
+      }, {transaction})
     }
     if (createForm.tagging && createForm.tagging.length) {
       await updateItemTags({
@@ -146,14 +136,17 @@ export async function createCost(user, createForm) {
         transaction,
         newTags: createForm.tagging
       });
-      addTaggingQueue(createForm.tagging.map(t => t.id));
     }
+    await transaction.commit();
     auditAction({
       actionId: PERMISSION.COST.CREATE,
       user, partnerPersonId: createForm.partnerPersonId, partnerCompanyId: createForm.partnerCompanyId,
       relativeId: String(cost.id)
     }).then();
-    await transaction.commit();
+    if (createForm.tagging && createForm.tagging.length) {
+      addTaggingQueue([...new Set(createForm.tagging.map(t => t.id))]);
+    }
+
     return cost;
   } catch (error) {
     await transaction.rollback();
@@ -176,7 +169,6 @@ export async function getCost(cId, user) {
       {
         model: db.Asset,
         as: 'assets',
-        attributes: ['id', 'name', 'type', 'ext', 'size', 'fileId', 'source'],
         through: {attributes: []}
       },
       {model: db.CostPurpose, as: 'costPurpose', attributes: ['purposeId', 'relativeId']},
@@ -235,20 +227,41 @@ export async function updateCost(cId, user, updateForm) {
       paymentMethodId: updateForm.paymentMethod?.id,
       partnerCompanyId: updateForm.partnerCompanyId,
       partnerPersonId: updateForm.partnerPersonId,
-      processedDate: updateForm.processedDate,
       amount: updateForm.amount,
       lastModifiedDate: new Date(),
       lastModifiedById: user.id
     }, transaction);
 
-    if (updateForm.purposeId && updateForm.purposeId.length > 0 && updateForm.relativeId && updateForm.relativeId.length > 0) {
-      await updateCostPurpose(existedCost.id, updateForm.purposeId, updateForm.relativeId, transaction);
+    if (updateForm.purposeId && updateForm.relativeId) {
+      return db.CostPurpose.update({
+        purposeId: updateForm.purposeId,
+        relativeId: updateForm.relativeId
+      }, {
+        where: {
+          costId: existedCost.id
+        }
+      }, {transaction});
     }
 
-    const listMerge = await mergeAssets(existedCost.assets, updateForm.assets, user.companyId);
-    if ((listMerge && listMerge.length) || (existedCost.assets && existedCost.assets.length)) {
-      await updateCostAssets(existedCost.assets, listMerge, cId, transaction);
+    if (existedCost.assets && existedCost.assets.length) {
+      await db.CostAsset.destroy({
+        where: {
+          costId: existedCost.id
+        }
+      }, {transaction});
     }
+    if (updateForm.assets && updateForm.assets.length) {
+      await CostAsset.bulkCreate(
+        updateForm.assets.map((t) => {
+          return {
+            assetId: t.id,
+            costId: existedCost.id
+          };
+        }),
+        {transaction}
+      );
+    }
+
     let listUpdateTags = []
     if ((updateForm.tagging && updateForm.tagging.length) || (existedCost.taggingItems && existedCost.taggingItems.length)) {
       await updateItemTags({
@@ -258,17 +271,17 @@ export async function updateCost(cId, user, updateForm) {
         newTags: updateForm.tagging
       });
 
-      listUpdateTags = [... new Set([...((updateForm.tagging || []).map(t => t.id)),
+      listUpdateTags = [...new Set([...((updateForm.tagging || []).map(t => t.id)),
         ...((existedCost.taggingItems || []).map(t => t.taggingId))])]
     }
 
+    await transaction.commit();
     auditAction({
       actionId: PERMISSION.COST.UPDATE,
       user, partnerPersonId: updateForm.partnerPersonId, partnerCompanyId: updateForm.partnerCompanyId,
       relativeId: String(cId)
     }).then();
-    await transaction.commit();
-    if(listUpdateTags.length){
+    if (listUpdateTags.length) {
       addTaggingQueue(listUpdateTags);
     }
     return existedCost;

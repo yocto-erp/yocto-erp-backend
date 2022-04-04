@@ -12,10 +12,9 @@ const inventory = express.Router();
 inventory.get('/', [hasPermission([PERMISSION.INVENTORY.GOODS_RECEIPT.READ, PERMISSION.INVENTORY.GOODS_ISSUE.READ]),
     pagingParse({column: 'id', dir: 'asc'})],
   (req, res, next) => {
-    return inventories(req.query, req.paging.order, req.paging.offset, req.paging.size, req.user)
+    return inventories(req.user, req.query, req.paging)
       .then(result => res.status(200).json(result)).catch(next);
   });
-
 
 export function initWebInventoryController(app) {
   app.use('/api/inventory', inventory);

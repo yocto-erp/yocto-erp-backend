@@ -1,6 +1,9 @@
 import db from '../../db/models';
 import {badRequest, FIELD_ERROR} from '../../config/error';
 import {hasText} from "../../util/string.util";
+import {MAIN_CONTACT_TYPE} from "../../db/models/student/student";
+import {SUBJECT_CATEGORY} from "../../db/models/partner/subject";
+import {getOrCreatePersonalSubject} from "../subject/subject.service";
 
 const {Op} = db.Sequelize;
 
@@ -70,12 +73,10 @@ export function students(query, order, offset, limit, user) {
         model: db.Person, as: 'child'
       },
       {
-        model: db.Person, as: 'father',
-        attributes: ['id', 'firstName', 'lastName', 'name']
+        model: db.Person, as: 'father'
       },
       {
-        model: db.Person, as: 'mother',
-        attributes: ['id', 'firstName', 'lastName', 'name']
+        model: db.Person, as: 'mother'
       }
     ],
     offset,
@@ -94,6 +95,9 @@ export async function getStudent(sId, user) {
         model: db.Person, as: 'child'
       },
       {
+        model: db.User, as: 'createdBy'
+      },
+      {
         model: db.StudentBusStop, as: 'toSchoolBusStop'
       },
       {
@@ -103,12 +107,10 @@ export async function getStudent(sId, user) {
         model: db.StudentClass, as: 'class'
       },
       {
-        model: db.Person, as: 'father',
-        attributes: ['id', 'firstName', 'lastName']
+        model: db.Person, as: 'father'
       },
       {
-        model: db.Person, as: 'mother',
-        attributes: ['id', 'firstName', 'lastName']
+        model: db.Person, as: 'mother'
       }
     ]
   });
@@ -141,12 +143,20 @@ export async function createStudent(user, createForm) {
       {
         firstName: firstName,
         lastName: lastName,
+        fullName: createForm.fullName,
         birthday: createForm.birthday,
         sex: createForm.sex ? createForm.sex : null,
         createdById: user.id,
         createdDate: new Date()
       }, {transaction}
     );
+
+    let mainContactSubject;
+    if (Number(createForm.mainContact) === MAIN_CONTACT_TYPE.MOTHER) {
+      mainContactSubject = await getOrCreatePersonalSubject(user, createForm.mother.id, SUBJECT_CATEGORY.PARENT)
+    } else {
+      mainContactSubject = await getOrCreatePersonalSubject(user, createForm.father.id, SUBJECT_CATEGORY.PARENT)
+    }
 
     const student = await db.Student.create(
       {
@@ -166,6 +176,8 @@ export async function createStudent(user, createForm) {
         toHomeBusRoute: createForm.toHomeBusRoute,
         enableMeal: createForm.enableMeal ? createForm.enableMeal : false,
         classId: createForm.class?.id,
+        mainContact: createForm.mainContact,
+        subjectId: mainContactSubject.id,
         createdById: user.id,
         createdDate: new Date()
       }, {transaction}
@@ -198,7 +210,6 @@ export async function updateStudent(sId, updateForm, user) {
     throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
   }
 
-
   const transaction = await db.sequelize.transaction();
   try {
     const splitFullName = updateForm.fullName.trim().split(' ');
@@ -212,9 +223,17 @@ export async function updateStudent(sId, updateForm, user) {
     await person.update({
       firstName: firstName,
       lastName: lastName,
+      fullName: updateForm.fullName,
       birthday: updateForm.birthday,
       sex: updateForm.sex ? updateForm.sex : null
     }, transaction);
+
+    let mainContactSubject;
+    if (Number(updateForm.mainContact) === MAIN_CONTACT_TYPE.MOTHER) {
+      mainContactSubject = await getOrCreatePersonalSubject(user, updateForm.mother.id, SUBJECT_CATEGORY.PARENT)
+    } else {
+      mainContactSubject = await getOrCreatePersonalSubject(user, updateForm.father.id, SUBJECT_CATEGORY.PARENT)
+    }
 
     const studentUpdate = await db.Student.update({
       personId: person.id,
@@ -233,6 +252,8 @@ export async function updateStudent(sId, updateForm, user) {
       toHomeBusRoute: updateForm.toHomeBusRoute,
       enableMeal: updateForm.enableMeal ? updateForm.enableMeal : false,
       classId: updateForm.class?.id,
+      mainContact: updateForm.mainContact,
+      subjectId: mainContactSubject.id,
       lastModifiedById: user.id,
       lastModifiedDate: new Date()
     }, {where: {id: sId}}, {transaction});

@@ -42,7 +42,7 @@ export function persons(query, order, offset, limit, user) {
         include: [
           {
             model: db.User, as: 'createdBy',
-            attributes: ['id', 'displayName']
+            attributes: ['id', 'displayName', 'email']
           }
         ]
       }
@@ -75,6 +75,7 @@ export async function createPerson(user, createForm) {
       {
         firstName: createForm.firstName,
         lastName: createForm.lastName,
+        fullName: `${createForm.firstName} ${createForm.lastName}`,
         gsm: createForm.gsm,
         email: createForm.email,
         address: createForm.address,
@@ -100,18 +101,12 @@ export async function createPerson(user, createForm) {
 }
 
 export async function updatePerson(pId, updateForm, user) {
-  const person = await db.Person.findOne({
-    where: {
-      id: pId
-    },
-    include: {model: db.PartnerPerson, as: 'partnerPerson', where: {companyId: user.companyId}, attributes: []}
-  });
-  if (!person) {
-    throw badRequest('person', FIELD_ERROR.INVALID, 'person not found');
-  }
+  const person = await getPerson(pId, user)
+
   const transaction = await db.sequelize.transaction();
   try {
     await person.update({
+      fullName: `${updateForm.firstName} ${updateForm.lastName}`,
       firstName: updateForm.firstName,
       lastName: updateForm.lastName,
       remark: updateForm.remark,
@@ -119,7 +114,7 @@ export async function updatePerson(pId, updateForm, user) {
       address: updateForm.address,
       email: updateForm.email,
       birthday: updateForm.birthday,
-      sex: +updateForm.sex
+      sex: updateForm.sex || null
     }, transaction);
 
     await transaction.commit();
@@ -131,15 +126,7 @@ export async function updatePerson(pId, updateForm, user) {
 }
 
 export async function removePerson(pId, user) {
-  const checkPerson = await db.Person.findOne({
-    where: {
-      id: pId
-    },
-    include: {model: db.PartnerPerson, as: 'partnerPerson', where: {companyId: user.companyId}, attributes: []}
-  });
-  if (!checkPerson) {
-    throw badRequest('person', FIELD_ERROR.INVALID, 'person not found');
-  }
+  const checkPerson = await getPerson(pId, user);
   const transaction = await db.sequelize.transaction();
   try {
     await db.PartnerPerson.destroy({

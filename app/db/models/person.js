@@ -34,6 +34,9 @@ export default class Person extends Sequelize.Model {
         remark: {type: DataTypes.TEXT},
         createdById: {type: DataTypes.INTEGER},
         createdDate: {type: DataTypes.DATE},
+        fullName: {
+          type: DataTypes.STRING(250)
+        },
         name: {
           type: DataTypes.VIRTUAL,
           get() {

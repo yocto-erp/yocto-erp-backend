@@ -6,7 +6,6 @@ import sharp from 'sharp';
 import db from '../../db/models';
 import ProductAsset from '../../db/models/product/product-asset';
 import {badRequest, FIELD_ERROR} from '../../config/error';
-import CostAsset from '../../db/models/cost/cost-asset';
 import {SYSTEM_CONFIG} from '../../config/system';
 import {ASSET_TYPE} from "../../db/models/asset";
 import {hasText} from "../../util/string.util";
@@ -263,26 +262,6 @@ export async function updateProductAssets(newAssets, productId, transaction) {
   }
 }
 
-export async function removeProductAssets(product, transaction) {
-  for (let j = 0; j < product.assets.length; j += 1) {
-    // eslint-disable-next-line no-await-in-loop
-    await deleteFile(product.assets[j].fileId);
-  }
-  const assetId = await product.assets.map(result => result.id);
-  await db.Asset.destroy({
-    where: {id: {[Op.in]: assetId}}
-  }, {transaction});
-
-  return db.ProductAsset.destroy({
-    where: {
-      productId: product.id,
-      assetId: {
-        [Op.in]: assetId
-      }
-    }
-  }, {transaction});
-}
-
 export async function getAssetByUUID(uuid) {
   const asset = await db.Asset.findOne({
     attributes: ['fileId'],
@@ -295,69 +274,6 @@ export async function getAssetByUUID(uuid) {
   }
 
   return asset;
-}
-
-export async function createCostAsset(
-  costId,
-  companyId,
-  assetsForm,
-  transaction
-) {
-  const assets = [];
-  for (let i = 0; i < assetsForm.length; i += 1) {
-    // eslint-disable-next-line no-await-in-loop
-    const fileId = await storeFileFromBase64(assetsForm[i].data);
-    assets.push({
-      name: assetsForm[i].name,
-      mimeType: assetsForm[i].type,
-      type: ASSET_TYPE.FILE,
-      size: assetsForm[i].size,
-      fileId: fileId,
-      companyId: companyId,
-      createdDate: new Date()
-    });
-  }
-  const assetModels = await db.Asset.bulkCreate(assets, {transaction});
-  return CostAsset.bulkCreate(
-    assetModels.map((t) => {
-      return {
-        assetId: t.id,
-        costId: costId
-      };
-    }),
-    {transaction}
-  );
-}
-
-export async function updateCostAssets(arrayDelete, arrayCreate, costId, transaction) {
-  if (arrayCreate && arrayCreate.length) {
-    const assetModels = await db.Asset.bulkCreate(arrayCreate, {transaction});
-    await CostAsset.bulkCreate(
-      assetModels.map((t) => {
-        return {
-          assetId: t.id,
-          costId: costId
-        };
-      }),
-      {transaction}
-    );
-  }
-
-  if (arrayDelete && arrayDelete.length) {
-    const assetId = await arrayDelete.map(result => result.id);
-    await db.Asset.destroy({
-      where: {id: {[Op.in]: assetId}}
-    }, {transaction});
-
-    await db.CostAsset.destroy({
-      where: {
-        costId: costId,
-        assetId: {
-          [Op.in]: assetId
-        }
-      }
-    }, {transaction});
-  }
 }
 
 export async function removeCostAssets(cost, transaction) {

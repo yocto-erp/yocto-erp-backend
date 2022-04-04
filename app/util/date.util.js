@@ -3,6 +3,10 @@ import moment from 'moment-timezone';
 
 export const DEFAULT_TIMEZONE = 'Asia/Hong_Kong';
 export const MYSQL_HOURLY_FORMAT = '%Y-%m-%dT%H:00:00.000Z'
+export const MIN_DATE = new Date(1900, 0, 1, 0, 0, 0, 0)
+export const DATE_TIME_FORMAT_WITH_TIMEZONE = 'DD-MM-YYYY hh:mm:ss ZZ'
+export const DATE_TIME_FORMAT = 'DD-MM-YYYY hh:mm:ss'
+export const DATE_FORMAT = 'YYYY-MM-DD'
 
 export function getIsoWeek() {
   const _moment = moment();
@@ -66,4 +70,35 @@ export const endDateStr = (dateStr) => {
   rs.setMinutes(59)
   rs.setMilliseconds(999)
   return rs;
+}
+
+export function beginningOfDate(dateStr) {
+  if (!dateStr || !dateStr.length) {
+    return null;
+  }
+  const date = new Date(dateStr);
+  date.setHours(0)
+  date.setMinutes(0)
+  date.setSeconds(0)
+  date.setMilliseconds(0)
+  return date;
+}
+
+export function endOfDate(dateStr) {
+  if (!dateStr || !dateStr.length) {
+    return null;
+  }
+  const date = new Date(dateStr);
+  date.setHours(23)
+  date.setMinutes(59)
+  date.setSeconds(50)
+  date.setMilliseconds(999)
+  return date;
+}
+
+export function formatDateTZ(date, timezone = 'UTC', format = DATE_FORMAT) {
+  if (!date) {
+    return ''
+  }
+  return moment(date).tz(timezone).format(format)
 }

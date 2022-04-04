@@ -63,7 +63,7 @@ export function orders(type, search, order, offset, limit, user) {
         attributes: ['id', 'displayName', 'email']
       },
       { model: db.Company, as: 'partnerCompany', attributes: ['id', 'name'] },
-      { model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name'] },
+      { model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'fullName'] },
       {
         model: db.TaggingItem, as: 'taggingItems',
         required: false,

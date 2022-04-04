@@ -1,22 +1,21 @@
 import express from 'express';
-import { pagingParse } from '../../middleware/paging.middleware';
+import {pagingParse} from '../../middleware/paging.middleware';
 import {
   createProduct,
   getAssets,
   getProduct, listProduct,
-  products,
   removeProduct,
   updateProduct
 } from '../../../service/product/product.service';
-import { hasPermission } from '../../middleware/permission';
-import { PERMISSION } from '../../../db/models/acl/acl-action';
-import { updateUnit } from '../../../service/product/product-unit.service';
-import { productUnitValidator, productValidator } from '../../middleware/validators/product.validator';
+import {hasPermission} from '../../middleware/permission';
+import {PERMISSION} from '../../../db/models/acl/acl-action';
+import {updateUnit} from '../../../service/product/product-unit.service';
+import {productUnitValidator, productValidator} from '../../middleware/validators/product.validator';
 
 const product = express.Router();
 
-product.get('/', hasPermission(PERMISSION.PRODUCT.READ),
-  pagingParse({ column: 'id', dir: 'asc' }),
+product.get('/', [hasPermission(PERMISSION.PRODUCT.READ),
+    pagingParse({column: 'id', dir: 'asc'})],
   (req, res, next) => {
     return listProduct(req.user, req.query, req.paging)
       .then(result => res.status(200).json(result)).catch(next);
@@ -42,7 +41,7 @@ product.post('/:id(\\d+)', hasPermission(PERMISSION.PRODUCT.UPDATE), (req, res, 
 
 product.post('/:id(\\d+)/units',
   [productUnitValidator, hasPermission(PERMISSION.PRODUCT.UPDATE)], (req, res, next) => {
-    return updateUnit(req.params.id, req.body)
+    return updateUnit(req.user, req.params.id, req.body)
       .then(result => res.status(200).json(result))
       .catch(next);
   });
@@ -55,7 +54,7 @@ product.get('/:id(\\d+)/assets',
   });
 
 product.delete('/:id(\\d+)', hasPermission(PERMISSION.PRODUCT.DELETE), (req, res, next) => {
-  return removeProduct(req.params.id)
+  return removeProduct(req.user, req.params.id)
     .then(result => res.status(200).json(result))
     .catch(next);
 });

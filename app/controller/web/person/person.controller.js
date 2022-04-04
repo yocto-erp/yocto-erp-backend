@@ -20,7 +20,7 @@ person.get('/:id(\\d+)', hasPermission(PERMISSION.CUSTOMER.READ), (req, res, nex
     .catch(next);
 });
 
-person.post('/', [hasPermission(PERMISSION.CUSTOMER.CREATE)],
+person.post('/', [hasPermission(PERMISSION.CUSTOMER.CREATE), personValidator],
   (req, res, next) => {
     return createPerson(req.user, req.body)
       .then(result => res.status(200).json(result))
