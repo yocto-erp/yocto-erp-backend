@@ -64,7 +64,8 @@ const PORT = process.env.PORT || appConf.port;
 server.listen(PORT, appConf.hostname, async () => {
   await loadConfigure().then(systemConfigure => {
     appLog.info(`System Configure Load: ${JSON.stringify(systemConfigure)}`)
-    app.use('/public', express.static(SYSTEM_CONFIG.PUBLIC_FOLDER));
+    app.use('/upload', express.static(SYSTEM_CONFIG.PUBLIC_FOLDER));
+    app.use('/thumbnail', express.static(`${SYSTEM_CONFIG.PUBLIC_FOLDER}/thumbnail`));
   });
   initCronTasks();
   // initIPFS().then();
