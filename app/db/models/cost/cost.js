@@ -1,4 +1,5 @@
-import Sequelize from 'sequelize';
+import Sequelize, {Op} from 'sequelize';
+import {TAGGING_TYPE} from "../tagging/tagging-item-type";
 
 const {DataTypes} = Sequelize;
 
@@ -21,8 +22,7 @@ export default class Cost extends Sequelize.Model {
         processedDate: {type: DataTypes.DATE},
         lastModifiedDate: {type: DataTypes.DATE},
         lastModifiedById: {type: DataTypes.BIGINT},
-        partnerCompanyId: {type: DataTypes.BIGINT},
-        partnerPersonId: {type: DataTypes.BIGINT},
+        subjectId: {type: DataTypes.BIGINT},
         remark: {type: DataTypes.TEXT},
         paymentMethodId: {type: DataTypes.BIGINT}
       },
@@ -30,19 +30,31 @@ export default class Cost extends Sequelize.Model {
         tableName: 'cost',
         modelName: 'cost',
         timestamps: false,
-        sequelize, ...opts
+        sequelize,
+        ...opts
       })
   }
 
   static associate(models) {
     this.belongsTo(models.User, {foreignKey: 'createdById', as: 'createdBy'});
-    this.belongsTo(models.Company, {foreignKey: 'partnerCompanyId', as: 'partnerCompany'});
-    this.belongsTo(models.Person, {foreignKey: 'partnerPersonId', as: 'partnerPerson'});
+    this.belongsTo(models.Subject, {foreignKey: 'subjectId', as: 'subject'});
     this.belongsToMany(models.Asset, {
       through: models.CostAsset,
       foreignKey: 'costId',
       otherKey: 'assetId',
       as: 'assets'
+    });
+    this.belongsToMany(models.Tagging, {
+      through: {
+        model: models.TaggingItem,
+        scope: {
+          itemType: {
+            [Op.in]: [TAGGING_TYPE.RECEIPT_VOUCHER, TAGGING_TYPE.PAYMENT_VOUCHER]
+          }
+        }
+      },
+      foreignKey: 'itemId',
+      as: 'tagging'
     });
     this.hasMany(models.TaggingItem, {
       foreignKey: 'itemId',
@@ -53,5 +65,19 @@ export default class Cost extends Sequelize.Model {
       as: 'costPurpose'
     });
     this.belongsTo(models.PaymentMethodSetting, {foreignKey: 'paymentMethodId', as: 'paymentMethod'});
+  }
+
+  static defineScope(models) {
+    this.addScope(
+      'search', {
+        include: [
+          {
+            model: models.User, as: 'createdBy',
+            attributes: ['id', 'displayName', 'email']
+          },
+          {model: models.Subject.scope('all'), as: 'subject'},
+          {model: models.PaymentMethodSetting, as: 'paymentMethod'}
+        ]
+      })
   }
 }
