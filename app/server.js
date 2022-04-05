@@ -7,7 +7,7 @@ import {appLog, httpStream} from './config/winston';
 import appConf from './config/application';
 
 import {FormError, HttpError, isSystemError} from './config/error';
-import { loadConfigure, SYSTEM_CONFIG } from './config/system';
+import {loadConfigure, SYSTEM_CONFIG} from './config/system';
 import {initWebController} from './controller/web';
 import {initMobileController} from "./controller/mobile";
 
@@ -40,6 +40,9 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+/**
+ * Not remove next
+ */
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   if (err instanceof FormError) {

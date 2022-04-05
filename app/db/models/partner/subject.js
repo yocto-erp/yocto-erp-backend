@@ -40,7 +40,8 @@ export default class Subject extends Sequelize.Model {
         tableName: 'subject',
         modelName: 'subject',
         timestamps: false,
-        sequelize, ...opts
+        sequelize,
+        ...opts
       })
   }
 
@@ -71,6 +72,23 @@ export default class Subject extends Sequelize.Model {
       },
       foreignKey: 'itemId',
       as: 'tagging'
+    });
+  }
+
+  static defineScope(models) {
+    this.addScope("all", {
+      include: [
+        {
+          model: models.Person, as: 'person'
+        },
+        {model: models.Company, as: 'company'},
+        {
+          model: models.Person, as: 'contactPerson'
+        },
+        {
+          model: models.Asset, as: 'image'
+        }
+      ]
     });
   }
 }

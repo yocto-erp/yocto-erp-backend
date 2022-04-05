@@ -63,6 +63,7 @@ import {initSaleModel} from "./sale";
 import {initTaxModel} from "./tax";
 import {initOrderModel} from "./order";
 import {initPartnerModel} from "./partner";
+import {initScope} from "./scope";
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -194,6 +195,8 @@ const models = {
 Object.values(models)
   .filter(model => typeof model.associate === 'function')
   .forEach(model => model.associate(models));
+
+initScope(models)
 
 models.sequelize = sequelize;
 models.Sequelize = Sequelize;
