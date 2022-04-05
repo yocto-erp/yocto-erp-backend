@@ -1,103 +1,71 @@
 import db from '../../db/models';
+import {badRequest, FIELD_ERROR} from '../../config/error';
+import {TAGGING_TYPE} from '../../db/models/tagging/tagging-item-type';
+import {updateItemTags} from '../tagging/tagging.service';
+import {ORDER_TYPE} from '../../db/models/order/order';
+import {hasText} from '../../util/string.util';
+import {buildDateRangeQuery} from "../../util/db.util";
+import {auditAction} from "../audit/audit.service";
+import {PERMISSION} from "../../db/models/acl/acl-action";
+import {addTaggingQueue} from "../../queue/tagging.queue";
 
-import { createOrderDetail, removeOrderDetail } from './order-detail.service';
-import { badRequest, FIELD_ERROR } from '../../config/error';
-import User from '../../db/models/user/user';
-import { TAGGING_TYPE } from '../../db/models/tagging/tagging-item-type';
-import { updateItemTags } from '../tagging/tagging.service';
-import { ORDER_TYPE } from '../../db/models/order/order';
-import { hasText } from '../../util/string.util';
-import { beginningDateStr, endDateStr } from '../../util/date.util';
-
-const { Op } = db.Sequelize;
+const {Op} = db.Sequelize;
 
 export function sumTotalProduct(orderDetailsForm) {
   return orderDetailsForm.reduce((valOld, valNew) => valOld + (valNew.quantity * valNew.price), 0);
 }
 
-const mapping = (item) => ({
-  ...item,
-  tagging: item.taggingItems.map(t => t.tagging)
-});
-
-
 export function orders(type, search, order, offset, limit, user) {
-  const where = { type };
-  console.log(search);
+  const where = {type};
   if (search) {
-    if (search.search && search.search.length) {
+    if (hasText(search.search)) {
       where.name = {
         [Op.like]: `%${search.search}%`
       };
     }
-    if (search.company && search.company.id) {
-      where.partnerCompanyId = search.company.id;
+    if (search.subject) {
+      where.subjectId = search.subject.id;
     }
-    if (search.customer && search.customer.id) {
-      where.partnerPersonId = search.customer.id;
-    }
+
     if (hasText(search.startDate) && hasText(search.endDate)) {
-      where.processedDate = {
-        [Op.lte]: endDateStr(search.endDate),
-        [Op.gte]: beginningDateStr(search.startDate)
-      };
-    } else if (hasText(search.endDate)) {
-      where.processedDate = {
-        [Op.lte]: endDateStr(search.endDate)
-      };
-    } else if (hasText(search.startDate)) {
-      where.processedDate = {
-        [Op.gte]: beginningDateStr(search.startDate)
-      };
+      const rangeDate = buildDateRangeQuery(search.startDate, search.endDate);
+      if (rangeDate != null) {
+        where.createdDate = rangeDate;
+      }
     }
   }
   where.companyId = user.companyId;
-  return db.Order.findAndCountAll({
+  return db.Order.scope("search").findAndCountAll({
     order,
     include: [
       {
-        model: User, as: 'createdBy',
-        attributes: ['id', 'displayName', 'email']
-      }, {
-        model: User, as: 'lastModifiedBy',
-        attributes: ['id', 'displayName', 'email']
-      },
-      { model: db.Company, as: 'partnerCompany', attributes: ['id', 'name'] },
-      { model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'fullName'] },
-      {
-        model: db.TaggingItem, as: 'taggingItems',
-        required: false,
-        where: {
-          itemType: {
-            [Op.in]: [TAGGING_TYPE.SALE_ORDER, TAGGING_TYPE.PURCHASE_ORDER]
-          }
-        },
-        include: [
-          { model: db.Tagging, as: 'tagging' }
-        ]
+        model: db.Tagging, as: 'tagging',
+        required: false
       }
     ],
     where,
     offset,
-    limit
-  }).then(resp => ({ ...resp, rows: resp.rows.map(item => mapping(item.get({ plain: true }))) }));
+    limit,
+    group: ['id']
+  }).then((resp) => {
+    return ({
+      count: resp.count.length,
+      rows: resp.rows
+    });
+  });
 }
 
 export async function getOrder(oId, user) {
-  const order = await db.Order.findOne({
+  const order = await db.Order.scope("search").findOne({
     where: {
-      [Op.and]: [
-        { id: oId },
-        { companyId: user.companyId }
-      ]
+      id: oId,
+      companyId: user.companyId
     },
     include: [
-      { model: db.Person, as: 'partnerPerson', attributes: ['id', 'firstName', 'lastName', 'name', 'email'] },
-      { model: db.Company, as: 'partnerCompany', attributes: ['id', 'name', 'address', 'gsm'] },
       {
         model: db.OrderDetail, as: 'details',
         include: [
-          { model: db.Product, as: 'product', attributes: ['id', 'name', 'remark'] },
+          {model: db.Product, as: 'product', attributes: ['id', 'name', 'remark']},
           {
             model: db.ProductUnit, as: 'unit',
             where: {
@@ -108,24 +76,13 @@ export async function getOrder(oId, user) {
           }
         ]
       },
-      {
-        model: db.TaggingItem, as: 'taggingItems',
-        required: false,
-        where: {
-          itemType: {
-            [Op.in]: [TAGGING_TYPE.SALE_ORDER, TAGGING_TYPE.PURCHASE_ORDER]
-          }
-        },
-        include: [
-          { model: db.Tagging, as: 'tagging' }
-        ]
-      }
+      {model: db.Tagging, as: 'tagging', required: false}
     ]
   });
   if (!order) {
     throw badRequest('order', FIELD_ERROR.INVALID, 'order not found');
   }
-  return mapping(order.get({ plain: true }));
+  return order;
 }
 
 export async function createOrder(user, type, createForm) {
@@ -135,33 +92,27 @@ export async function createOrder(user, type, createForm) {
     const order = await db.Order.create({
       name: createForm.name,
       remark: createForm.remark,
-      partnerCompanyId: createForm.partnerCompanyId,
-      partnerPersonId: createForm.partnerPersonId,
+      subjectId: createForm.subject?.id,
       createdById: user.id,
       companyId: user.companyId,
       processedDate: new Date(),
       type: type,
       totalAmount: totalAmount,
       createdDate: new Date()
-    }, { transaction });
+    }, {transaction});
 
-    if (createForm.details && createForm.details.length) {
-      await createOrderDetail(order.id, createForm.details, transaction);
-    }
+    await db.OrderDetail.bulkCreate(createForm.details.map((result, index) => {
+      return {
+        orderDetailId: index + 1,
+        orderId: order.id,
+        productId: result.product.id,
+        productUnitId: result.unit.id,
+        quantity: result.quantity,
+        remark: result.remark,
+        price: result.price
+      }
+    }), {transaction})
 
-    if (createForm.partnerCompanyId && createForm.partnerPersonId) {
-      await db.PartnerCompanyPerson.findOrCreate({
-        where: {
-          partnerCompanyId: createForm.partnerCompanyId,
-          personId: createForm.partnerPersonId
-        },
-        defaults: {
-          partnerCompanyId: createForm.partnerCompanyId,
-          personId: createForm.partnerPersonId
-        },
-        transaction
-      });
-    }
     if (createForm.tagging && createForm.tagging.length) {
       await updateItemTags({
         id: order.id,
@@ -171,6 +122,15 @@ export async function createOrder(user, type, createForm) {
       });
     }
     await transaction.commit();
+
+    auditAction({
+      actionId: PERMISSION.ORDER.PURCHASE.CREATE,
+      user, partnerPersonId: createForm.partnerPersonId, partnerCompanyId: createForm.partnerCompanyId,
+      relativeId: String(order.id), subject: createForm.subject
+    }).then();
+    if (createForm.tagging && createForm.tagging.length) {
+      addTaggingQueue([...new Set(createForm.tagging.map(t => t.id))]);
+    }
     return order;
   } catch (error) {
     await transaction.rollback();
@@ -179,61 +139,66 @@ export async function createOrder(user, type, createForm) {
 }
 
 export async function updateOrder(oId, user, type, updateForm) {
-  const existedOrder = await db.Order.findOne({
-    where: {
-      [Op.and]: [
-        { id: oId },
-        { companyId: user.companyId }
-      ]
-    }
-  });
-  if (!existedOrder) {
-    throw badRequest('order', FIELD_ERROR.INVALID, 'order not found');
-  }
+  const existedOrder = await getOrder(oId, user);
+
   const transaction = await db.sequelize.transaction();
   try {
-
     const totalAmount = await sumTotalProduct(updateForm.details);
 
     await existedOrder.update({
       name: updateForm.name,
       remark: updateForm.remark,
-      partnerCompanyId: updateForm.partnerCompanyId,
-      partnerPersonId: updateForm.partnerPersonId,
+      subjectId: updateForm.subject?.id,
       companyId: user.companyId,
-      processedDate: new Date(),
       type: type,
       totalAmount: totalAmount,
       lastModifiedDate: new Date(),
       lastModifiedById: user.id
     }, transaction);
 
-    if (updateForm.partnerCompanyId && updateForm.partnerPersonId) {
-      await db.PartnerCompanyPerson.findOrCreate({
-        where: {
-          partnerCompanyId: updateForm.partnerCompanyId,
-          personId: updateForm.partnerPersonId
-        },
-        defaults: {
-          partnerCompanyId: updateForm.partnerCompanyId,
-          personId: updateForm.partnerPersonId
-        },
-        transaction
-      });
-    }
     if (updateForm.details && updateForm.details.length) {
-      await removeOrderDetail(existedOrder.id, transaction);
-      await createOrderDetail(existedOrder.id, updateForm.details, transaction);
+      await db.OrderDetail.destroy(
+        {
+          where: {
+            orderId: existedOrder.id
+          }
+        }, {transaction}
+      );
+      await db.OrderDetail.bulkCreate(updateForm.details.map((result, index) => {
+        return {
+          orderDetailId: index + 1,
+          orderId: existedOrder.id,
+          productId: result.product.id,
+          productUnitId: result.unit.id,
+          quantity: result.quantity,
+          remark: result.remark,
+          price: result.price
+        }
+      }), {transaction})
     }
-    if (updateForm.tagging && updateForm.tagging.length) {
+    let listUpdateTags = []
+    if ((updateForm.tagging && updateForm.tagging.length) || (existedOrder.tagging && existedOrder.tagging.length)) {
       await updateItemTags({
-        id: oId,
+        id: existedOrder.id,
         type: type === ORDER_TYPE.PURCHASE ? TAGGING_TYPE.PURCHASE_ORDER : TAGGING_TYPE.SALE_ORDER,
         transaction,
         newTags: updateForm.tagging
       });
+
+      listUpdateTags = [...new Set([...((updateForm.tagging || []).map(t => t.id)),
+        ...((existedOrder.tagging || []).map(t => t.id))])]
     }
     await transaction.commit();
+
+    auditAction({
+      actionId: PERMISSION.ORDER.PURCHASE.UPDATE,
+      user, subject: updateForm.subject,
+      relativeId: String(oId)
+    }).then();
+    if (listUpdateTags.length) {
+      addTaggingQueue(listUpdateTags);
+    }
+
     return existedOrder;
   } catch (error) {
     await transaction.rollback();
@@ -243,27 +208,15 @@ export async function updateOrder(oId, user, type, updateForm) {
 }
 
 export async function removeOrder(oId, user) {
-  const checkOrder = await db.Order.findOne({
-    where: {
-      [Op.and]: [
-        { id: oId },
-        { companyId: user.companyId }
-      ]
-    }
-  });
-  if (!checkOrder) {
-    throw badRequest('order', FIELD_ERROR.INVALID, 'order not found');
-  }
-  const transaction = await db.sequelize.transaction();
+  const checkOrder = await getOrder(oId, user)
   try {
-    await removeOrderDetail(checkOrder.id, transaction);
-    const order = db.Order.destroy({
-      where: { id: checkOrder.id }
-    }, { transaction });
-    await transaction.commit();
-    return order;
+    await checkOrder.destroy()
+
+    if (checkOrder.tagging && checkOrder.tagging.length) {
+      addTaggingQueue([...new Set(checkOrder.tagging.map(t => t.id))]);
+    }
+    return checkOrder;
   } catch (error) {
-    await transaction.rollback();
     throw error;
   }
 }

@@ -200,7 +200,7 @@ export async function updateCost(cId, user, updateForm) {
     }
 
     let listUpdateTags = []
-    if ((updateForm.tagging && updateForm.tagging.length) || (existedCost.taggingItems && existedCost.taggingItems.length)) {
+    if ((updateForm.tagging && updateForm.tagging.length) || (existedCost.tagging && existedCost.tagging.length)) {
       await updateItemTags({
         id: cId,
         type: type === COST_TYPE.RECEIPT ? TAGGING_TYPE.RECEIPT_VOUCHER : TAGGING_TYPE.PAYMENT_VOUCHER,

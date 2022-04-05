@@ -13,6 +13,7 @@ export default class Audit extends Sequelize.Model {
         createdDate: {type: DataTypes.DATE},
         remark: {type: DataTypes.TEXT},
         partnerPersonId: {type: DataTypes.BIGINT},
+        subjectId: {type: DataTypes.BIGINT},
         partnerCompanyId: {type: DataTypes.BIGINT},
         relativeId: {type: DataTypes.STRING(128)}
       },
@@ -32,6 +33,10 @@ export default class Audit extends Sequelize.Model {
     this.belongsTo(models.Company, {
       foreignKey: 'partnerCompanyId',
       as: 'partnerCompany'
+    });
+    this.belongsTo(models.Subject, {
+      foreignKey: 'subjectId',
+      as: 'subject'
     });
     this.belongsTo(models.User, {foreignKey: 'userId', as: 'createdBy'});
   }
