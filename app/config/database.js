@@ -17,23 +17,23 @@ function dbLogging(str, time) {
 
 export default {
   development: {
-    dialect: 'mysql',
+    dialect: "mysql",
     pool: pool,
-    port: process.env.DB_PORT || '3306',
+    port: process.env.DB_PORT || "3306",
     benchmark: true,
     logging: dbLogging,
     dialectOptions
   },
   test: {
-    dialect: 'mysql',
+    dialect: "mysql",
     pool: pool,
-    port: process.env.DB_PORT || '3306',
+    port: process.env.DB_PORT || "3306",
     benchmark: true,
     logging: dbLogging,
     dialectOptions
   },
   production: {
-    dialect: 'mysql',
+    dialect: "mysql",
     pool: pool,
     benchmark: true,
     logging: dbLogging,
