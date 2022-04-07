@@ -222,3 +222,10 @@ export async function removeAssets(user, ids) {
   }
 }
 
+export const mappingAssetItem = (record) => {
+  const t = record.get({ plain: true });
+  return {
+    ...t,
+    assets: t.assetItems.map(pI => pI.asset)
+  };
+};

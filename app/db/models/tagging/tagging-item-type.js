@@ -1,6 +1,6 @@
-import Sequelize from 'sequelize';
+import Sequelize from "sequelize";
 
-const {DataTypes} = Sequelize;
+const { DataTypes } = Sequelize;
 
 export const TAGGING_TYPE = {
   PURCHASE_ORDER: 1,
@@ -13,6 +13,7 @@ export const TAGGING_TYPE = {
   COMPANY: 8,
   PRODUCT: 9,
   SUBJECT: 10, // Can be customer, provider, ....
+  ECOMMERCE_PRODUCT: 11,
   OTHER: 100
 };
 
@@ -20,14 +21,14 @@ export default class TaggingItemType extends Sequelize.Model {
   static init(sequelize, opts) {
     return super.init(
       {
-        id: {type: DataTypes.INTEGER, primaryKey: true},
-        name: {type: DataTypes.STRING(150)}
+        id: { type: DataTypes.INTEGER, primaryKey: true },
+        name: { type: DataTypes.STRING(150) }
       },
       {
-        tableName: 'tagging_item_type',
-        modelName: 'taggingItemType',
+        tableName: "tagging_item_type",
+        modelName: "taggingItemType",
         timestamps: false,
         sequelize, ...opts
-      })
+      });
   }
 }

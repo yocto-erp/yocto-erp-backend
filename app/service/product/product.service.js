@@ -224,22 +224,7 @@ export async function updateProduct(pId, user, updateForm) {
     }
   }
 
-  const existedProduct = await db.Product.findByPk(pId, {
-    include: [
-      { model: db.Asset, as: "assets" },
-      {
-        model: db.TaggingItem,
-        as: "taggingItems",
-        required: false,
-        where: {
-          itemType: {
-            [Op.in]: [TAGGING_TYPE.PRODUCT]
-          }
-        },
-        include: [{ model: db.Tagging, as: "tagging" }]
-      }
-    ]
-  });
+  const existedProduct = await getProduct(user, pId);
   if (!existedProduct) {
     throw badRequest("product", FIELD_ERROR.INVALID, "Product not found");
   }
@@ -310,13 +295,13 @@ export async function updateProduct(pId, user, updateForm) {
         newTags: updateForm.tagging
       });
       listUpdateTags = [...new Set([...((updateForm.tagging || []).map(t => t.id)),
-        ...((existedProduct.taggingItems || []).map(t => t.taggingId))])];
+        ...((existedProduct.tagging || []).map(t => t.id))])];
     }
 
     await transaction.commit();
 
     if (listUpdateTags.length) {
-      console.log("Update Inventory Tagging", listUpdateTags);
+      console.log("Update Product Tagging", listUpdateTags);
       addTaggingQueue(listUpdateTags);
     }
     auditAction({
@@ -333,14 +318,7 @@ export async function updateProduct(pId, user, updateForm) {
 }
 
 export async function removeProduct(user, productId) {
-  const checkProduct = await db.Product.findOne({
-    where: {
-      id: productId,
-      companyId: user.companyId
-    }
-  }, {
-    include: [{ model: db.Asset, as: "assets" }]
-  });
+  const checkProduct = await getProduct(user, productId);
   if (!checkProduct) {
     throw badRequest("product", FIELD_ERROR.INVALID, "product not found");
   }
@@ -362,6 +340,14 @@ export async function removeProduct(user, productId) {
     );
     await checkProduct.destroy({ transaction });
     await transaction.commit();
+    auditAction({
+      actionId: PERMISSION.PRODUCT.DELETE,
+      user,
+      relativeId: String(checkProduct.id)
+    }).then();
+    if (checkProduct.tagging && checkProduct.tagging.length) {
+      addTaggingQueue(checkProduct.tagging.map(t => t.id));
+    }
     return checkProduct;
   } catch (error) {
     await transaction.rollback();

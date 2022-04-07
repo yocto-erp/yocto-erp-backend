@@ -1,28 +1,39 @@
-import Sequelize from 'sequelize';
+import Sequelize from "sequelize";
 
-const {DataTypes} = Sequelize;
+const { DataTypes } = Sequelize;
 
-export default class CostPurpose extends Sequelize.Model{
+/**
+ * This COST_PURPOSE define never change it value, only add new
+ */
+export const COST_PURPOSE = {
+  ORDER: 1,
+  DEBT: 2,
+  SALE: 3,
+  STUDENT_FEE: 4,
+  POS: 4
+};
+
+export default class CostPurpose extends Sequelize.Model {
   static init(sequelize, opts) {
     return super.init(
       {
-        costId: {type: DataTypes.BIGINT, primaryKey: true},
-        purposeId: {type: DataTypes.INTEGER, primaryKey: true},
-        relativeId: {type: DataTypes.BIGINT}
+        costId: { type: DataTypes.BIGINT, primaryKey: true },
+        purposeId: { type: DataTypes.INTEGER },
+        relativeId: { type: DataTypes.BIGINT }
 
       },
       {
-        tableName: 'cost_purpose',
-        modelName: 'costPurpose',
+        tableName: "cost_purpose",
+        modelName: "costPurpose",
         timestamps: false,
         sequelize, ...opts
-      })
+      });
   }
 
-  static associate (models) {
-    this.belongsTo(models.Cost,{
-      foreignKey: 'costId',
-      as: 'costPurpose'
-    })
+  static associate(models) {
+    this.belongsTo(models.Cost, {
+      foreignKey: "costId",
+      as: "costPurpose"
+    });
   }
 }
