@@ -24,8 +24,11 @@ const client = new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN });
  */
 export const uploadToIPFSFiles = async (listFiles) => {
   const files = await filterFileExisted(listFiles);
-  const uploadIPFSFiles = await getFilesFromPath(files);
-  return client.put(uploadIPFSFiles);
+  if (files.length) {
+    const uploadIPFSFiles = await getFilesFromPath(files);
+    return client.put(uploadIPFSFiles);
+  }
+  return null;
 };
 
 export const getCIDIpfsStatus = (cid) => {

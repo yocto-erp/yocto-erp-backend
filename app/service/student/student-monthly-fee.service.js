@@ -1,54 +1,54 @@
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 import Mustache from "mustache";
-import db from '../../db/models';
-import {badRequest, FIELD_ERROR} from '../../config/error';
-import {hex2binary} from "../../util/string.util";
-import {formatDateTime, formatTemplateMoney, personToPrintData} from "../template/template.util";
-import {templateRenderPDF} from "../template/template-render.service";
-import {getEmailTemplate} from "../template/template-email.service";
-import {EMAIL_ATTACHMENT_TYPE} from "../../db/models/email/email-attachment";
-import {addEmailQueue} from "../email/company-email.service";
-import {COST_TYPE} from "../../db/models/cost/cost";
-import {updateItemTags} from "../tagging/tagging.service";
-import {TAGGING_TYPE} from "../../db/models/tagging/tagging-item-type";
-import {addTaggingQueue} from "../../queue/tagging.queue";
+import db from "../../db/models";
+import { badRequest, FIELD_ERROR } from "../../config/error";
+import { hex2binary } from "../../util/string.util";
+import { formatDateTime, formatTemplateMoney, personToPrintData } from "../template/template.util";
+import { templateRenderPDF } from "../template/template-render.service";
+import { getEmailTemplate } from "../template/template-email.service";
+import { EMAIL_ATTACHMENT_TYPE } from "../../db/models/email/email-attachment";
+import { addEmailQueue } from "../email/company-email.service";
+import { COST_TYPE } from "../../db/models/cost/cost";
+import { updateItemTags } from "../tagging/tagging.service";
+import { TAGGING_TYPE } from "../../db/models/tagging/tagging-item-type";
+import { addTaggingQueue } from "../../queue/tagging.queue";
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
 export async function listStudentMonthlyFee(query, order, offset, limit, user) {
   console.log(query);
-  const {search, month: monthStr, isPaid, class: studentClass} = query;
+  const { search, month: monthStr, isPaid, class: studentClass } = query;
   const where = {};
   let wherePerson = {};
   if (search && search.length) {
     wherePerson = {
       [Op.or]: [
         {
-          '$student.child.firstName$': {
+          "$student.child.firstName$": {
             [Op.like]: `%${search}%`
           }
         }, {
-          '$student.child.lastName$': {
+          "$student.child.lastName$": {
             [Op.like]: `%${search}%`
           }
         }, {
-          '$student.alias$': {
+          "$student.alias$": {
             [Op.like]: `%${search}%`
           }
         }
       ]
     };
   }
-  if (isPaid === '1') {
+  if (isPaid === "1") {
     where.paidDate = null;
-  } else if (isPaid === '2') {
+  } else if (isPaid === "2") {
     where.paidDate = {
       [Op.ne]: null
-    }
+    };
   }
 
-  if (studentClass && studentClass.length) {
-    wherePerson['$student.class$'] = studentClass;
+  if (studentClass) {
+    wherePerson["$student.classId$"] = studentClass.id;
   }
   if (monthStr && monthStr.year && monthStr.month) {
     where.monthFee = monthStr.month;
@@ -58,11 +58,11 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
   console.log(isPaid, where);
   const _order = order.map(t => {
     const [col, dir] = t;
-    if (col === 'lastName') {
-      return [{model: db.Student, as: 'student'}, {model: db.Person, as: 'child'}, col, dir]
+    if (col === "lastName") {
+      return [{ model: db.Student, as: "student" }, { model: db.Person, as: "child" }, col, dir];
     }
     return t;
-  })
+  });
   const resp = await db.StudentMonthlyFee.findAndCountAll({
     order: _order,
     where: {
@@ -70,12 +70,12 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
     },
     include: [
       {
-        model: db.Student, as: 'student',
+        model: db.Student, as: "student",
         required: true,
         include: [
-          {model: db.Person, as: 'child', required: true},
+          { model: db.Person, as: "child", required: true },
           {
-            model: db.StudentClass, as: 'class'
+            model: db.StudentClass, as: "class"
           }
         ]
       }
@@ -83,24 +83,24 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
     offset,
     limit
   });
-  const {rows, count} = resp;
+  const { rows, count } = resp;
   const response = rows.map(r => {
-    const uuid = Buffer.from(r.id, 'hex').toString('hex');
-    const rs = r.get({plain: true});
+    const uuid = Buffer.from(r.id, "hex").toString("hex");
+    const rs = r.get({ plain: true });
     rs.id = uuid;
     return rs;
   });
   return {
     count,
     rows: response
-  }
+  };
 }
 
 export async function getStudentMonthlyFee(sId, user) {
-  const splitIds = sId.split(',');
+  const splitIds = sId.split(",");
   const ids = [];
   for (let i = 0; i < splitIds.length; i += 1) {
-    ids.push(Buffer.from(splitIds[i], 'hex'));
+    ids.push(Buffer.from(splitIds[i], "hex"));
   }
   const students = await db.StudentMonthlyFee.findAll({
     where: {
@@ -109,22 +109,22 @@ export async function getStudentMonthlyFee(sId, user) {
     },
     include: [
       {
-        model: db.Student, as: 'student',
+        model: db.Student, as: "student",
         include: [
           {
-            model: db.Person, as: 'child',
-            attributes: ['id', 'firstName', 'lastName', 'name']
+            model: db.Person, as: "child",
+            attributes: ["id", "firstName", "lastName", "name"]
           },
           {
-            model: db.StudentClass, as: 'class'
+            model: db.StudentClass, as: "class"
           }
         ]
       }
     ]
   });
   return students.map(r => {
-    const uuid = Buffer.from(r.id, 'hex').toString('hex');
-    const rs = r.get({plain: true});
+    const uuid = Buffer.from(r.id, "hex").toString("hex");
+    const rs = r.get({ plain: true });
     rs.id = uuid;
     return rs;
   });
@@ -134,7 +134,7 @@ export async function createStudentMonthlyFee(user, createForm) {
   try {
     if (createForm && createForm.details) {
       for (let i = 0; i < createForm.details.length; i += 1) {
-        const {monthYear: {from, to, numberOfMonths}} = createForm.details[i];
+        const { monthYear: { from, to, numberOfMonths } } = createForm.details[i];
 
         const uuidS = hex2binary(uuidv4());
 
@@ -172,7 +172,7 @@ export async function createStudentMonthlyFee(user, createForm) {
     return true;
   } catch (e) {
     console.log(e);
-    throw badRequest('student', FIELD_ERROR.INVALID, 'student Exist');
+    throw badRequest("student", FIELD_ERROR.INVALID, "student Exist");
   }
 }
 
@@ -182,17 +182,17 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
     const transaction = await db.sequelize.transaction();
     try {
       for (let i = 0; i < updateForm.details.length; i += 1) {
-        const {monthYear: {from, to, numberOfMonths}} = updateForm.details[i];
+        const { monthYear: { from, to, numberOfMonths } } = updateForm.details[i];
 
         // eslint-disable-next-line no-await-in-loop
         const studentFee = await db.StudentMonthlyFee.findOne({
           where: {
-            id: Buffer.from(updateForm.details[i].id, 'hex'),
+            id: Buffer.from(updateForm.details[i].id, "hex"),
             companyId: user.companyId
           }, transaction
         });
         if (!studentFee) {
-          throw badRequest('studentFee', FIELD_ERROR.INVALID, `Student Fee not exist`);
+          throw badRequest("studentFee", FIELD_ERROR.INVALID, `Student Fee not exist`);
         }
         // eslint-disable-next-line no-await-in-loop
         await studentFee.update({
@@ -220,7 +220,7 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
           toYear: to?.year,
           numberOfMonths,
           lastUpdatedDate: new Date(), lastUpdatedById: user.id
-        }, {transaction});
+        }, { transaction });
       }
       await transaction.commit();
     } catch (error) {
@@ -233,7 +233,7 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
 
 export async function deleteListStudentMonthlyFee(sId, user) {
   const listId = sId.map(t => hex2binary(t));
-  console.log(listId)
+  console.log(listId);
   return db.StudentMonthlyFee.destroy({
     where: {
       id: {
@@ -241,7 +241,7 @@ export async function deleteListStudentMonthlyFee(sId, user) {
       },
       companyId: user.companyId
     }
-  })
+  });
 }
 
 async function getStudentMonthlyFeeItem(id, companyId) {
@@ -252,14 +252,14 @@ async function getStudentMonthlyFeeItem(id, companyId) {
       companyId
     }, include: [
       {
-        model: db.Student, as: 'student',
+        model: db.Student, as: "student",
         include: [
           {
-            model: db.Person, as: 'child'
+            model: db.Person, as: "child"
           }, {
-            model: db.Person, as: 'father'
+            model: db.Person, as: "father"
           }, {
-            model: db.Person, as: 'mother'
+            model: db.Person, as: "mother"
           }
         ]
       }
@@ -270,7 +270,7 @@ async function getStudentMonthlyFeeItem(id, companyId) {
 export async function removeStudentMonthlyFee(sId, user) {
   const checkStudent = await getStudentMonthlyFeeItem(sId, user.companyId);
   if (!checkStudent) {
-    throw badRequest('student', FIELD_ERROR.INVALID, 'Student fee not found');
+    throw badRequest("student", FIELD_ERROR.INVALID, "Student fee not found");
   }
 
   return checkStudent.destroy();
@@ -284,14 +284,14 @@ export async function toPrintData(id, companyId) {
       companyId
     }, include: [
       {
-        model: db.Student, as: 'student',
+        model: db.Student, as: "student",
         include: [
           {
-            model: db.Person, as: 'child'
+            model: db.Person, as: "child"
           }, {
-            model: db.Person, as: 'father'
+            model: db.Person, as: "father"
           }, {
-            model: db.Person, as: 'mother'
+            model: db.Person, as: "mother"
           }
         ]
       }
@@ -299,10 +299,10 @@ export async function toPrintData(id, companyId) {
   });
 
   const monthStr = `0${fee.monthFee + 1}`;
-  let toMonthStr = '';
+  let toMonthStr = "";
   if (fee.toMonth > 0) {
     toMonthStr = `0${fee.toMonth + 1}`;
-    toMonthStr = toMonthStr.substr(toMonthStr.length - 2, 2)
+    toMonthStr = toMonthStr.substr(toMonthStr.length - 2, 2);
   }
 
   const studentFee = {
@@ -337,7 +337,7 @@ export async function toPrintData(id, companyId) {
   return {
     name: `${student.firstName} ${student.lastName}_${formatDateTime(fee.lastUpdatedDate)}`,
     studentFee, student, mother, father
-  }
+  };
 }
 
 export async function generatePDF(templateId, feeId, companyId) {
@@ -356,36 +356,36 @@ async function processSendEmailForFee(feeId, emailTemplate, printTemplateId, isP
       }
     );
   }
-  const {subject, template: {content}} = emailTemplate;
+  const { subject, template: { content } } = emailTemplate;
 
   const subjectText = Mustache.render(subject, templateData);
   const contentHTML = Mustache.render(content, templateData);
 
   const to = [];
-  const {father, mother} = templateData;
+  const { father, mother } = templateData;
   if (father && father.email) {
-    to.push(`${father.firstName} ${father.lastName} <${father.email}>`)
+    to.push(`${father.firstName} ${father.lastName} <${father.email}>`);
   }
   if (mother && mother.email) {
-    to.push(`${mother.firstName} ${mother.lastName} <${mother.email}>`)
+    to.push(`${mother.firstName} ${mother.lastName} <${mother.email}>`);
   }
 
   const emailMessage = {
     from,
-    cc: cc ? cc.join(',') : '',
-    bcc: bcc ? bcc.join(',') : '',
-    to: to.join(','),
+    cc: cc ? cc.join(",") : "",
+    bcc: bcc ? bcc.join(",") : "",
+    to: to.join(","),
     subject: subjectText,
     message: contentHTML,
     attachments
-  }
+  };
   return addEmailQueue(emailMessage, user.companyId, user.id);
 }
 
-export async function sendEmails({listId, emailTemplateId, isPDFAttached, printTemplateId, from, cc, bcc}, user) {
+export async function sendEmails({ listId, emailTemplateId, isPDFAttached, printTemplateId, from, cc, bcc }, user) {
   const emailTemplate = await getEmailTemplate(emailTemplateId, user);
   if (!emailTemplate) {
-    throw badRequest('EmailTemplate', 'NOT_FOUND', 'Invalid email template');
+    throw badRequest("EmailTemplate", "NOT_FOUND", "Invalid email template");
   }
   const rs = {
     success: [],
@@ -398,7 +398,7 @@ export async function sendEmails({listId, emailTemplateId, isPDFAttached, printT
       rs.success.push(listId[i]);
     } catch (e) {
       console.error(e);
-      rs.fail.push({id: listId[i], message: e.message});
+      rs.fail.push({ id: listId[i], message: e.message });
     }
   }
   return rs;
@@ -419,10 +419,10 @@ export async function paidMonthlyFee(feeId, form, user) {
     storeOtherCashIn, storeOtherCashInName, storeOtherCashInAmount, storeOtherCashInTagging,
     subject
   } = form;
-  const {companyId} = user;
+  const { companyId } = user;
   const fee = await getStudentMonthlyFeeItem(feeId, user.companyId);
   if (!fee) {
-    throw badRequest('studentFee', FIELD_ERROR.INVALID, 'Student fee not found');
+    throw badRequest("studentFee", FIELD_ERROR.INVALID, "Student fee not found");
   }
   const transaction = await db.sequelize.transaction();
   try {
@@ -439,7 +439,7 @@ export async function paidMonthlyFee(feeId, form, user) {
         amount: storeCashInAmount,
         createdById: user.id,
         createdDate: new Date()
-      }, {transaction});
+      }, { transaction });
 
       if (storeCashInTagging && storeCashInTagging.length) {
         await updateItemTags({
@@ -462,7 +462,7 @@ export async function paidMonthlyFee(feeId, form, user) {
         amount: storeCashInMealAmount,
         createdById: user.id,
         createdDate: new Date()
-      }, {transaction});
+      }, { transaction });
 
       if (storeCashInMealTagging && storeCashInMealTagging.length) {
         await updateItemTags({
@@ -483,7 +483,7 @@ export async function paidMonthlyFee(feeId, form, user) {
         amount: storeCashInBusAmount,
         createdById: user.id,
         createdDate: new Date()
-      }, {transaction});
+      }, { transaction });
 
       if (storeCashInBusTagging && storeCashInBusTagging.length) {
         await updateItemTags({
@@ -504,7 +504,7 @@ export async function paidMonthlyFee(feeId, form, user) {
         amount: storeOtherCashInAmount,
         createdById: user.id,
         createdDate: new Date()
-      }, {transaction});
+      }, { transaction });
 
       if (storeOtherCashInTagging && storeOtherCashInTagging.length) {
         await updateItemTags({
@@ -516,25 +516,25 @@ export async function paidMonthlyFee(feeId, form, user) {
         addTaggingQueue(storeOtherCashInTagging.map(t => t.id));
       }
     }
-    await fee.save({transaction});
+    await fee.save({ transaction });
     await transaction.commit();
     if (sendEmailConfirm) {
       const to = [];
-      const {father, mother} = fee.student;
+      const { father, mother } = fee.student;
       if (father && father.email) {
-        to.push(`${father.firstName} ${father.lastName} <${father.email}>`)
+        to.push(`${father.firstName} ${father.lastName} <${father.email}>`);
       }
       if (mother && mother.email) {
-        to.push(`${mother.firstName} ${mother.lastName} <${mother.email}>`)
+        to.push(`${mother.firstName} ${mother.lastName} <${mother.email}>`);
       }
       const emailMessage = {
         from,
-        cc: cc ? cc.join(',') : '',
-        bcc: bcc ? bcc.join(',') : '',
-        to: to.join(','),
+        cc: cc ? cc.join(",") : "",
+        bcc: bcc ? bcc.join(",") : "",
+        to: to.join(","),
         subject,
         message: content
-      }
+      };
       addEmailQueue(emailMessage, user.companyId, user.id).then();
     }
     return fee;

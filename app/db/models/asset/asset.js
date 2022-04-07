@@ -11,7 +11,8 @@ export const ASSET_SYNC_STATUS = {
   PENDING: 0,
   PROCESSING: 1,
   SUCCESS: 2,
-  FAIL: 3
+  FAIL: 3,
+  FILE_NOT_EXISTED: 4
 };
 
 export default class Asset extends Sequelize.Model {
