@@ -31,6 +31,7 @@ import {initStudentController} from "./student";
 import {initWebSaleController} from "./sale";
 import {initTaxController} from "./tax";
 import {initWebPartnerController} from "./partner/partner.controller";
+import { initWebDebtController } from './debt/debt.controller';
 
 
 export function initWebController(app) {
@@ -66,5 +67,6 @@ export function initWebController(app) {
   initWebEcommerceShopController(app);
   initWebSaleController(app);
   initTaxController(app);
-  initWebPartnerController(app)
+  initWebPartnerController(app);
+  initWebDebtController(app)
 }

@@ -12,3 +12,5 @@ coverage
 .coveralls.yml
 uploadsTest/
 renderFolder/
+yarn.lock
+package-lock.json

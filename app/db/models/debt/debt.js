@@ -15,6 +15,7 @@ export default class Debt extends Sequelize.Model {
       {
         id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
         subjectId: {type: DataTypes.BIGINT},
+        name: {type: DataTypes.STRING(255)},
         companyId: {type: DataTypes.BIGINT},
         amount: {type: DataTypes.DECIMAL(12, 2)},
         createdDate: {type: DataTypes.DATE},

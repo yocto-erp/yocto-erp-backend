@@ -15,8 +15,7 @@ export default class DebtDetail extends Sequelize.Model {
       {
         debtId: {type: DataTypes.BIGINT, primaryKey: true},
         relateId: {type: DataTypes.BIGINT, primaryKey: true},
-        purposeType: {type: DataTypes.INTEGER, primaryKey: true},
-        remark: {type: DataTypes.TEXT}
+        purposeType: {type: DataTypes.INTEGER, primaryKey: true}
       },
       {
         tableName: 'debt_detail',
