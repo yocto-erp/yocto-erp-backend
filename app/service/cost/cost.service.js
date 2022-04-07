@@ -1,7 +1,6 @@
 import db from '../../db/models';
 import {removeCostPurpose} from './cost-purpose.service';
 import {badRequest, FIELD_ERROR} from '../../config/error';
-import {removeCostAssets} from '../asset/asset.service';
 import {taggingMapping, updateItemTags} from '../tagging/tagging.service';
 import {TAGGING_TYPE} from '../../db/models/tagging/tagging-item-type';
 import {COST_TYPE} from '../../db/models/cost/cost';
@@ -106,7 +105,7 @@ export async function createCost(user, createForm) {
     if (createForm.tagging && createForm.tagging.length) {
       await updateItemTags({
         id: cost.id,
-        type: createForm.type === COST_TYPE.RECEIPT ? TAGGING_TYPE.RECEIPT_VOUCHER : TAGGING_TYPE.PAYMENT_VOUCHER,
+        type: Number(createForm.type) === COST_TYPE.RECEIPT ? TAGGING_TYPE.RECEIPT_VOUCHER : TAGGING_TYPE.PAYMENT_VOUCHER,
         transaction,
         newTags: createForm.tagging
       });
@@ -200,10 +199,10 @@ export async function updateCost(cId, user, updateForm) {
     }
 
     let listUpdateTags = []
-    if ((updateForm.tagging && updateForm.tagging.length) || (existedCost.taggingItems && existedCost.taggingItems.length)) {
+    if ((updateForm.tagging && updateForm.tagging.length) || (existedCost.tagging && existedCost.tagging.length)) {
       await updateItemTags({
         id: cId,
-        type: type === COST_TYPE.RECEIPT ? TAGGING_TYPE.RECEIPT_VOUCHER : TAGGING_TYPE.PAYMENT_VOUCHER,
+        type: Number(type) === COST_TYPE.RECEIPT ? TAGGING_TYPE.RECEIPT_VOUCHER : TAGGING_TYPE.PAYMENT_VOUCHER,
         transaction,
         newTags: updateForm.tagging
       });
@@ -244,7 +243,11 @@ export async function removeCost(cId, user) {
   const transaction = await db.sequelize.transaction();
   try {
     if (checkCost.assets && checkCost.assets.length) {
-      await removeCostAssets(checkCost, transaction);
+      await db.CostAsset.destroy({
+        where: {
+          costId: checkCost.id
+        }
+      }, {transaction});
     }
     await removeCostPurpose(checkCost.id, transaction);
     const cost = db.Cost.destroy({

@@ -1,27 +1,21 @@
-import db from '../../db/models';
-import User from '../../db/models/user/user';
-import {badRequest, FIELD_ERROR} from '../../config/error';
-import {taggingMapping, updateItemTags} from '../tagging/tagging.service';
-import {TAGGING_TYPE} from '../../db/models/tagging/tagging-item-type';
-import {addTaggingQueue} from '../../queue/tagging.queue';
-import {auditAction} from '../audit/audit.service';
-import {PERMISSION} from '../../db/models/acl/acl-action';
-import {isArray} from '../../util/func.util';
-import {hasText} from "../../util/string.util";
+import db from "../../db/models";
+import User from "../../db/models/user/user";
+import { badRequest, FIELD_ERROR } from "../../config/error";
+import { taggingMapping, updateItemTags } from "../tagging/tagging.service";
+import { TAGGING_TYPE } from "../../db/models/tagging/tagging-item-type";
+import { addTaggingQueue } from "../../queue/tagging.queue";
+import { auditAction } from "../audit/audit.service";
+import { PERMISSION } from "../../db/models/acl/acl-action";
+import { isArray } from "../../util/func.util";
+import { hasText } from "../../util/string.util";
 import ProductAsset from "../../db/models/product/product-asset";
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
-const mapping = (item) => ({
-  ...item,
-  tagging: item.taggingItems.map((t) => t.tagging),
-  assets: item.productAssets?.map((t) => t.asset)
-});
-
-export function listProduct(user, query, {order, offset, limit}) {
+export function listProduct(user, query, { order, offset, limit }) {
   console.log(query);
-  const {tagging, search} = query;
-  const where = {companyId: user.companyId};
+  const { tagging, search } = query;
+  const where = { companyId: user.companyId };
   if (hasText(search)) {
     where[Op.or] = [
       {
@@ -36,7 +30,9 @@ export function listProduct(user, query, {order, offset, limit}) {
       }
     ];
   }
-  const whereTagging = {};
+  const whereTagging = {
+    itemType: TAGGING_TYPE.PRODUCT
+  };
   let isTaggingRequired = false;
   if (tagging && tagging.id) {
     whereTagging.taggingId = {
@@ -45,40 +41,48 @@ export function listProduct(user, query, {order, offset, limit}) {
     isTaggingRequired = true;
   }
   return db.Product.findAndCountAll({
-    attributes: ['id', 'name', 'remark', 'thumbnail', 'createdDate'],
+    attributes: ["id", "name", "remark", "thumbnail", "createdDate"],
     where,
     include: [
       {
         model: User,
-        as: 'createdBy',
-        attributes: ['id', 'displayName', 'email']
+        as: "createdBy",
+        attributes: ["id", "displayName", "email"]
       },
       {
         model: User,
-        as: 'lastModifiedBy',
-        attributes: ['id', 'displayName', 'email']
+        as: "lastModifiedBy",
+        attributes: ["id", "displayName", "email"]
       },
       {
         model: db.TaggingItem,
         required: isTaggingRequired,
-        as: 'taggingItems',
+        as: "taggingItems",
         where: whereTagging,
         include: [
-          {model: db.Tagging, as: 'tagging'}
+          { model: db.Tagging, as: "tagging" }
         ]
       }
     ],
     order,
     offset,
     limit,
-    group: ['id']
+    group: ["id"]
   }).then(async (resp) => {
     return ({
       count: resp.count.length,
-      rows: resp.rows.map(item => taggingMapping(item.get({plain: true})))
+      rows: resp.rows.map(item => taggingMapping(item.get({ plain: true })))
     });
   });
 }
+
+export const mappingProduct = (p) => {
+  const t = p.get({ plain: true });
+  return {
+    ...t,
+    assets: t.productAssets.filter(pI => pI.asset !== null).map(pI => pI.asset)
+  };
+};
 
 export async function getProduct(user, pId) {
   const product = await db.Product.findOne({
@@ -89,34 +93,22 @@ export async function getProduct(user, pId) {
     include: [
       {
         model: db.ProductAsset,
-        as: 'productAssets',
-        include: [{model: db.Asset, as: 'asset'}]
+        as: "productAssets",
+        include: [{ model: db.Asset, as: "asset", include: [{ model: db.AssetIpfs, as: "ipfs" }] }]
       },
       {
         model: db.ProductUnit,
-        as: 'units',
-        attributes: ['id', 'name', 'rate']
+        as: "units",
+        attributes: ["id", "name", "rate"]
       },
-      {
-        model: db.TaggingItem,
-        as: 'taggingItems',
-        required: false,
-        where: {
-          itemType: {
-            [Op.in]: [TAGGING_TYPE.PRODUCT]
-          }
-        },
-        include: [{model: db.Tagging, as: 'tagging'}]
-      }
+      { model: db.Tagging, as: "tagging" }
     ],
-    order: [
-      [{model: db.ProductAsset, as: 'productAssets'}, 'priority', 'asc']
-    ]
+    order: [[{ model: db.ProductAsset, as: "productAssets" }, "priority", "asc"]]
   });
   if (!product) {
-    throw badRequest('product', FIELD_ERROR.INVALID, 'product not found');
+    throw badRequest("product", FIELD_ERROR.INVALID, "product not found");
   }
-  return mapping(product.get({plain: true}));
+  return product;
 }
 
 export async function createProduct(user, createForm) {
@@ -130,9 +122,9 @@ export async function createProduct(user, createForm) {
     });
     if (checkProductDocument) {
       throw badRequest(
-        'product',
+        "product",
         FIELD_ERROR.EXISTED,
-        'productDocumentId existed!'
+        "productDocumentId existed!"
       );
     }
   }
@@ -154,7 +146,7 @@ export async function createProduct(user, createForm) {
         createdById: user.id,
         createdDate: new Date()
       },
-      {transaction}
+      { transaction }
     );
 
     if (createForm.assets && createForm.assets.length) {
@@ -166,7 +158,7 @@ export async function createProduct(user, createForm) {
             priority: i
           };
         }),
-        {transaction}
+        { transaction }
       );
     }
 
@@ -177,8 +169,8 @@ export async function createProduct(user, createForm) {
           productId: product.id,
           name: result.name.trim(),
           rate: result.rate
-        }
-      }), {transaction})
+        };
+      }), { transaction });
     }
 
     if (createForm.tagging && createForm.tagging.length) {
@@ -225,31 +217,31 @@ export async function updateProduct(pId, user, updateForm) {
 
     if (checkProductDocument) {
       throw badRequest(
-        'product',
+        "product",
         FIELD_ERROR.EXISTED,
-        'productDocumentId existed!'
+        "productDocumentId existed!"
       );
     }
   }
 
   const existedProduct = await db.Product.findByPk(pId, {
     include: [
-      {model: db.Asset, as: 'assets'},
+      { model: db.Asset, as: "assets" },
       {
         model: db.TaggingItem,
-        as: 'taggingItems',
+        as: "taggingItems",
         required: false,
         where: {
           itemType: {
             [Op.in]: [TAGGING_TYPE.PRODUCT]
           }
         },
-        include: [{model: db.Tagging, as: 'tagging'}]
+        include: [{ model: db.Tagging, as: "tagging" }]
       }
     ]
   });
   if (!existedProduct) {
-    throw badRequest('product', FIELD_ERROR.INVALID, 'Product not found');
+    throw badRequest("product", FIELD_ERROR.INVALID, "Product not found");
   }
 
   const transaction = await db.sequelize.transaction();
@@ -275,7 +267,7 @@ export async function updateProduct(pId, user, updateForm) {
       where: {
         productId: existedProduct.id
       }
-    }, {transaction});
+    }, { transaction });
 
     if (updateForm.assets && updateForm.assets.length) {
       await ProductAsset.bulkCreate(
@@ -286,7 +278,7 @@ export async function updateProduct(pId, user, updateForm) {
             priority: i
           };
         }),
-        {transaction}
+        { transaction }
       );
     }
 
@@ -296,16 +288,16 @@ export async function updateProduct(pId, user, updateForm) {
           where: {
             productId: existedProduct.id
           }
-        }, {transaction}
-      )
+        }, { transaction }
+      );
       await db.ProductUnit.bulkCreate(updateForm.units.map((result, index) => {
         return {
           id: index + 1,
           productId: existedProduct.id,
           name: result.name,
           rate: result.rate
-        }
-      }), {transaction})
+        };
+      }), { transaction });
     }
 
     let listUpdateTags = [];
@@ -316,15 +308,15 @@ export async function updateProduct(pId, user, updateForm) {
         type: TAGGING_TYPE.PRODUCT,
         transaction,
         newTags: updateForm.tagging
-      })
+      });
       listUpdateTags = [...new Set([...((updateForm.tagging || []).map(t => t.id)),
-        ...((existedProduct.taggingItems || []).map(t => t.taggingId))])]
+        ...((existedProduct.taggingItems || []).map(t => t.taggingId))])];
     }
 
     await transaction.commit();
 
     if (listUpdateTags.length) {
-      console.log("Update Inventory Tagging", listUpdateTags)
+      console.log("Update Inventory Tagging", listUpdateTags);
       addTaggingQueue(listUpdateTags);
     }
     auditAction({
@@ -347,10 +339,10 @@ export async function removeProduct(user, productId) {
       companyId: user.companyId
     }
   }, {
-    include: [{model: db.Asset, as: 'assets'}]
+    include: [{ model: db.Asset, as: "assets" }]
   });
   if (!checkProduct) {
-    throw badRequest('product', FIELD_ERROR.INVALID, 'product not found');
+    throw badRequest("product", FIELD_ERROR.INVALID, "product not found");
   }
   const transaction = await db.sequelize.transaction();
   try {
@@ -359,16 +351,16 @@ export async function removeProduct(user, productId) {
         where: {
           productId: checkProduct.id
         }
-      }, {transaction});
+      }, { transaction });
     }
     await db.ProductUnit.destroy(
       {
         where: {
           productId: checkProduct.id
         }
-      }, {transaction}
+      }, { transaction }
     );
-    await checkProduct.destroy({transaction})
+    await checkProduct.destroy({ transaction });
     await transaction.commit();
     return checkProduct;
   } catch (error) {
@@ -377,12 +369,18 @@ export async function removeProduct(user, productId) {
   }
 }
 
-export async function getAssets(productId) {
-  return db.ProductAsset.findAll({
+export async function getAssets(user, productId) {
+  return db.Product.findOne({
     where: {
-      productId
+      id: productId, companyId: user.companyId
     },
-    include: [{model: db.Asset, as: 'asset'}],
-    order: [['priority', 'asc']]
-  });
+    include: [
+      {
+        model: db.ProductAsset, as: "productAssets", include: [
+          { model: db.Asset, as: "asset", include: [{ model: db.AssetIpfs, as: "ipfs" }] }
+        ]
+      }
+    ],
+    order: [[{ model: db.ProductAsset, as: "productAssets" }, "priority", "asc"]]
+  }).then(t => t.productAssets.map(pa => pa.asset));
 }

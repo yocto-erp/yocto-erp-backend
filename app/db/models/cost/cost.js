@@ -1,5 +1,6 @@
 import Sequelize, {Op} from 'sequelize';
 import {TAGGING_TYPE} from "../tagging/tagging-item-type";
+import {DEFAULT_INCLUDE_USER_ATTRS} from "../constants";
 
 const {DataTypes} = Sequelize;
 
@@ -73,7 +74,7 @@ export default class Cost extends Sequelize.Model {
         include: [
           {
             model: models.User, as: 'createdBy',
-            attributes: ['id', 'displayName', 'email']
+            attributes: DEFAULT_INCLUDE_USER_ATTRS
           },
           {model: models.Subject.scope('all'), as: 'subject'},
           {model: models.PaymentMethodSetting, as: 'paymentMethod'}

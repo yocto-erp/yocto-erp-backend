@@ -1,49 +1,47 @@
 import db from '../db/models';
 import EmailSend from '../db/models/email/email-send';
+import {hasText} from "../util/string.util";
+import {buildDateObjRangeQuery} from "../util/db.util";
 
 const {Op} = db.Sequelize;
 
 export function logEmail(user, query, order, offset, limit) {
   const {search, fromDate, toDate} = query;
-  const where = {};
+  const where = {
+    companyId: user.companyId
+  };
   let whereSendMail = {};
-  if (fromDate || toDate || (search && search.length)) {
-    if (fromDate && toDate) {
-      whereSendMail.sent_date = {
-        [Op.and]: {
-          [Op.gte]: new Date(fromDate),
-          [Op.lte]: new Date(toDate)
-        }
-      };
-    } else if (fromDate) {
-      whereSendMail.sent_date = {
-        [Op.gte]: new Date(fromDate)
-      };
-    } else if (toDate) {
-      whereSendMail.sent_date = {
-        [Op.lte]: new Date(toDate)
-      };
-    }
-
-    if (search && search.length) {
-      whereSendMail = {
-        [Op.or]: [
-          {
-            from: {
-              [Op.like]: `%${search}%`
-            }
-          }, {
-            to: {
-              [Op.like]: `%${search}%`
-            }
+  if (search && search.length) {
+    whereSendMail = {
+      [Op.or]: [
+        {
+          from: {
+            [Op.like]: `%${search}%`
           }
-        ]
-      };
-    }
-    where.companyId = user.companyId;
+        }, {
+          to: {
+            [Op.like]: `%${search}%`
+          }
+        }
+      ]
+    };
   }
+  if (hasText(fromDate) || hasText(toDate)) {
+    const rangeDate = buildDateObjRangeQuery(fromDate, toDate)
+    if (rangeDate != null) {
+      whereSendMail.sent_date = rangeDate
+    }
+  }
+
+  const _order = order.map(t => {
+    if (t[0] === 'sent_date') {
+      return [db.EmailSend, ...t]
+    }
+    return t
+  })
+
   return db.EmailCompany.findAndCountAll({
-    order,
+    order: _order,
     where,
     include: [
       {

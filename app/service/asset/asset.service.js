@@ -1,40 +1,44 @@
-import {v4 as uuidv4} from 'uuid';
-import _ from 'lodash';
-import fs from 'fs';
-import md5 from 'md5';
-import sharp from 'sharp';
-import db from '../../db/models';
-import ProductAsset from '../../db/models/product/product-asset';
-import {badRequest, FIELD_ERROR} from '../../config/error';
-import {SYSTEM_CONFIG} from '../../config/system';
-import {ASSET_TYPE} from "../../db/models/asset";
-import {hasText} from "../../util/string.util";
-import {isImageMimeType} from "../../util/image.util";
+import { v4 as uuidv4 } from "uuid";
+import fs from "fs";
+import md5 from "md5";
+import sharp from "sharp";
+import { QueryTypes } from "sequelize";
+import db from "../../db/models";
+import { badRequest, FIELD_ERROR } from "../../config/error";
+import { SYSTEM_CONFIG } from "../../config/system";
+import { ASSET_TYPE } from "../../db/models/asset/asset";
+import { hasText } from "../../util/string.util";
+import { isImageMimeType } from "../../util/image.util";
+import { SYSTEM_STATUS } from "../../db/models/constants";
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
 export const ASSET_STORE_FOLDER = SYSTEM_CONFIG.UPLOAD_FOLDER;
 
-export async function listAsset(user, {parentId, search}, {offset, limit, order}) {
+export async function listAsset(user, { parentId, search }, { offset, limit, order }) {
   const where = {
     companyId: user.companyId,
-    parentId: null
-  }
+    parentId: null,
+    systemStatus: SYSTEM_STATUS.NORMAL
+  };
   if (hasText(parentId)) {
-    where.parentId = parentId
+    where.parentId = parentId;
   }
   if (hasText(search)) {
     where.name = {
       [Op.like]: `%${search}%`
-    }
+    };
   }
-  console.log("listAsset", offset, limit, order)
+  console.log("listAsset", offset, limit, order);
   return db.Asset.findAndCountAll({
     where,
     order,
     offset,
-    limit
-  })
+    limit,
+    include: [
+      { model: db.AssetIpfs, as: "ipfs" }
+    ]
+  });
 }
 
 export function createAssetFolder(user, form) {
@@ -47,7 +51,7 @@ export function createAssetFolder(user, form) {
     companyId: user.companyId,
     createdById: user.id,
     createdDate: new Date()
-  })
+  });
 }
 
 /**
@@ -64,15 +68,15 @@ async function generatePreview(file) {
       .flatten()
       .resize(200, 200, {
         fit: sharp.fit.contain,
-        position: 'centre',
-        background: {r: 0, g: 0, b: 0, alpha: 0}
+        position: "centre",
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
       })
       .toFile(`${SYSTEM_CONFIG.PUBLIC_FOLDER}/thumbnail/${file.filename}.png`).then(() => {
     }, (err) => {
-      console.log('thumbnail error', err)
+      console.log("thumbnail error", err);
     });
   } else {
-    console.log("File no need generate preview", file)
+    console.log("File no need generate preview", file);
   }
 }
 
@@ -88,23 +92,8 @@ export async function storeFiles(user, form, parentId) {
     createdById: user.id,
     createdDate: new Date()
   });
-  generatePreview(form).then()
+  generatePreview(form).then();
   return rs;
-}
-
-export async function storeFileFromBase64(baseImage) {
-  const ext = baseImage.substring(
-    baseImage.indexOf('/') + 1,
-    baseImage.indexOf(';base64')
-  );
-  const fileType = baseImage.substring('data:'.length, baseImage.indexOf('/'));
-  const regex = new RegExp(`^data:${fileType}/${ext};base64,`, 'gi');
-  const base64Data = baseImage.replace(regex, '');
-  const filename = uuidv4();
-
-  fs.writeFileSync(`${ASSET_STORE_FOLDER}/${filename}`, base64Data, 'base64');
-
-  return filename;
 }
 
 export function deletePublicFile(filename) {
@@ -127,78 +116,30 @@ export function deleteFile(fileId) {
   }
 }
 
-export async function mergeAssets(oldFormAssets, newFormAsset, companyId, transaction) {
-  console.log(oldFormAssets);
-  const listMergeAssets = [];
-  if (newFormAsset && newFormAsset.length) {
-    for (let i = 0; i < newFormAsset.length; i += 1) {
-      const {fileId, data, id, name, type, size} = newFormAsset[i];
-      let newAssetId = id;
-      if (!fileId) {
-        /**
-         * New Upload File
-         * @type {*|string}
-         */
-          // eslint-disable-next-line no-await-in-loop
-        const newAsset = await db.Asset.create({
-            name,
-            mimeType: type,
-            type: ASSET_TYPE.FILE,
-            size,
-            // eslint-disable-next-line no-await-in-loop
-            fileId: await storeFileFromBase64(data),
-            companyId: companyId,
-            createdDate: new Date()
-          });
-        newAssetId = newAsset.id;
-      } else {
-        /**
-         * File existed on server, now we remove file from old list
-         */
-        _.remove(oldFormAssets, val => val.fileId === fileId);
-      }
-      listMergeAssets.push({
-        assetId: newAssetId,
-        priority: i
-      });
-    }
-  }
-  if (oldFormAssets && oldFormAssets.length) {
-    for (let j = 0; j < oldFormAssets.length; j += 1) {
-      // eslint-disable-next-line no-await-in-loop
-      await deleteFile(oldFormAssets[j].fileId);
-      // eslint-disable-next-line no-await-in-loop
-      await oldFormAssets[j].destroy({transaction});
-    }
-    // oldFormAssets.destroy({ transaction });
-  }
-  return listMergeAssets;
-}
-
 export async function generateProductThumbnail(productId) {
   const asset = await db.ProductAsset.findOne({
     where: {
       productId
     },
     include: [
-      {model: db.Asset, as: 'asset', required: true}
+      { model: db.Asset, as: "asset", required: true }
     ],
-    order: [['priority', 'asc']],
+    order: [["priority", "asc"]],
     limit: 1
   });
 
   const product = await db.Product.findByPk(productId);
   if (asset && product) {
-    const {fileId} = asset.asset;
+    const { fileId } = asset.asset;
     const filename = md5(`${productId}_${fileId}`);
-    console.log('generateProductThumbnail', productId, fileId, product.thumbnail);
+    console.log("generateProductThumbnail", productId, fileId, product.thumbnail);
     const newThumbnailUrl = `${filename}.png`;
     if (newThumbnailUrl !== product.thumbnail) {
       deletePublicFile(product.thumbnail);
       sharp(`${ASSET_STORE_FOLDER}/${fileId}`)
         .resize(200, 200, {
           fit: sharp.fit.contain,
-          background: {r: 0, g: 0, b: 0, alpha: 0}
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
         })
         .toFile(`${SYSTEM_CONFIG.PUBLIC_FOLDER}/${newThumbnailUrl}`)
         .then(async () => {
@@ -209,90 +150,75 @@ export async function generateProductThumbnail(productId) {
   }
 }
 
-export async function createProductAsset(
-  productId,
-  companyId,
-  assetsForm,
-  transaction
-) {
-  const assets = [];
-  for (let i = 0; i < assetsForm.length; i += 1) {
-    // eslint-disable-next-line no-await-in-loop
-    const fileId = await storeFileFromBase64(assetsForm[i].data);
-    assets.push({
-      name: assetsForm[i].name,
-      mimeType: assetsForm[i].type,
-      type: ASSET_TYPE.FILE,
-      size: assetsForm[i].size,
-      fileId: fileId,
-      companyId: companyId,
-      createdDate: new Date()
-    });
-  }
-  const assetModels = await db.Asset.bulkCreate(assets, {transaction});
-  await ProductAsset.bulkCreate(
-    assetModels.map((t, i) => {
-      return {
-        assetId: t.id,
-        productId: productId,
-        priority: i
-      };
-    }),
-    {transaction}
-  );
-  return assetModels;
-}
-
-export async function updateProductAssets(newAssets, productId, transaction) {
-  await db.ProductAsset.destroy({
-    where: {
-      productId: productId
-    }
-  }, {transaction});
-  if (newAssets && newAssets.length) {
-    await ProductAsset.bulkCreate(
-      newAssets.map((t) => {
-        return {
-          ...t,
-          productId: productId
-        };
-      }),
-      {transaction}
-    );
-  }
-}
-
 export async function getAssetByUUID(uuid) {
   const asset = await db.Asset.findOne({
-    attributes: ['fileId'],
+    attributes: ["fileId"],
     where: {
-      fileId: uuid
+      fileId: uuid,
+      systemStatus: SYSTEM_STATUS.NORMAL
     }
   });
   if (!asset) {
-    throw badRequest('image', FIELD_ERROR.INVALID, 'image not found');
+    throw badRequest("image", FIELD_ERROR.INVALID, "image not found");
   }
 
   return asset;
 }
 
-export async function removeCostAssets(cost, transaction) {
-  for (let j = 0; j < cost.assets.length; j += 1) {
-    // eslint-disable-next-line no-await-in-loop
-    await deleteFile(cost.assets[j].fileId);
-  }
-  const assetId = await cost.assets.map(result => result.id);
-  await db.Asset.destroy({
-    where: {id: {[Op.in]: assetId}}
-  }, {transaction});
-
-  return db.CostAsset.destroy({
+export async function removeAssets(user, ids) {
+  const listId = ids.split(",").map(t => Number(t));
+  const assets = await db.Asset.findAll({
     where: {
-      costId: cost.id,
-      assetId: {
-        [Op.in]: assetId
-      }
+      id: {
+        [Op.in]: listId
+      },
+      companyId: user.companyId,
+      systemStatus: SYSTEM_STATUS.NORMAL
     }
-  }, {transaction});
+  });
+
+  let totalFile = 0;
+  const transaction = await db.sequelize.transaction();
+
+  try {
+    for (let i = 0; i < assets.length; i += 1) {
+      const asset = assets[i];
+      if (asset.type === ASSET_TYPE.FOLDER) {
+        // eslint-disable-next-line no-await-in-loop
+        const rs = await db.sequelize.query(`with recursive cte (id, name, fileId, parentId) as (
+          select     id,
+                     name,
+                     fileId, parentId
+          from       asset
+          where      parentId = ${asset.id}
+          union all
+            select     p.id,
+                       p.name,
+                       p.fileId, p.parentId
+            from       asset p
+          inner join cte
+                  on p.parentId = cte.id
+        )
+        UPDATE asset
+        SET systemStatus = ${SYSTEM_STATUS.DELETED},
+            lastModifiedDate = now()
+            WHERE id IN (select id from cte);`,
+          { type: QueryTypes.BULKUPDATE }, { transaction });
+        console.log("rs: ", rs);
+        totalFile += rs;
+      }
+      asset.systemStatus = SYSTEM_STATUS.DELETED;
+      asset.lastModifiedDate = new Date();
+      totalFile += 1;
+      // eslint-disable-next-line no-await-in-loop
+      await asset.save({ transaction });
+    }
+
+    await transaction.commit();
+    return totalFile;
+  } catch (e) {
+    await transaction.rollback();
+    throw e;
+  }
 }
 

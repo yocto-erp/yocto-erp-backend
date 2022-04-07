@@ -33,11 +33,12 @@
 // }
 //
 
-import {every5secondSendEmail} from "./email";
-import {every15minUpdateHourlyCost} from "./report/report-cost";
+import { every10minUpdateIPFSStatus, every30secondSendEmail, every5minUploadToIPFS } from "./email";
+import { every15minUpdateHourlyCost } from "./report/report-cost";
 
 export function initCronTasks() {
-  every5secondSendEmail.start();
-  // every5secondUploadBlockChain.start();
+  every30secondSendEmail.start();
+  every10minUpdateIPFSStatus.start();
+  every5minUploadToIPFS.start();
   every15minUpdateHourlyCost.start();
 }

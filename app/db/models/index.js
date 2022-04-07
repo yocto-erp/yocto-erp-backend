@@ -10,7 +10,6 @@ import UserActivate from './user/user-activate';
 import SystemProperty from './system-property';
 import databaseConfig from '../../config/database';
 import UserResetPassword from './user/user-reset-password';
-import Asset from './asset';
 import Company from './company/company';
 import CompanyPerson from './company/company-person';
 import CompanyShop from './company/company-shop';
@@ -64,6 +63,7 @@ import {initTaxModel} from "./tax";
 import {initOrderModel} from "./order";
 import {initPartnerModel} from "./partner";
 import {initScope} from "./scope";
+import {initAssetModel} from "./asset";
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -130,7 +130,7 @@ const models = {
   UserShop: UserShop.init(sequelize),
 
   // Asset
-  Asset: Asset.init(sequelize),
+  ...initAssetModel(sequelize),
 
   // BusinessAction
   BusinessAction: BusinessAction.init(sequelize),
