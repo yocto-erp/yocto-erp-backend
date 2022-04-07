@@ -37,34 +37,48 @@ export const cronJobUploadIPFS = async () => {
       const listFilesId = listAsset.map(t => t.fileId);
       console.log("listFile", listFilesId);
       const cid = await uploadToIPFSFiles(listFilesId);
-      const transaction = await db.sequelize.transaction();
-      try {
-        const newIpfs = await db.AssetIpfs.create({
-          carId: cid,
-          lastModifiedDate: new Date(),
-          totalPinned: 0,
-          totalDeal: 0
-        }, { transaction });
+      if (cid && cid.length) {
+        const transaction = await db.sequelize.transaction();
+        try {
+          const newIpfs = await db.AssetIpfs.create({
+            carId: cid,
+            lastModifiedDate: new Date(),
+            totalPinned: 0,
+            totalDeal: 0
+          }, { transaction });
+          await db.Asset.update({
+            syncStatus: ASSET_SYNC_STATUS.SUCCESS,
+            ipfsId: newIpfs.id,
+            lastModifiedDate: new Date(),
+            lastSynced: new Date()
+          }, {
+            where: {
+              id: {
+                [Op.in]: listAsset.map(t => t.id)
+              }
+            },
+            fields: ["syncStatus", "ipfsId", "lastModifiedDate"],
+            transaction
+          });
+          await transaction.commit();
+        } catch (e) {
+          await transaction.rollback();
+          throw e;
+        }
+      } else {
         await db.Asset.update({
-          syncStatus: ASSET_SYNC_STATUS.SUCCESS,
-          ipfsId: newIpfs.id,
-          lastModifiedDate: new Date(),
-          lastSynced: new Date()
+          syncStatus: ASSET_SYNC_STATUS.FAIL,
+          lastSynced: new Date(),
+          lastModifiedDate: new Date()
         }, {
           where: {
             id: {
               [Op.in]: listAsset.map(t => t.id)
             }
           },
-          fields: ["syncStatus", "ipfsId", "lastModifiedDate"],
-          transaction
+          fields: ["syncStatus", "lastSynced", "lastModifiedDate"]
         });
-        await transaction.commit();
-      } catch (e) {
-        await transaction.rollback();
-        throw e;
       }
-
     }
   } catch (e) {
     if (listAsset.length) {
