@@ -3,4 +3,5 @@ export function initScope(models) {
   models.Subject.defineScope(models)
   models.Cost.defineScope(models)
   models.Order.defineScope(models)
+  models.Debt.defineScope(models)
 }

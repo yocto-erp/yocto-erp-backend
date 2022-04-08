@@ -13,6 +13,7 @@ export const TAGGING_TYPE = {
   COMPANY: 8,
   PRODUCT: 9,
   SUBJECT: 10, // Can be customer, provider, ....
+  DEBT: 11,
   OTHER: 100
 };
 
