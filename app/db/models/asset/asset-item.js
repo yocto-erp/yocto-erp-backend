@@ -4,7 +4,8 @@ const { DataTypes } = Sequelize;
 
 export const ASSET_ITEM_TYPE = {
   COST: 1,
-  PRODUCT: 2
+  PRODUCT: 2,
+  ECOMMERCE_PRODUCT: 3
 };
 
 export default class AssetItem extends Sequelize.Model {
@@ -12,13 +13,13 @@ export default class AssetItem extends Sequelize.Model {
     return super.init(
       {
         assetId: { type: DataTypes.BIGINT, primaryKey: true },
-        itemId: { type: DataTypes.STRING(250) },
-        assetItemType: { type: DataTypes.INTEGER },
+        itemId: { type: DataTypes.BIGINT, primaryKey: true },
+        assetItemType: { type: DataTypes.INTEGER, primaryKey: true },
         priority: { type: DataTypes.INTEGER }
       },
       {
-        tableName: "asset",
-        modelName: "asset",
+        tableName: "asset_item",
+        modelName: "asset_item",
         timestamps: false,
         sequelize,
         ...opts
