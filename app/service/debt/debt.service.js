@@ -242,8 +242,9 @@ export async function removeDebt(user, dId) {
 export function commonDebts(user, query, {order, offset, limit}) {
   const {search} = query;
   const where = {companyId: user.companyId};
+  const whereSubject = {};
   if (hasText(search)) {
-    where[Op.or] = [
+    whereSubject[Op.or] = [
       {
         name: {
           [Op.like]: `%${search}%`
@@ -257,6 +258,7 @@ export function commonDebts(user, query, {order, offset, limit}) {
       {
         model: db.Subject,
         as: 'subject',
+        where: whereSubject,
         include: [
           {
             model: db.Person, as: 'person'
