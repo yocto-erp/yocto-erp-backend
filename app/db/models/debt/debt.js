@@ -1,4 +1,6 @@
 import Sequelize from 'sequelize';
+import { TAGGING_TYPE } from '../tagging/tagging-item-type';
+import { DEFAULT_INCLUDE_USER_ATTRS } from '../constants';
 
 const {DataTypes} = Sequelize;
 
@@ -15,6 +17,7 @@ export default class Debt extends Sequelize.Model {
       {
         id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
         subjectId: {type: DataTypes.BIGINT},
+        name: {type: DataTypes.STRING(255)},
         companyId: {type: DataTypes.BIGINT},
         amount: {type: DataTypes.DECIMAL(12, 2)},
         createdDate: {type: DataTypes.DATE},
@@ -32,6 +35,7 @@ export default class Debt extends Sequelize.Model {
   }
 
   static associate(models) {
+    this.belongsTo(models.User, {foreignKey: 'createdById', as: 'createdBy'});
     this.belongsTo(models.Subject, {
       foreignKey: 'subjectId',
       as: 'subject'
@@ -39,6 +43,34 @@ export default class Debt extends Sequelize.Model {
     this.hasMany(models.DebtDetail, {
       foreignKey: 'debtId',
       as: 'details'
-    })
+    });
+    this.hasMany(models.TaggingItem, {
+      foreignKey: "itemId",
+      as: "taggingItems"
+    });
+    this.belongsToMany(models.Tagging, {
+      through: {
+        model: models.TaggingItem,
+        scope: {
+          itemType: TAGGING_TYPE.DEBT
+        }
+      },
+      foreignKey: "itemId",
+      otherKey: "taggingId",
+      as: "tagging"
+    });
+  }
+
+  static defineScope(models) {
+    this.addScope(
+      'search', {
+        include: [
+          {
+            model: models.User, as: 'createdBy',
+            attributes: DEFAULT_INCLUDE_USER_ATTRS
+          },
+          {model: models.Subject.scope('all'), as: 'subject'}
+        ]
+      })
   }
 }
