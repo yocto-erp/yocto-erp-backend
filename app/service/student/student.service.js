@@ -4,6 +4,7 @@ import {hasText} from "../../util/string.util";
 import {MAIN_CONTACT_TYPE} from "../../db/models/student/student";
 import {SUBJECT_CATEGORY} from "../../db/models/partner/subject";
 import {getOrCreatePersonalSubject} from "../subject/subject.service";
+import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
 
 const {Op} = db.Sequelize;
 
@@ -58,7 +59,7 @@ export function students(query, order, offset, limit, user) {
     include: [
       {
         model: db.User, as: 'createdBy',
-        attributes: ['id', 'displayName']
+        attributes: DEFAULT_INCLUDE_USER_ATTRS
       },
       {
         model: db.StudentBusStop, as: 'toSchoolBusStop'

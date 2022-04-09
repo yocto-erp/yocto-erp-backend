@@ -1,6 +1,7 @@
 import db from '../../db/models';
 import {badRequest, FIELD_ERROR} from '../../config/error';
 import User from '../../db/models/user/user';
+import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
 
 const {Op} = db.Sequelize;
 
@@ -23,10 +24,10 @@ export function warehouses(user, query, order, offset, limit) {
     include: [
       {
         model: User, as: 'createdBy',
-        attributes: ['id', 'displayName', 'email']
+        attributes: DEFAULT_INCLUDE_USER_ATTRS
       }, {
         model: User, as: 'lastModifiedBy',
-        attributes: ['id', 'displayName', 'email']
+        attributes: DEFAULT_INCLUDE_USER_ATTRS
       }
     ],
     offset,

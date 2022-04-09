@@ -1,5 +1,6 @@
 import db from '../../db/models'
 import {badRequest, FIELD_ERROR} from '../../config/error';
+import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
 
 const {Op} = db.Sequelize;
 
@@ -42,7 +43,7 @@ export function persons(query, order, offset, limit, user) {
         include: [
           {
             model: db.User, as: 'createdBy',
-            attributes: ['id', 'displayName', 'email']
+            attributes: DEFAULT_INCLUDE_USER_ATTRS
           }
         ]
       }

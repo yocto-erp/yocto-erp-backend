@@ -21,7 +21,7 @@ export default class EcommerceProduct extends Sequelize.Model {
         lastModifiedDate: { type: DataTypes.DATE },
         taxSetId: { type: DataTypes.BIGINT },
         enableWarehouse: { type: DataTypes.BOOLEAN },
-        thumbnailId: {type: DataTypes.BIGINT}
+        thumbnailId: { type: DataTypes.BIGINT }
       },
       {
         tableName: "ecommerce_product",
@@ -44,6 +44,7 @@ export default class EcommerceProduct extends Sequelize.Model {
       through: models.TaxSetDetail,
       foreignKey: "taxSetId",
       otherKey: "taxId",
+      sourceKey: "taxSetId",
       as: "taxes"
     });
     this.belongsTo(models.Product, {

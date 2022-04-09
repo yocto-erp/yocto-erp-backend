@@ -1,6 +1,7 @@
 import db from '../../db/models';
 import {badRequest, FIELD_ERROR} from '../../config/error';
 import {getShop} from "../shop/shop.service";
+import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
 
 const {Op} = db.Sequelize;
 
@@ -24,7 +25,7 @@ export async function listPOS(user, query, {order, offset, limit}) {
     include: [
       {
         model: db.User, as: 'lastModifiedBy',
-        attributes: ['id', 'displayName', 'email']
+        attributes: DEFAULT_INCLUDE_USER_ATTRS
       },
       {model: db.WareHouse, as: 'warehouse'},
       {model: db.Shop, as: 'shop'}
@@ -43,7 +44,7 @@ export async function getPOS(user, wId) {
     include: [
       {
         model: db.User, as: 'lastModifiedBy',
-        attributes: ['id', 'displayName', 'email']
+        attributes: DEFAULT_INCLUDE_USER_ATTRS
       },
       {model: db.WareHouse, as: 'warehouse'},
       {model: db.Shop, as: 'shop'}

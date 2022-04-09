@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path'
 import db from "../../db/models";
 import {formatDateTime} from "./template.util";
+import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
 
 const puppeteer = require('puppeteer');
 
@@ -21,7 +22,7 @@ export async function templateRender(templateId, object) {
     include: [
       {
         model: db.User, as: 'createdBy',
-        attributes: ['id', 'displayName', 'email']
+        attributes: DEFAULT_INCLUDE_USER_ATTRS
       }, {
         model: db.TemplateType, as: 'templateType'
       }
@@ -41,7 +42,7 @@ export async function printTemplateRender(templateId, object) {
     include: [
       {
         model: db.User, as: 'createdBy',
-        attributes: ['id', 'displayName', 'email']
+        attributes: DEFAULT_INCLUDE_USER_ATTRS
       }, {
         model: db.TemplateType, as: 'templateType'
       }

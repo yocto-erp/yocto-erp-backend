@@ -9,6 +9,7 @@ import {PERMISSION} from "../../db/models/acl/acl-action";
 import {addTaggingQueue} from "../../queue/tagging.queue";
 import {getPerson} from "../person/person.service";
 import {getCompany} from "../company/company.service";
+import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
 
 const {Op} = db.Sequelize;
 
@@ -52,7 +53,7 @@ export function listSubject(user, query, {order, offset, limit}) {
       {model: db.Company, as: 'company'},
       {
         model: db.User, as: 'createdBy',
-        attributes: ['id', 'displayName', 'email']
+        attributes: DEFAULT_INCLUDE_USER_ATTRS
       },
       {
         model: db.Person, as: 'contactPerson'

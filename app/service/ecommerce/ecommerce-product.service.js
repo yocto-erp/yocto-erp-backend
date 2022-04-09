@@ -121,7 +121,7 @@ export async function getEcommerceProduct(user, id) {
       { model: db.Product, as: "product" },
       { model: db.Tax, as: "taxes" },
       { model: db.TaxSet, as: "taxSet" },
-      { model: db.ProductUnit, as: "unit" },
+      { model: db.ProductUnit, as: "unit", where: { productId: { [Op.col]: "ecommerceProduct.productId" } } },
       { model: db.Tagging, as: "tagging" }
     ],
     order: [[{ model: db.AssetItem, as: "assetItems" }, "priority", "asc"]]

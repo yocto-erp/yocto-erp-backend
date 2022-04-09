@@ -4,6 +4,7 @@ import User from '../../db/models/user/user';
 import {taggingMapping} from "../tagging/tagging.service";
 import {TAGGING_TYPE} from '../../db/models/tagging/tagging-item-type';
 import {buildDateRangeQuery} from "../../util/db.util";
+import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
 
 const {Op} = db.Sequelize;
 
@@ -32,11 +33,11 @@ export function inventories(user, query, {order, offset, limit}) {
       {model: db.InventoryDetail, as: 'details'},
       {
         model: User, as: 'createdBy',
-        attributes: ['id', 'displayName', 'email']
+        attributes: DEFAULT_INCLUDE_USER_ATTRS
       },
       {
         model: User, as: 'lastModifiedBy',
-        attributes: ['id', 'displayName', 'email']
+        attributes: DEFAULT_INCLUDE_USER_ATTRS
       },
       {model: db.WareHouse, as: 'warehouse', attributes: ['id', 'name', 'address']},
       {
