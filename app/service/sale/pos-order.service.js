@@ -9,6 +9,11 @@ import { PERMISSION } from "../../db/models/acl/acl-action";
 import { storeCost } from "../cost/cost.service";
 import { COST_TYPE } from "../../db/models/cost/cost";
 import { COST_PURPOSE } from "../../db/models/cost/cost-purpose";
+import { storeDebt } from "../debt/debt.service";
+import { DEBT_TYPE } from "../../db/models/debt/debt";
+import { DEBT_PURPOSE_TYPE } from "../../db/models/debt/debt-detail";
+import { addTaggingQueue } from "../../queue/tagging.queue";
+import { compare, formatNumberDB, fromBigNumberJson, toBigNumber } from "../../util/math.util";
 
 export async function getUserPos(user, posId) {
   const item = await db.PosUser.findOne({
@@ -27,13 +32,13 @@ export async function getUserPos(user, posId) {
 
 async function checkValidAndUpdateInventory(user, warehouseId, products, transaction) {
   const checkProducts = products
-    .filter(p => p.enableWarehouse)
+    .filter(p => p.product.enableWarehouse)
     .map(t => {
       return {
-        productId: t.productId,
-        unitId: t.unitId,
+        productId: t.product.productId,
+        unitId: t.product.unitId,
         quantity: t.qty,
-        product: t.product
+        product: t.product.product
       };
     });
   const listInventoryUpdate = mergeListUpdateInventory(checkProducts, null);
@@ -43,22 +48,19 @@ async function checkValidAndUpdateInventory(user, warehouseId, products, transac
 
 /* eslint-disable no-unused-vars */
 export async function posOrder(user, posId, form, userAgent, ip) {
-  console.log("posOrder", form);
   const userPos = await getUserPos(user, posId);
   const {
-    products,
-    id: clientId,
-    name,
-    customer,
-    totalWithTax,
-    tax,
-    isShipping,
-    debt,
-    remark,
-    return: returnValue,
-    paymentAmount,
+    order: {
+      products,
+      id: clientId,
+      name,
+      customer,
+      isShipping,
+      debt,
+      remark
+    },
     voucher: {
-      storeDebt,
+      storeDebt: isStoreDebt,
       storeDebtAmount,
       storeDebtName,
       storeDebtTagging,
@@ -71,12 +73,16 @@ export async function posOrder(user, posId, form, userAgent, ip) {
       storeCashInTagging
     }
   } = form;
+  const totalWithTax = fromBigNumberJson(form.order.totalWithTax);
+  const tax = fromBigNumberJson(form.order.tax);
+  const paymentAmount = toBigNumber(form.order.paymentAmount);
   const transaction = await db.sequelize.transaction();
   let warehouseProducts = null;
   try {
     if (storeWarehouse) {
       // Check value in inventory is value
       warehouseProducts = await checkValidAndUpdateInventory(user, userPos.pos.warehouseId, products, transaction);
+      console.log("Check Valid warehouse product", warehouseProducts);
     }
     const order = await db.Order.create({
       name,
@@ -86,11 +92,11 @@ export async function posOrder(user, posId, form, userAgent, ip) {
       companyId: user.companyId,
       processedDate: new Date(),
       type: ORDER_TYPE.SALE,
-      totalAmount: totalWithTax,
-      taxAmount: tax,
+      totalAmount: formatNumberDB(totalWithTax),
+      taxAmount: formatNumberDB(tax),
       createdDate: new Date(),
-      shopId: "",
-      paymentStatus: paymentAmount >= totalWithTax ? ORDER_PAYMENT_STATUS.PAID : ORDER_PAYMENT_STATUS.PENDING,
+      shopId: userPos.pos.shopId,
+      paymentStatus: compare(paymentAmount, totalWithTax) > 0 ? ORDER_PAYMENT_STATUS.PAID : ORDER_PAYMENT_STATUS.PENDING,
       status: isShipping ? ORDER_STATUS.SHIPPING : ORDER_STATUS.DONE,
       source: ORDER_SOURCE.POS,
       ip
@@ -99,6 +105,7 @@ export async function posOrder(user, posId, form, userAgent, ip) {
     const orderDetails = [];
     const orderDetailTaxes = [];
     const ecommerceDetails = [];
+    let listUpdateTags = [];
     for (let i = 0; i < products.length; i += 1) {
       const { product, qty, taxes: productTaxes, price, id } = products[i];
       orderDetails.push({
@@ -116,18 +123,18 @@ export async function posOrder(user, posId, form, userAgent, ip) {
       });
       for (let j = 0; j < productTaxes.length; j += 1) {
         const taxItem = productTaxes[j];
+        const taxAmount = fromBigNumberJson(taxItem.taxAmount);
         orderDetailTaxes.push({
           orderDetailId: i + 1,
           orderId: order.id,
           taxId: taxItem.id,
-          amount: taxItem.taxAmount
+          amount: formatNumberDB(taxAmount)
         });
       }
     }
 
     await db.OrderDetail.bulkCreate(orderDetails, { transaction });
     await db.OrderDetailTax.bulkCreate(orderDetailTaxes, { transaction });
-    await db.EcommerceOrderDetail.bulkCreate(ecommerceDetails, { transaction });
     const ecommerceOrder = await db.EcommerceOrder.create({
       orderId: order.id,
       customerOrderId: clientId,
@@ -135,8 +142,9 @@ export async function posOrder(user, posId, form, userAgent, ip) {
       userAgent,
       confirmedDate: new Date(),
       isConfirmed: true,
-      userPayAmount: paymentAmount
-    });
+      userPayAmount: formatNumberDB(paymentAmount)
+    }, { transaction });
+    await db.EcommerceOrderDetail.bulkCreate(ecommerceDetails, { transaction });
 
     if (storeWarehouse && warehouseProducts && warehouseProducts.length) {
       const newInventoryOut = await createInventory(user, INVENTORY_TYPE.OUT, {
@@ -144,22 +152,33 @@ export async function posOrder(user, posId, form, userAgent, ip) {
         name: storeWarehouseName, remark, purposeId: INVENTORY_PURPOSE.SALE,
         relativeId: ecommerceOrder.id, tagging: storeWarehouseTagging
       }, transaction);
+      listUpdateTags = [...new Set(storeWarehouseTagging.map(t => t.id))];
     }
     if (storeCashIn) {
       const newCost = await storeCost(user, {
         name: storeCashInName,
         remark,
-        type: COST_TYPE.PAYMENT,
+        type: COST_TYPE.RECEIPT,
         subject: customer,
         amount: storeCashInAmount,
         purposeId: COST_PURPOSE.SALE,
         relativeId: ecommerceOrder.id,
         tagging: storeCashInTagging
       }, transaction);
+      listUpdateTags = [...new Set([...listUpdateTags, ...storeCashInTagging.map(t => t.id)])];
     }
     // eslint-disable-next-line no-empty
-    if (storeDebt) {
-
+    if (isStoreDebt) {
+      const newDebt = await storeDebt(user, {
+        name: storeDebtName,
+        type: DEBT_TYPE.RECEIVABLES,
+        subject: customer,
+        amount: storeDebtAmount,
+        tagging: storeDebtTagging,
+        relateId: ecommerceOrder.id,
+        purposeType: DEBT_PURPOSE_TYPE.SALE
+      }, transaction);
+      listUpdateTags = [...new Set([...listUpdateTags, ...storeDebtTagging.map(t => t.id)])];
     }
 
     await transaction.commit();
@@ -168,6 +187,9 @@ export async function posOrder(user, posId, form, userAgent, ip) {
       user, subject: customer,
       relativeId: String(order.id)
     }).then();
+    if (listUpdateTags.length) {
+      addTaggingQueue(listUpdateTags);
+    }
     return ecommerceOrder;
   } catch (e) {
     await transaction.rollback();

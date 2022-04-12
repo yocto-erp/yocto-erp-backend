@@ -1,7 +1,7 @@
 import isArray from "lodash/isArray";
 
 const isArrayHasLength = (arr) => {
-  return isArray(arr) && arr.length;
+  return arr && isArray(arr) && arr.length;
 };
 
 export {

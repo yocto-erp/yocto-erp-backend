@@ -55,5 +55,6 @@ export default class Person extends Sequelize.Model {
   static associate(models) {
     this.belongsTo(models.User, {foreignKey: 'createdById', as: 'createdBy'});
     this.hasMany(models.PartnerPerson, {foreignKey: 'personId', as: 'partnerPerson'});
+    this.hasOne(models.Subject, {foreignKey: 'personId', as: 'subject'})
   }
 }

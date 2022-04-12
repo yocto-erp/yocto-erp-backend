@@ -2,7 +2,7 @@ import Sequelize from 'sequelize';
 
 const {DataTypes} = Sequelize;
 
-// MAX 87
+// MAX 91
 
 export const PERMISSION = {
   PRODUCT: {
@@ -143,10 +143,10 @@ export const PERMISSION = {
     DELETE: 85
   },
   DEBT: {
-    READ: 86,
-    CREATE: 87,
-    UPDATE: 88,
-    DELETE: 89
+    READ: 88,
+    CREATE: 89,
+    UPDATE: 90,
+    DELETE: 91
   }
 };
 

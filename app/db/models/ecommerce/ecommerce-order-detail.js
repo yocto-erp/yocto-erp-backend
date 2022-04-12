@@ -28,10 +28,5 @@ export default class EcommerceOrderDetail extends Sequelize.Model {
       sourceKey: "ecommerceOrderId",
       as: "detail"
     });
-    this.hasOne(models.EcommerceOrderShipping, {
-      foreignKey: "ecommerceOrderId",
-      sourceKey: "orderId",
-      as: "shipping"
-    });
   }
 }

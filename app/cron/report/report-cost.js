@@ -1,12 +1,12 @@
-import db from '../../db/models'
-import {getHourRange, getHourRangeFromLastMin} from "../../util/date.util";
-import {sendErrorMessage} from "../../service/partner/telegram";
-import {COST_TYPE} from "../../db/models/cost/cost";
-import {schedulerLog} from "../../config/winston";
+import db from "../../db/models";
+import { getHourRange, getHourRangeFromLastMin } from "../../util/date.util";
+import { sendErrorMessage } from "../../service/partner/telegram";
+import { COST_TYPE } from "../../db/models/cost/cost";
+import { schedulerLog } from "../../config/winston";
 
-const {CronJob} = require('cron');
+const { CronJob } = require("cron");
 
-const {Op, fn, col} = db.Sequelize;
+const { Op, fn, col } = db.Sequelize;
 const RUNNING_MIN = 5;
 
 
@@ -23,19 +23,19 @@ export async function costSummary(from, to) {
   try {
     const rs = await db.Cost.findAll({
       attributes: [
-        [fn('sum', col('amount')), 'total'],
-        [fn('DATE_FORMAT', col('processedDate'), '%Y-%m-%dT%H:00:00.000Z'), 'date'],
-        'companyId',
-        'type'
+        [fn("sum", col("amount")), "total"],
+        [fn("DATE_FORMAT", col("processedDate"), "%Y-%m-%dT%H:00:00.000Z"), "date"],
+        "companyId",
+        "type"
       ],
       where,
-      group: ['date', 'companyId', 'type'],
+      group: ["date", "companyId", "type"],
       raw: true
     });
     const reports = [];
     for (let i = 0; i < rs.length; i += 1) {
       const item = rs[i];
-      let {companyId} = item;
+      let { companyId } = item;
       if (companyId === null) {
         companyId = 0;
       }
@@ -47,7 +47,7 @@ export async function costSummary(from, to) {
           receipt: item.type === COST_TYPE.RECEIPT ? item.total : 0,
           payment: item.type === COST_TYPE.PAYMENT ? item.total : 0,
           lastUpdated: new Date()
-        }
+        };
         reports.push(existReport);
       } else if (item.type === COST_TYPE.RECEIPT) {
         existReport.receipt = item.total;
@@ -62,6 +62,7 @@ export async function costSummary(from, to) {
   } catch (e) {
     console.error(e);
     sendErrorMessage(e.stack).then();
+    return { error: e };
   }
 }
 
@@ -71,7 +72,7 @@ export function reportDailyCostSummary() {
   return costSummary(lastHourRange.begin, currentHourRange.end);
 }
 
-export const every15minUpdateHourlyCost = new CronJob('00 */5 * * * *', () => {
-  schedulerLog.info('Running Report Cost Hourly Summary');
+export const every15minUpdateHourlyCost = new CronJob("00 */5 * * * *", () => {
+  schedulerLog.info("Running Report Cost Hourly Summary");
   return reportDailyCostSummary();
 });

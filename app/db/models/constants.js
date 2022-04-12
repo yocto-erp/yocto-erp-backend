@@ -3,12 +3,7 @@
  */
 export const DEBT_PURPOSE = {
   OTHER: 1,
-  POS_ORDER: 2
-};
-
-export const DEBT_TYPE = {
-  CREDIT: 1, // Ghi nợ
-  DEBIT: 2 // Trả nợ
+  SALE: 2
 };
 
 export const DEFAULT_INCLUDE_USER_ATTRS = ["id", "displayName", "email"];

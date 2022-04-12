@@ -1,22 +1,22 @@
-import { hasText } from '../../util/string.util';
-import db from '../../db/models';
-import { badRequest, FIELD_ERROR } from '../../config/error';
-import { updateItemTags } from '../tagging/tagging.service';
-import { TAGGING_TYPE } from '../../db/models/tagging/tagging-item-type';
-import { auditAction } from '../audit/audit.service';
-import { PERMISSION } from '../../db/models/acl/acl-action';
-import { addTaggingQueue } from '../../queue/tagging.queue';
-import { DEBT_PURPOSE_TYPE } from '../../db/models/debt/debt-detail';
-import { createDebtBalance, updateDebtBalance, updateDebtBalanceWhenDeleteDebt } from './debt-subject-balance.service';
-import { DEBT_TYPE } from '../../db/models/debt/debt';
+import { hasText } from "../../util/string.util";
+import db from "../../db/models";
+import { badRequest, FIELD_ERROR } from "../../config/error";
+import { updateItemTags } from "../tagging/tagging.service";
+import { TAGGING_TYPE } from "../../db/models/tagging/tagging-item-type";
+import { auditAction } from "../audit/audit.service";
+import { PERMISSION } from "../../db/models/acl/acl-action";
+import { addTaggingQueue } from "../../queue/tagging.queue";
+import { createDebtBalance, updateDebtBalance, updateDebtBalanceWhenDeleteDebt } from "./debt-subject-balance.service";
+import { DEBT_TYPE } from "../../db/models/debt/debt";
+import { isArrayHasLength } from "../../util/func.util";
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
-export function debts(user, query, {order, offset, limit}) {
-  const {search, debtType} = query;
-  const where = {companyId: user.companyId};
+export function debts(user, query, { order, offset, limit }) {
+  const { search, debtType } = query;
+  const where = { companyId: user.companyId };
   if (debtType) {
-    where.type = debtType
+    where.type = debtType;
   }
   if (hasText(search)) {
     where[Op.or] = [
@@ -32,26 +32,36 @@ export function debts(user, query, {order, offset, limit}) {
     include: [
       {
         model: db.User,
-        as: 'createdBy',
-        attributes: ['id', 'displayName', 'email']
+        as: "createdBy",
+        attributes: ["id", "displayName", "email"]
+      },
+      {
+        model: db.Tagging,
+        as: "tagging"
       },
       {
         model: db.Subject,
-        as: 'subject',
+        as: "subject",
         include: [
           {
-            model: db.Person, as: 'person'
+            model: db.Person, as: "person"
           },
           {
-            model: db.Company, as: 'company'
+            model: db.Company, as: "company"
           }
         ]
       }
     ],
+    group: ["id"],
     order,
     offset,
     limit
-  })
+  }).then((resp) => {
+    return ({
+      count: resp.count.length,
+      rows: resp.rows
+    });
+  });
 }
 
 export async function getDebt(user, dId) {
@@ -61,16 +71,28 @@ export async function getDebt(user, dId) {
       companyId: user.companyId
     },
     include: [
-      { model: db.Tagging, as: "tagging" }
+      { model: db.Tagging, as: "tagging" },
+      {
+        model: db.Subject,
+        as: "subject",
+        include: [
+          {
+            model: db.Person, as: "person"
+          },
+          {
+            model: db.Company, as: "company"
+          }
+        ]
+      }
     ]
   });
   if (!debt) {
-    throw badRequest('debt', FIELD_ERROR.INVALID, 'Debt not found');
+    throw badRequest("debt", FIELD_ERROR.INVALID, "Debt not found");
   }
   return debt;
 }
 
-export async function createDebt(user, createForm) {
+export async function storeDebt(user, createForm, transaction) {
   const {
     name,
     type,
@@ -78,54 +100,69 @@ export async function createDebt(user, createForm) {
     subject,
     amount,
     tagging,
-    settleDebtId
+    settleDebtId,
+    relateId,
+    purposeType
+  } = createForm;
+  const newDebt = await db.Debt.create({
+    name,
+    type: Number(type),
+    subjectId: subject.id,
+    remark,
+    amount,
+    companyId: user.companyId,
+    createdDate: new Date(),
+    createdById: user.id,
+    settleDebtId: Number(type) === DEBT_TYPE.RECOVERY_PUBLIC_DEBT || Number(type) === DEBT_TYPE.PAID_DEBT ? settleDebtId.id : null
+  }, { transaction });
+
+  if (relateId && purposeType) {
+    await db.DebtDetail.create({
+      debtId: newDebt.id,
+      relateId,
+      purposeType
+    }, { transaction });
+  }
+
+  const checkDebtSubjectBalance = await db.DebtSubjectBalance.findOne({
+    where: {
+      companyId: user.companyId,
+      subjectId: subject.id
+    }
+  }, { transaction });
+
+  if (!checkDebtSubjectBalance) {
+    await createDebtBalance(user, subject.id, type, amount, transaction);
+  } else {
+    await updateDebtBalance(user, type, amount, checkDebtSubjectBalance, transaction);
+  }
+
+  if (isArrayHasLength(tagging)) {
+    await updateItemTags({
+      id: newDebt.id,
+      type: TAGGING_TYPE.DEBT,
+      transaction,
+      newTags: tagging
+    });
+  }
+  return newDebt;
+}
+
+export async function createDebt(user, createForm) {
+  const {
+    subject,
+    tagging
   } = createForm;
   const transaction = await db.sequelize.transaction();
   try {
-    const newDebt = await db.Debt.create({
-      name,
-      type: Number(type),
-      subjectId: subject.id,
-      remark,
-      amount,
-      companyId: user.companyId,
-      createdDate: new Date(),
-      createdById: user.id,
-      settleDebtId:Number(type) === DEBT_TYPE.RECOVERY_PUBLIC_DEBT || Number(type) === DEBT_TYPE.PAID_DEBT ? settleDebtId.id : null
-    }, {transaction})
-
-    await db.DebtDetail.create({
-      debtId: newDebt.id,
-      relateId: user.id,
-      purposeType: DEBT_PURPOSE_TYPE.OTHER
-    }, {transaction})
-
-    const checkDebtSubjectBalance = await db.DebtSubjectBalance.findOne({
-      where: {
-        companyId: user.companyId,
-        subjectId: subject.id
-      }
-    });
-
-    if (!checkDebtSubjectBalance) {
-      await createDebtBalance(user, subject.id, type, amount, transaction)
-    } else {
-      await updateDebtBalance(user, type, amount, checkDebtSubjectBalance, transaction);
-    }
-
-    if (tagging && tagging.length) {
-      await updateItemTags({
-        id: newDebt.id,
-        type: TAGGING_TYPE.DEBT,
-        transaction,
-        newTags: tagging
-      });
-    }
+    const newDebt = await storeDebt(user, createForm, transaction);
     await transaction.commit();
+
     auditAction({
-      actionId: PERMISSION.DEBT.UPDATE,
+      actionId: PERMISSION.DEBT.CREATE,
       user,
-      relativeId: String(subject.id)
+      subject,
+      relativeId: String(newDebt.id)
     }).then();
     if (tagging && tagging.length) {
       addTaggingQueue([...new Set(tagging.map(t => t.id))]);
@@ -133,11 +170,8 @@ export async function createDebt(user, createForm) {
 
     return newDebt;
   } catch (e) {
-    console.error(e)
+    console.error(e);
     await transaction.rollback();
-    if (e.name === 'SequelizeUniqueConstraintError') {
-      throw badRequest('subject', FIELD_ERROR.EXISTED, 'Subject is existed')
-    }
     throw e;
   }
 }
@@ -174,12 +208,12 @@ export async function updateDebt(dId, user, updateForm) {
     });
 
     if (!checkDebtSubjectBalance) {
-      await createDebtBalance(user, subject.id, type, amount, transaction)
+      await createDebtBalance(user, subject.id, type, amount, transaction);
     } else {
       await updateDebtBalance(user, type, amount, checkDebtSubjectBalance, transaction);
     }
 
-    let listUpdateTags = []
+    let listUpdateTags = [];
     if ((tagging && tagging.length) || (existedDebt.tagging && existedDebt.tagging.length)) {
       await updateItemTags({
         id: existedDebt.id,
@@ -189,13 +223,14 @@ export async function updateDebt(dId, user, updateForm) {
       });
 
       listUpdateTags = [...new Set([...((tagging || []).map(t => t.id)),
-        ...((existedDebt.tagging || []).map(t => t.id))])]
+        ...((existedDebt.tagging || []).map(t => t.id))])];
     }
     await transaction.commit();
     auditAction({
-      actionId: PERMISSION.DEBT.CREATE,
+      actionId: PERMISSION.DEBT.UPDATE,
       user,
-      relativeId: String(subject.id)
+      subject: subject,
+      relativeId: String(existedDebt.id)
     }).then();
     if (listUpdateTags.length) {
       addTaggingQueue(listUpdateTags);
@@ -203,35 +238,40 @@ export async function updateDebt(dId, user, updateForm) {
 
     return existedDebt;
   } catch (e) {
-    console.error(e)
+    console.error(e);
     await transaction.rollback();
-    if (e.name === 'SequelizeUniqueConstraintError') {
-      throw badRequest('subject', FIELD_ERROR.EXISTED, 'Subject is existed')
-    }
     throw e;
   }
 }
 
 export async function removeDebt(user, dId) {
-  const checkDebt = await db.Debt.findOne({
-    where: {
-      id: dId,
-      companyId: user.companyId
-    }
-  });
-  if (!checkDebt) {
-    throw badRequest("debt", FIELD_ERROR.INVALID, "debt not found");
-  }
+  const checkDebt = await getDebt(user, dId);
+
   const transaction = await db.sequelize.transaction();
   try {
-    await db.DebtDetail.destroy({
-      where: {
-        debtId: checkDebt.id
-      }
-    }, { transaction });
     await updateDebtBalanceWhenDeleteDebt(user, checkDebt, transaction);
     await checkDebt.destroy({ transaction });
+    let listUpdateTags = [];
+    if (isArrayHasLength(checkDebt.tagging)) {
+      await db.TaggingItem.destroy({
+        where: {
+          itemType: TAGGING_TYPE.DEBT,
+          itemId: checkDebt.id
+        },
+        transaction
+      });
+      listUpdateTags = [...new Set(((checkDebt.checkDebt || []).map(t => t.id)))];
+    }
     await transaction.commit();
+    auditAction({
+      actionId: PERMISSION.DEBT.DELETE,
+      user,
+      subject: checkDebt.subject,
+      relativeId: String(checkDebt.id)
+    }).then();
+    if (listUpdateTags.length) {
+      addTaggingQueue(listUpdateTags);
+    }
     return checkDebt;
   } catch (error) {
     await transaction.rollback();
@@ -239,9 +279,9 @@ export async function removeDebt(user, dId) {
   }
 }
 
-export function commonDebts(user, query, {order, offset, limit}) {
-  const {search} = query;
-  const where = {companyId: user.companyId};
+export function commonDebts(user, query, { order, offset, limit }) {
+  const { search } = query;
+  const where = { companyId: user.companyId };
   const whereSubject = {};
   if (hasText(search)) {
     whereSubject[Op.or] = [
@@ -257,14 +297,14 @@ export function commonDebts(user, query, {order, offset, limit}) {
     include: [
       {
         model: db.Subject,
-        as: 'subject',
+        as: "subject",
         where: whereSubject,
         include: [
           {
-            model: db.Person, as: 'person'
+            model: db.Person, as: "person"
           },
           {
-            model: db.Company, as: 'company'
+            model: db.Company, as: "company"
           }
         ]
       }
@@ -272,5 +312,5 @@ export function commonDebts(user, query, {order, offset, limit}) {
     order,
     offset,
     limit
-  })
+  });
 }

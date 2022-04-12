@@ -1,11 +1,11 @@
-import db from '../../db/models';
-import {badRequest, FIELD_ERROR} from '../../config/error';
+import db from "../../db/models";
+import { badRequest, FIELD_ERROR } from "../../config/error";
 import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
 export function companies(query, order, offset, limit, user) {
-  const {search} = query;
+  const { search } = query;
   let where = {};
   if (search && search.length) {
     where = {
@@ -33,11 +33,11 @@ export function companies(query, order, offset, limit, user) {
     where,
     include: [
       {
-        model: db.User, as: 'createdBy',
+        model: db.User, as: "createdBy",
         attributes: DEFAULT_INCLUDE_USER_ATTRS
       },
       {
-        model: db.PartnerCompany, as: 'partnerCompany', where: {companyId: user.companyId}, attributes: []
+        model: db.PartnerCompany, as: "partnerCompany", where: { companyId: user.companyId }, attributes: []
       }
     ],
     offset,
@@ -51,13 +51,13 @@ export async function getCompany(cId, user) {
       id: cId
     },
     include: [{
-      model: db.PartnerCompany, as: 'partnerCompany', where: {companyId: user.companyId}, attributes: []
+      model: db.PartnerCompany, as: "partnerCompany", where: { companyId: user.companyId }, attributes: []
     }, {
-      model: db.Subject, as: 'subject'
+      model: db.Subject, as: "subject"
     }]
   });
   if (!company) {
-    throw badRequest('company', FIELD_ERROR.INVALID, 'Company not found');
+    throw badRequest("company", FIELD_ERROR.INVALID, "Company not found");
   }
   return company;
 }
@@ -75,13 +75,13 @@ export async function createCompany(user, createForm) {
         email: createForm.email,
         createdDate: new Date(),
         createdById: user.id
-      }, {transaction}
+      }, { transaction }
     );
 
     await db.PartnerCompany.create({
       companyId: user.companyId,
       partnerCompanyId: partnerCompany.id
-    }, {transaction})
+    }, { transaction });
 
     await transaction.commit();
 
@@ -108,7 +108,8 @@ export async function updateCompany(cId, updateForm, user) {
       company.subject.name = updateForm.name;
       company.subject.gsm = updateForm.gsm;
       company.subject.email = updateForm.email;
-      await company.subject.save({transaction})
+      company.subject.lastActionedDate = new Date();
+      await company.subject.save({ transaction });
     }
 
     await transaction.commit();
@@ -124,10 +125,10 @@ export async function removeCompany(cId, user) {
     where: {
       id: cId
     },
-    include: {model: db.PartnerCompany, as: 'partnerCompany', where: {companyId: user.companyId}, attributes: []}
+    include: { model: db.PartnerCompany, as: "partnerCompany", where: { companyId: user.companyId }, attributes: [] }
   });
   if (!checkCompany) {
-    throw badRequest('company', FIELD_ERROR.INVALID, 'company not found');
+    throw badRequest("company", FIELD_ERROR.INVALID, "company not found");
   }
   const transaction = await db.sequelize.transaction();
   try {
@@ -136,10 +137,10 @@ export async function removeCompany(cId, user) {
         companyId: user.companyId,
         partnerCompanyId: checkCompany.id
       }
-    }, {transaction});
+    }, { transaction });
     const company = db.Company.destroy({
-      where: {id: checkCompany.id}
-    }, {transaction});
+      where: { id: checkCompany.id }
+    }, { transaction });
     await transaction.commit();
     return company;
   } catch (error) {
