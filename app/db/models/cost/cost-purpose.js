@@ -9,8 +9,7 @@ export const COST_PURPOSE = {
   ORDER: 1,
   DEBT: 2,
   SALE: 3,
-  STUDENT_FEE: 4,
-  POS: 4
+  STUDENT_FEE: 4
 };
 
 export default class CostPurpose extends Sequelize.Model {

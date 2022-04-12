@@ -8,7 +8,7 @@ export default class EcommerceOrderShipping extends Sequelize.Model {
       {
         ecommerceOrderId: { type: DataTypes.BIGINT, primaryKey: true },
         shippingTypeId: { type: DataTypes.INTEGER },
-        status: { type: DataTypes.TINYINT(4) },
+        status: { type: DataTypes.TINYINT() },
         shippedDate: { type: DataTypes.DATE },
         receivedDate: { type: DataTypes.DATE },
         lastUpdatedById: { type: DataTypes.BIGINT },

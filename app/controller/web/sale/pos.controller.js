@@ -51,6 +51,12 @@ router.delete('/:id(\\d+)', hasPermission(PERMISSION.POS.DELETE), (req, res, nex
     .catch(next);
 });
 
+router.post('/:id(\\d+)/order', hasPermission(PERMISSION.POS.ORDER), (req, res, next) => {
+  return removePOS(req.user, req.params.id)
+    .then(result => res.status(200).json(result))
+    .catch(next);
+});
+
 router.get('/:id(\\d+)/users', hasPermission(PERMISSION.POS.READ), (req, res, next) => {
   return getPosUser(req.user, req.params.id)
     .then(result => res.status(200).json(result))

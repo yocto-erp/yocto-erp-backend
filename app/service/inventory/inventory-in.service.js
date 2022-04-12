@@ -1,15 +1,23 @@
-import {INVENTORY_TYPE} from "../../db/models/inventory/inventory";
+import { INVENTORY_TYPE } from "../../db/models/inventory/inventory";
 import db from "../../db/models";
-import {updateItemTags} from "../tagging/tagging.service";
-import {TAGGING_TYPE} from "../../db/models/tagging/tagging-item-type";
-import {hasText} from "../../util/string.util";
-import {badRequest, FIELD_ERROR} from "../../config/error";
-import {updateInventoryPurpose} from "./inventory-purpose.service";
-import {addTaggingQueue} from "../../queue/tagging.queue";
+import { updateItemTags } from "../tagging/tagging.service";
+import { TAGGING_TYPE } from "../../db/models/tagging/tagging-item-type";
+import { hasText } from "../../util/string.util";
+import { badRequest, FIELD_ERROR } from "../../config/error";
+import { updateInventoryPurpose } from "./inventory-purpose.service";
+import { addTaggingQueue } from "../../queue/tagging.queue";
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
 /**
+ * {
+ *   productId, unitId, quantity, serialCode, product
+ *   productId: Product Id
+ *   unitId: unit id
+ *   quantity
+ *   product: using for get contain name when throw exception
+ * }
+ *
  * Subtract Old and Plus New
  * @param removeDetails list detail product need to remove from inventory
  * @param addDetails list detail product need to add to inventory
@@ -18,20 +26,20 @@ export function mergeListUpdateInventory(removeDetails, addDetails) {
   const rs = [];
   if (removeDetails && removeDetails.length) {
     for (let i = 0; i < removeDetails.length; i += 1) {
-      const {productId, unitId, quantity, serialCode, product} = removeDetails[i];
+      const { productId, unitId, quantity, serialCode, product } = removeDetails[i];
       let existItem = rs.find(t => t.productId === productId && t.unitId === unitId);
       if (!existItem) {
         existItem = {
           productId, unitId, serials: [], quantity: 0, product
-        }
-        rs.push(existItem)
+        };
+        rs.push(existItem);
       }
       existItem.quantity -= quantity;
       if (hasText(serialCode)) {
         let existedSerial = existItem.serials.find(t => t.serial === serialCode);
         if (!existedSerial) {
-          existedSerial = {serial: serialCode, quantity: 0}
-          existItem.serials.push(existedSerial)
+          existedSerial = { serial: serialCode, quantity: 0 };
+          existItem.serials.push(existedSerial);
         }
         existedSerial.quantity -= quantity;
       }
@@ -39,20 +47,20 @@ export function mergeListUpdateInventory(removeDetails, addDetails) {
   }
   if (addDetails && addDetails.length) {
     for (let i = 0; i < addDetails.length; i += 1) {
-      const {productId, unitId, quantity, serialCode, product} = addDetails[i];
+      const { productId, unitId, quantity, serialCode, product } = addDetails[i];
       let existItem = rs.find(t => t.productId === productId && t.unitId === unitId);
       if (!existItem) {
         existItem = {
           productId, unitId, serials: [], quantity: 0, product
-        }
-        rs.push(existItem)
+        };
+        rs.push(existItem);
       }
       existItem.quantity += quantity;
       if (hasText(serialCode)) {
         let existedSerial = existItem.serials.find(t => t.serial === serialCode);
         if (!existedSerial) {
-          existedSerial = {serial: serialCode, quantity: 0}
-          existItem.serials.push(existedSerial)
+          existedSerial = { serial: serialCode, quantity: 0 };
+          existItem.serials.push(existedSerial);
         }
         existedSerial.quantity += quantity;
       }
@@ -64,7 +72,7 @@ export function mergeListUpdateInventory(removeDetails, addDetails) {
 
 export async function updateInventory(companyId, warehouseId, userId, listUpdateDetails, transaction) {
   for (let i = 0; i < listUpdateDetails.length; i += 1) {
-    const {productId, unitId, quantity, serials, product} = listUpdateDetails[i];
+    const { productId, unitId, quantity, serials, product } = listUpdateDetails[i];
     if (quantity !== 0 || serials.find(s => s.quantity !== 0)) {
       // eslint-disable-next-line no-await-in-loop
       let inventorySummary = await db.InventorySummary.findOne({
@@ -74,7 +82,7 @@ export async function updateInventory(companyId, warehouseId, userId, listUpdate
           unitId,
           warehouseId: warehouseId
         }
-      }, {transaction});
+      }, { transaction });
       if (!inventorySummary) {
         inventorySummary = db.InventorySummary.build({
           companyId,
@@ -87,34 +95,34 @@ export async function updateInventory(companyId, warehouseId, userId, listUpdate
       inventorySummary.quantity += quantity;
       // TODO: check if quantity negative then throw exception
       if (inventorySummary.quantity < 0) {
-        throw badRequest('product', FIELD_ERROR.INVALID, `Product ${product.name} had invalid stock.`)
+        throw badRequest("product", FIELD_ERROR.INVALID, `Product ${product.name} had invalid stock.`);
       }
       inventorySummary.lastModifiedDate = new Date();
       inventorySummary.lastModifiedById = userId;
       // eslint-disable-next-line no-await-in-loop
-      inventorySummary = await inventorySummary.save({transaction});
+      inventorySummary = await inventorySummary.save({ transaction });
       if (serials.length) {
         for (let j = 0; j < serials.length; j += 1) {
-          const {serial, quantity: qty} = serials[j];
+          const { serial, quantity: qty } = serials[j];
           // eslint-disable-next-line no-await-in-loop
           let inventorySerial = await db.InventorySummarySerial.findOne({
             where: {
               inventorySummaryId: inventorySummary.id,
               serialCode: serial
             }
-          })
+          });
           if (!inventorySerial) {
             inventorySerial = db.InventorySummarySerial.build({
               inventorySummaryId: inventorySummary.id,
               serialCode: serial, quantity: 0
-            })
+            });
           }
           inventorySerial.quantity += qty;
           // TODO: Check if quantity negative then throw exception
           if (inventorySerial.quantity < 0) {
-            throw badRequest('product', FIELD_ERROR.INVALID, `Product ${product.name} - serial ${serial} had invalid stock.`)
+            throw badRequest("product", FIELD_ERROR.INVALID, `Product ${product.name} - serial ${serial} had invalid stock.`);
           }
-          inventorySerial.save({transaction})
+          inventorySerial.save({ transaction });
         }
       }
     }
@@ -123,7 +131,7 @@ export async function updateInventory(companyId, warehouseId, userId, listUpdate
 
 export async function createInventoryIn(user, createForm) {
   const listInventoryUpdate = mergeListUpdateInventory(null, createForm.details);
-  console.log('Add Inventory', listInventoryUpdate);
+  console.log("Add Inventory", listInventoryUpdate);
   const transaction = await db.sequelize.transaction();
   try {
     await updateInventory(user.companyId, createForm.warehouseId, user.id, listInventoryUpdate, transaction);
@@ -137,7 +145,7 @@ export async function createInventoryIn(user, createForm) {
       remark: createForm.remark,
       createdDate: new Date(),
       createdById: user.id
-    }, {transaction});
+    }, { transaction });
 
     await db.InventoryDetail.bulkCreate(createForm.details.map((t, index) => ({
       inventoryId: inventory.id,
@@ -147,23 +155,23 @@ export async function createInventoryIn(user, createForm) {
       quantity: t.quantity,
       remark: t.remark,
       serialCode: t.serialCode
-    })), {transaction})
+    })), { transaction });
 
     if (createForm.purposeId > 0 && createForm.relativeId > 0) {
       await db.InventoryPurpose.create({
         inventoryId: inventory.id,
         purposeId: createForm.purposeId,
         relativeId: createForm.relativeId
-      }, {transaction})
+      }, { transaction });
     }
-    let listUpdateTags = []
+    let listUpdateTags = [];
     if (createForm.tagging && createForm.tagging.length) {
       await updateItemTags({
         id: inventory.id,
         type: TAGGING_TYPE.INVENTORY_GOOD_RECEIPT,
         transaction,
         newTags: createForm.tagging
-      })
+      });
       listUpdateTags = [...new Set(((createForm.tagging || []).map(t => t.id)))];
     }
 
@@ -184,28 +192,28 @@ export async function getInventoryItem(user, inventoryId) {
   const inventory = await db.Inventory.findOne({
     where: {
       [Op.and]: [
-        {id: inventoryId},
-        {companyId: user.companyId}
+        { id: inventoryId },
+        { companyId: user.companyId }
       ]
     }, include: [
-      {model: db.WareHouse, as: 'warehouse'},
+      { model: db.WareHouse, as: "warehouse" },
       {
-        model: db.InventoryDetail, as: 'details',
+        model: db.InventoryDetail, as: "details",
         include: [
-          {model: db.Product, as: 'product', attributes: ['id', 'name', 'remark']},
+          { model: db.Product, as: "product", attributes: ["id", "name", "remark"] },
           {
-            model: db.ProductUnit, as: 'unit',
+            model: db.ProductUnit, as: "unit",
             required: false,
             where: {
               productId: {
-                [Op.eq]: db.Sequelize.col('details.productId')
+                [Op.eq]: db.Sequelize.col("details.productId")
               }
             }
           }
         ]
       },
       {
-        model: db.TaggingItem, as: 'taggingItems',
+        model: db.TaggingItem, as: "taggingItems",
         required: false,
         where: {
           itemType: {
@@ -213,25 +221,25 @@ export async function getInventoryItem(user, inventoryId) {
           }
         },
         include: [
-          {model: db.Tagging, as: 'tagging'}
+          { model: db.Tagging, as: "tagging" }
         ]
       }
     ]
   });
   if (!inventory) {
-    throw badRequest('inventory', FIELD_ERROR.INVALID, 'Inventory not found');
+    throw badRequest("inventory", FIELD_ERROR.INVALID, "Inventory not found");
   }
 
   return inventory;
 }
 
 export async function updateInventoryIn(user, inventoryId, updateForm) {
-  const inventoryOld = await getInventoryItem(user, inventoryId)
+  const inventoryOld = await getInventoryItem(user, inventoryId);
   const listUpdateDetails = mergeListUpdateInventory(inventoryOld.details, updateForm.details);
-  console.log('Update Inventory', JSON.stringify(listUpdateDetails))
+  console.log("Update Inventory", JSON.stringify(listUpdateDetails));
   const transaction = await db.sequelize.transaction();
   try {
-    await updateInventory(user.companyId, updateForm.warehouseId, user.id, listUpdateDetails, transaction)
+    await updateInventory(user.companyId, updateForm.warehouseId, user.id, listUpdateDetails, transaction);
 
     inventoryOld.name = updateForm.name;
     inventoryOld.warehouseId = updateForm.warehouseId;
@@ -239,14 +247,14 @@ export async function updateInventoryIn(user, inventoryId, updateForm) {
     inventoryOld.remark = updateForm.remark;
     inventoryOld.lastModifiedDate = new Date();
     inventoryOld.lastModifiedById = user.id;
-    await inventoryOld.save({transaction})
+    await inventoryOld.save({ transaction });
 
     if (updateForm.details && updateForm.details.length) {
       // delete inventory detail old
       await db.InventoryDetail.destroy(
         {
-          where: {inventoryId: inventoryId}
-        }, {transaction}
+          where: { inventoryId: inventoryId }
+        }, { transaction }
       );
       // create inventory detail
       await db.InventoryDetail.bulkCreate(updateForm.details.map((t, index) => ({
@@ -257,13 +265,13 @@ export async function updateInventoryIn(user, inventoryId, updateForm) {
         quantity: t.quantity,
         remark: t.remark,
         serialCode: t.serialCode
-      })), {transaction});
+      })), { transaction });
     }
 
-    if (updateForm.purposeId && updateForm.purposeId.length && updateForm.relativeId && updateForm.relativeId.length) {
+    if (updateForm.purposeId && updateForm.relativeId) {
       await updateInventoryPurpose(inventoryOld.id, updateForm.purposeId, updateForm.relativeId, transaction);
     }
-    let listUpdateTags = []
+    let listUpdateTags = [];
 
     if (updateForm.tagging && updateForm.tagging.length) {
       await updateItemTags({
@@ -271,13 +279,13 @@ export async function updateInventoryIn(user, inventoryId, updateForm) {
         type: TAGGING_TYPE.INVENTORY_GOOD_RECEIPT,
         transaction,
         newTags: updateForm.tagging
-      })
+      });
       listUpdateTags = [...new Set([...((updateForm.tagging || []).map(t => t.id)),
-        ...((inventoryOld.taggingItems || []).map(t => t.taggingId))])]
+        ...((inventoryOld.taggingItems || []).map(t => t.taggingId))])];
     }
 
     await transaction.commit();
-    console.log("Update Inventory Tagging", listUpdateTags)
+    console.log("Update Inventory Tagging", listUpdateTags);
     if (listUpdateTags.length) {
       addTaggingQueue(listUpdateTags);
     }
@@ -290,20 +298,20 @@ export async function updateInventoryIn(user, inventoryId, updateForm) {
 
 export async function removeInventoryIn(user, inventoryId) {
   const existedInventory = await getInventoryItem(user, inventoryId);
-  const listUpdateDetails = mergeListUpdateInventory(existedInventory.details, null)
+  const listUpdateDetails = mergeListUpdateInventory(existedInventory.details, null);
   const transaction = await db.sequelize.transaction();
   try {
-    await updateInventory(user.companyId, existedInventory.warehouseId, user.id, listUpdateDetails, transaction)
+    await updateInventory(user.companyId, existedInventory.warehouseId, user.id, listUpdateDetails, transaction);
     await db.InventoryDetail.destroy(
       {
-        where: {inventoryId: inventoryId}
-      }, {transaction}
-    )
+        where: { inventoryId: inventoryId }
+      }, { transaction }
+    );
     await db.InventoryPurpose.destroy({
-      where: {inventoryId: inventoryId}
-    }, {transaction})
+      where: { inventoryId: inventoryId }
+    }, { transaction });
 
-    let listUpdateTags = []
+    let listUpdateTags = [];
 
     if (existedInventory.taggingItems && existedInventory.taggingItems.length) {
       await db.TaggingItem.destroy({
@@ -312,11 +320,11 @@ export async function removeInventoryIn(user, inventoryId) {
           itemId: existedInventory.id
         },
         transaction
-      })
-      listUpdateTags = [...new Set(((existedInventory.taggingItems || []).map(t => t.taggingId)))]
+      });
+      listUpdateTags = [...new Set(((existedInventory.taggingItems || []).map(t => t.taggingId)))];
     }
 
-    await existedInventory.destroy({transaction});
+    await existedInventory.destroy({ transaction });
 
     await transaction.commit();
     if (listUpdateTags.length) {

@@ -1,77 +1,82 @@
-import {INVENTORY_TYPE} from "../../db/models/inventory/inventory";
+import { INVENTORY_TYPE } from "../../db/models/inventory/inventory";
 import db from "../../db/models";
-import {updateItemTags} from "../tagging/tagging.service";
-import {TAGGING_TYPE} from "../../db/models/tagging/tagging-item-type";
-import {updateInventoryPurpose} from "./inventory-purpose.service";
-import {addTaggingQueue} from "../../queue/tagging.queue";
-import {getInventoryItem, mergeListUpdateInventory, updateInventory} from "./inventory-in.service";
+import { updateItemTags } from "../tagging/tagging.service";
+import { TAGGING_TYPE } from "../../db/models/tagging/tagging-item-type";
+import { addTaggingQueue } from "../../queue/tagging.queue";
+import { getInventoryItem, mergeListUpdateInventory, updateInventory } from "./inventory-in.service";
+import { auditAction } from "../audit/audit.service";
+import { PERMISSION } from "../../db/models/acl/acl-action";
+
+export async function createInventory(user, inventoryType, form, transaction) {
+  const { details, warehouseId, name, remark, purposeId, relativeId, tagging } = form;
+
+  const inventory = await db.Inventory.create({
+    name,
+    warehouseId,
+    type: inventoryType,
+    processedDate: new Date(),
+    companyId: user.companyId,
+    totalProduct: details.length,
+    remark: remark,
+    createdDate: new Date(),
+    createdById: user.id
+  }, { transaction });
+  await db.InventoryDetail.bulkCreate(details.map((t, index) => ({
+    inventoryId: inventory.id,
+    inventoryDetailId: index + 1,
+    productId: t.productId,
+    unitId: t.unitId,
+    quantity: t.quantity,
+    remark: t.remark,
+    serialCode: t.serialCode
+  })), { transaction });
+  if (purposeId > 0 && relativeId > 0) {
+    await db.InventoryPurpose.create({
+      inventoryId: inventory.id,
+      purposeId: purposeId,
+      relativeId: relativeId
+    }, { transaction });
+  }
+  let listUpdateTags = [];
+  if (tagging && tagging.length) {
+    await updateItemTags({
+      id: inventory.id,
+      type: Number(inventoryType) === INVENTORY_TYPE.OUT ? TAGGING_TYPE.INVENTORY_GOOD_ISSUE : TAGGING_TYPE.INVENTORY_GOOD_RECEIPT,
+      transaction,
+      newTags: tagging
+    });
+    listUpdateTags = [...new Set(((tagging || []).map(t => t.id)))];
+  }
+  return {
+    inventory, listUpdateTags
+  };
+}
 
 export async function createInventoryOut(user, createForm) {
-  const listInventoryUpdate = mergeListUpdateInventory(createForm.details, null);
-  console.log('Substract Inventory', listInventoryUpdate);
   const transaction = await db.sequelize.transaction();
   try {
+    const listInventoryUpdate = mergeListUpdateInventory(createForm.details, null);
     await updateInventory(user.companyId, createForm.warehouseId, user.id, listInventoryUpdate, transaction);
-    const inventory = await db.Inventory.create({
-      name: createForm.name,
-      warehouseId: createForm.warehouseId,
-      type: INVENTORY_TYPE.OUT,
-      processedDate: new Date(),
-      companyId: user.companyId,
-      totalProduct: createForm.details.length,
-      remark: createForm.remark,
-      createdDate: new Date(),
-      createdById: user.id
-    }, {transaction});
-
-    await db.InventoryDetail.bulkCreate(createForm.details.map((t, index) => ({
-      inventoryId: inventory.id,
-      inventoryDetailId: index + 1,
-      productId: t.productId,
-      unitId: t.unitId,
-      quantity: t.quantity,
-      remark: t.remark,
-      serialCode: t.serialCode
-    })), {transaction})
-
-    if (createForm.purposeId > 0 && createForm.relativeId > 0) {
-      await db.InventoryPurpose.create({
-        inventoryId: inventory.id,
-        purposeId: createForm.purposeId,
-        relativeId: createForm.relativeId
-      }, {transaction})
-    }
-    let listUpdateTags = []
-    if (createForm.tagging && createForm.tagging.length) {
-      await updateItemTags({
-        id: inventory.id,
-        type: TAGGING_TYPE.INVENTORY_GOOD_ISSUE,
-        transaction,
-        newTags: createForm.tagging
-      })
-      listUpdateTags = [...new Set(((createForm.tagging || []).map(t => t.id)))];
-    }
-
+    const rs = await createInventory(user, INVENTORY_TYPE.OUT, createForm, transaction);
     await transaction.commit();
-    if (listUpdateTags.length) {
-      addTaggingQueue(listUpdateTags);
+    if (rs.listUpdateTags.length) {
+      addTaggingQueue(rs.listUpdateTags);
     }
 
-    return inventory;
+    return rs.inventory;
   } catch (error) {
-    console.error(error);
     await transaction.rollback();
     throw error;
   }
 }
 
 export async function updateInventoryOut(user, inventoryId, updateForm) {
-  const inventoryOld = await getInventoryItem(user, inventoryId)
+  const inventoryOld = await getInventoryItem(user, inventoryId);
   const listUpdateDetails = mergeListUpdateInventory(updateForm.details, inventoryOld.details);
-  console.log('Update Inventory Out', JSON.stringify(listUpdateDetails))
+  console.log("Update Inventory Out", JSON.stringify(listUpdateDetails));
   const transaction = await db.sequelize.transaction();
   try {
-    await updateInventory(user.companyId, updateForm.warehouseId, user.id, listUpdateDetails, transaction)
+    await updateInventory(user.companyId, updateForm.warehouseId, user.id, listUpdateDetails, transaction);
 
     inventoryOld.name = updateForm.name;
     inventoryOld.warehouseId = updateForm.warehouseId;
@@ -79,14 +84,14 @@ export async function updateInventoryOut(user, inventoryId, updateForm) {
     inventoryOld.remark = updateForm.remark;
     inventoryOld.lastModifiedDate = new Date();
     inventoryOld.lastModifiedById = user.id;
-    await inventoryOld.save({transaction})
+    await inventoryOld.save({ transaction });
 
     if (updateForm.details && updateForm.details.length) {
       // delete inventory detail old
       await db.InventoryDetail.destroy(
         {
-          where: {inventoryId: inventoryId}
-        }, {transaction}
+          where: { inventoryId: inventoryId }
+        }, { transaction }
       );
       // create inventory detail
       await db.InventoryDetail.bulkCreate(updateForm.details.map((t, index) => ({
@@ -97,13 +102,17 @@ export async function updateInventoryOut(user, inventoryId, updateForm) {
         quantity: t.quantity,
         remark: t.remark,
         serialCode: t.serialCode
-      })), {transaction});
+      })), { transaction });
     }
 
-    if (updateForm.purposeId && updateForm.purposeId.length && updateForm.relativeId && updateForm.relativeId.length) {
-      await updateInventoryPurpose(inventoryOld.id, updateForm.purposeId, updateForm.relativeId, transaction);
+    if (updateForm.purposeId && updateForm.relativeId) {
+      await db.InventoryPurpose.update({
+        relativeId: updateForm.relativeId
+      }, {
+        where: { inventoryId: inventoryId, purposeId: updateForm.purposeId }
+      }, { transaction });
     }
-    let listUpdateTags = []
+    let listUpdateTags = [];
 
     if (updateForm.tagging && updateForm.tagging.length) {
       await updateItemTags({
@@ -111,13 +120,17 @@ export async function updateInventoryOut(user, inventoryId, updateForm) {
         type: TAGGING_TYPE.INVENTORY_GOOD_ISSUE,
         transaction,
         newTags: updateForm.tagging
-      })
+      });
       listUpdateTags = [...new Set([...((updateForm.tagging || []).map(t => t.id)),
-        ...((inventoryOld.taggingItems || []).map(t => t.taggingId))])]
+        ...((inventoryOld.taggingItems || []).map(t => t.taggingId))])];
     }
 
     await transaction.commit();
-    console.log("Update Inventory Tagging", listUpdateTags)
+    auditAction({
+      actionId: PERMISSION.INVENTORY.GOODS_ISSUE.UPDATE,
+      user,
+      relativeId: String(inventoryId)
+    }).then();
     if (listUpdateTags.length) {
       addTaggingQueue(listUpdateTags);
     }
@@ -130,20 +143,20 @@ export async function updateInventoryOut(user, inventoryId, updateForm) {
 
 export async function removeInventoryOut(user, inventoryId) {
   const existedInventory = await getInventoryItem(user, inventoryId);
-  const listUpdateDetails = mergeListUpdateInventory(null, existedInventory.details)
+  const listUpdateDetails = mergeListUpdateInventory(null, existedInventory.details);
   const transaction = await db.sequelize.transaction();
   try {
-    await updateInventory(user.companyId, existedInventory.warehouseId, user.id, listUpdateDetails, transaction)
+    await updateInventory(user.companyId, existedInventory.warehouseId, user.id, listUpdateDetails, transaction);
     await db.InventoryDetail.destroy(
       {
-        where: {inventoryId: inventoryId}
-      }, {transaction}
-    )
+        where: { inventoryId: inventoryId }
+      }, { transaction }
+    );
     await db.InventoryPurpose.destroy({
-      where: {inventoryId: inventoryId}
-    }, {transaction})
+      where: { inventoryId: inventoryId }
+    }, { transaction });
 
-    let listUpdateTags = []
+    let listUpdateTags = [];
 
     if (existedInventory.taggingItems && existedInventory.taggingItems.length) {
       await db.TaggingItem.destroy({
@@ -152,11 +165,11 @@ export async function removeInventoryOut(user, inventoryId) {
           itemId: existedInventory.id
         },
         transaction
-      })
-      listUpdateTags = [...new Set(((existedInventory.taggingItems || []).map(t => t.taggingId)))]
+      });
+      listUpdateTags = [...new Set(((existedInventory.taggingItems || []).map(t => t.taggingId)))];
     }
 
-    await existedInventory.destroy({transaction});
+    await existedInventory.destroy({ transaction });
 
     await transaction.commit();
     if (listUpdateTags.length) {

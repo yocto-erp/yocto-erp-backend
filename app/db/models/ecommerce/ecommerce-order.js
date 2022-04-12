@@ -1,4 +1,4 @@
-import Sequelize from 'sequelize';
+import Sequelize from "sequelize";
 
 const { DataTypes } = Sequelize;
 
@@ -12,11 +12,12 @@ export default class EcommerceOrder extends Sequelize.Model {
         userAgent: { type: DataTypes.TEXT },
         confirmCode: { type: DataTypes.STRING(10) },
         confirmedDate: { type: DataTypes.DATE },
-        isConfirmed: { type: DataTypes.BOOLEAN }
+        isConfirmed: { type: DataTypes.BOOLEAN },
+        userPayAmount: { type: DataTypes.DECIMAL(12, 2) }
       },
       {
-        tableName: 'ecommerce_order',
-        modelName: 'ecommerceOrder',
+        tableName: "ecommerce_order",
+        modelName: "ecommerceOrder",
         timestamps: false,
         sequelize, ...opts
       });
@@ -24,18 +25,18 @@ export default class EcommerceOrder extends Sequelize.Model {
 
   static associate(models) {
     this.belongsTo(models.Order, {
-      foreignKey: 'orderId',
-      as: 'order'
+      foreignKey: "orderId",
+      as: "order"
     });
     this.hasOne(models.EcommerceOrderPayment, {
-      foreignKey: 'ecommerceOrderId',
-      sourceKey: 'orderId',
-      as: 'payment'
+      foreignKey: "ecommerceOrderId",
+      sourceKey: "orderId",
+      as: "payment"
     });
     this.hasOne(models.EcommerceOrderShipping, {
-      foreignKey: 'ecommerceOrderId',
-      sourceKey: 'orderId',
-      as: 'shipping'
+      foreignKey: "ecommerceOrderId",
+      sourceKey: "orderId",
+      as: "shipping"
     });
   }
 }
