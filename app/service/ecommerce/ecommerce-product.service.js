@@ -55,6 +55,15 @@ export async function createEcommerceProduct(user, formData) {
     assets,
     tagging
   } = formData;
+  const existedItem = await db.EcommerceProduct.findOne({
+    where: {
+      productId: product.id,
+      unitId: unit.id
+    }
+  });
+  if (existedItem) {
+    throw badRequest("Product", FIELD_ERROR.EXISTED, `Product (${product.name}) and Unit(${unit.name}) existed`);
+  }
   const transaction = await db.sequelize.transaction();
   try {
     const newItem = await db.EcommerceProduct.create({
