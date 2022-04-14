@@ -150,7 +150,7 @@ export async function posOrder(user, posId, form, userAgent, ip) {
       const newInventoryOut = await createInventory(user, INVENTORY_TYPE.OUT, {
         details: warehouseProducts, warehouseId: userPos.pos.warehouseId,
         name: storeWarehouseName, remark, purposeId: INVENTORY_PURPOSE.SALE,
-        relativeId: ecommerceOrder.id, tagging: storeWarehouseTagging
+        relativeId: order.id, tagging: storeWarehouseTagging
       }, transaction);
       listUpdateTags = [...new Set(storeWarehouseTagging.map(t => t.id))];
     }
@@ -162,7 +162,7 @@ export async function posOrder(user, posId, form, userAgent, ip) {
         subject: customer,
         amount: storeCashInAmount,
         purposeId: COST_PURPOSE.SALE,
-        relativeId: ecommerceOrder.id,
+        relativeId: order.id,
         tagging: storeCashInTagging
       }, transaction);
       listUpdateTags = [...new Set([...listUpdateTags, ...storeCashInTagging.map(t => t.id)])];
@@ -175,7 +175,7 @@ export async function posOrder(user, posId, form, userAgent, ip) {
         subject: customer,
         amount: storeDebtAmount,
         tagging: storeDebtTagging,
-        relateId: ecommerceOrder.id,
+        relateId: order.id,
         purposeType: DEBT_PURPOSE_TYPE.SALE
       }, transaction);
       listUpdateTags = [...new Set([...listUpdateTags, ...storeDebtTagging.map(t => t.id)])];

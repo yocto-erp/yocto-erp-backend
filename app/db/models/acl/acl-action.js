@@ -1,6 +1,6 @@
-import Sequelize from 'sequelize';
+import Sequelize from "sequelize";
 
-const {DataTypes} = Sequelize;
+const { DataTypes } = Sequelize;
 
 // MAX 91
 
@@ -169,7 +169,9 @@ export const ALL_PERMISSIONS = [
   PERMISSION.EMAIL.SEND, PERMISSION.EMAIL.READ, PERMISSION.AUDIT,
   PERMISSION.USER.CREATE, PERMISSION.USER.READ, PERMISSION.USER.UPDATE, PERMISSION.USER.DELETE,
   PERMISSION.SURVEY.CREATE, PERMISSION.SURVEY.READ, PERMISSION.SURVEY.UPDATE, PERMISSION.SURVEY.DELETE,
-  PERMISSION.ECOMMERCE.PRODUCT.CREATE, PERMISSION.ECOMMERCE.PRODUCT.DELETE, PERMISSION.ECOMMERCE.PRODUCT.UPDATE, PERMISSION.ECOMMERCE.PRODUCT.DELETE,
+
+  // ECOMMERCE
+  PERMISSION.ECOMMERCE.PRODUCT.CREATE, PERMISSION.ECOMMERCE.PRODUCT.READ, PERMISSION.ECOMMERCE.PRODUCT.UPDATE, PERMISSION.ECOMMERCE.PRODUCT.DELETE,
   PERMISSION.ECOMMERCE.ORDER.UPDATE, PERMISSION.ECOMMERCE.ORDER.READ, PERMISSION.ECOMMERCE.ORDER.DELETE,
   PERMISSION.ECOMMERCE.SETTING,
   // SHOP
@@ -194,13 +196,13 @@ export default class ACLAction extends Sequelize.Model {
           primaryKey: true,
           autoIncrement: true
         },
-        moduleId: {type: DataTypes.INTEGER},
-        name: {type: DataTypes.STRING(255)},
-        remark: {type: DataTypes.TEXT}
+        moduleId: { type: DataTypes.INTEGER },
+        name: { type: DataTypes.STRING(255) },
+        remark: { type: DataTypes.TEXT }
       },
       {
-        tableName: 'acl_action',
-        modelName: 'aclAction',
+        tableName: "acl_action",
+        modelName: "aclAction",
         timestamps: false,
         sequelize, ...opts
       }
@@ -210,9 +212,9 @@ export default class ACLAction extends Sequelize.Model {
   static associate(models) {
     this.belongsToMany(models.ACLGroupAction, {
       through: models.ACLGroupAction,
-      foreignKey: 'actionId',
-      otherKey: 'groupId'
+      foreignKey: "actionId",
+      otherKey: "groupId"
     });
-    this.belongsTo(models.ACLModule, {foreignKey: 'moduleId', as: 'modules'});
+    this.belongsTo(models.ACLModule, { foreignKey: "moduleId", as: "modules" });
   }
 }

@@ -289,6 +289,16 @@ export function commonDebts(user, query, { order, offset, limit }) {
         name: {
           [Op.like]: `%${search}%`
         }
+      },
+      {
+        email: {
+          [Op.like]: `%${search}%`
+        }
+      },
+      {
+        gsm: {
+          [Op.like]: `%${search}%`
+        }
       }
     ];
   }
@@ -296,17 +306,9 @@ export function commonDebts(user, query, { order, offset, limit }) {
     where,
     include: [
       {
-        model: db.Subject,
+        model: db.Subject.scope("all"),
         as: "subject",
-        where: whereSubject,
-        include: [
-          {
-            model: db.Person, as: "person"
-          },
-          {
-            model: db.Company, as: "company"
-          }
-        ]
+        where: whereSubject
       }
     ],
     order,

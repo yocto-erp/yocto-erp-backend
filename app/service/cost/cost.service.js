@@ -93,7 +93,9 @@ export async function storeCost(user, createForm, transaction) {
     })), { transaction });
   }
 
+  console.log("Create COst purpose", purposeId, relativeId);
   if (purposeId && relativeId) {
+    console.log("Created");
     await db.CostPurpose.create({
       costId: cost.id,
       purposeId,
