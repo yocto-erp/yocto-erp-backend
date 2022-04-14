@@ -1,5 +1,6 @@
 git pull
+nvm use 17
 npm install
 npm run build
-pm2 restart "YOCTO ERP API"
-pm2 log "YOCTO ERP API"
+systemctl restart yocto
+systemctl status yocto
