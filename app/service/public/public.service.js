@@ -45,7 +45,15 @@ export async function listPublicECommerceProducts(query, order, offset, limit) {
           as: 'taggingItems',
           where: whereTagging
         }]
-      }
+      },
+      {
+        model: db.Asset, as: "thumbnail", include: [
+          { model: db.AssetIpfs, as: "ipfs" }
+        ]
+      },
+      { model: db.Tagging, as: "tagging" },
+      { model: db.TaxSet, as: "taxSet" },
+      { model: db.ProductUnit, as: "unit", where: { productId: { [Op.col]: "ecommerceProduct.productId" } } }
     ],
     offset,
     limit,
