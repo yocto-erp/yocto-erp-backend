@@ -1,4 +1,7 @@
-import Sequelize from 'sequelize';
+/**
+ * Reference: https://www.selecthub.com/inventory-management/best-shipping-software/
+ */
+import Sequelize from "sequelize";
 
 const { DataTypes } = Sequelize;
 
@@ -22,8 +25,8 @@ export default class EcommerceOrderShipping extends Sequelize.Model {
         lat: { type: DataTypes.FLOAT(10, 6) }
       },
       {
-        tableName: 'ecommerce_order_shipping',
-        modelName: 'ecommerceOrderShipping',
+        tableName: "ecommerce_order_shipping",
+        modelName: "ecommerceOrderShipping",
         timestamps: false,
         sequelize, ...opts
       });
