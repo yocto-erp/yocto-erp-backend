@@ -286,6 +286,7 @@ export async function toPrintData(id, companyId) {
       {
         model: db.Student, as: "student",
         include: [
+          { model: db.DebtSubjectBalance, as: "debt" },
           {
             model: db.Person, as: "child"
           }, {
@@ -304,6 +305,10 @@ export async function toPrintData(id, companyId) {
     toMonthStr = `0${fee.toMonth + 1}`;
     toMonthStr = toMonthStr.substr(toMonthStr.length - 2, 2);
   }
+
+  const debt = fee.student?.debt?.debit || 0;
+  const credit = fee.student?.debt?.credit || 0;
+  const total = fee.totalAmount + debt - credit;
 
   const studentFee = {
     monthFee: monthStr.substr(monthStr.length - 2, 2),
@@ -324,9 +329,12 @@ export async function toPrintData(id, companyId) {
     beginningYearFee: formatTemplateMoney(fee.beginningYearFee),
     otherFee: formatTemplateMoney(fee.otherFee),
     otherDeduceFee: formatTemplateMoney(fee.otherDeduceFee),
-    debt: formatTemplateMoney(fee.debt),
+    debtNumber: debt,
+    creditNumber: debt,
+    debt: formatTemplateMoney(debt),
+    credit: formatTemplateMoney(credit),
     remark: fee.remark,
-    total: formatTemplateMoney(fee.totalAmount)
+    total: formatTemplateMoney(total)
   };
   const student = personToPrintData(fee.student.child);
 

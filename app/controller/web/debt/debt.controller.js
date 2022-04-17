@@ -1,8 +1,5 @@
 import express from 'express';
 import {pagingParse} from '../../middleware/paging.middleware';
-import {
-  updateProduct
-} from '../../../service/product/product.service';
 import {hasPermission} from '../../middleware/permission';
 import {PERMISSION} from '../../../db/models/acl/acl-action';
 import { commonDebts, createDebt, debts, getDebt, removeDebt, updateDebt } from '../../../service/debt/debt.service';

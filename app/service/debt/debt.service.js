@@ -13,8 +13,16 @@ import { isArrayHasLength } from "../../util/func.util";
 const { Op } = db.Sequelize;
 
 export function debts(user, query, { order, offset, limit }) {
-  const { search, debtType } = query;
+  const { search, debtType, subject } = query;
+  console.log(subject)
   const where = { companyId: user.companyId };
+  let isRequiredSubject = false;
+  const whereSubject = {};
+
+  if (subject) {
+    whereSubject.id = subject.id;
+    isRequiredSubject = true;
+  }
   if (debtType) {
     where.type = debtType;
   }
@@ -42,6 +50,8 @@ export function debts(user, query, { order, offset, limit }) {
       {
         model: db.Subject,
         as: "subject",
+        required: isRequiredSubject,
+        where: whereSubject,
         include: [
           {
             model: db.Person, as: "person"
