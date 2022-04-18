@@ -4,7 +4,7 @@ import {isArray} from '../../util/func.util';
 
 const {Op} = db.Sequelize;
 
-export async function listPublicECommerceProducts(query, order, offset, limit) {
+export async function listPublicECommerceProductsShop(query, order, offset, limit) {
   const {tagging, search, publicId} = query;
   const company = await db.Company.findOne({where: {publicId}});
   if (!company) {
@@ -71,6 +71,30 @@ export async function listPublicECommerceProducts(query, order, offset, limit) {
       rows: newRows
     });
   });
+}
+
+export async function getEcommerceProductShop(id) {
+  const item = await db.EcommerceProduct.findOne({
+    where: {
+      id
+    },
+    include: [
+      {
+        model: db.Asset, as: "thumbnail", include: [
+          { model: db.AssetIpfs, as: "ipfs" }
+        ]
+      },
+      { model: db.Product, as: "product" },
+      { model: db.Tax, as: "taxes" },
+      { model: db.TaxSet, as: "taxSet" },
+      { model: db.ProductUnit, as: "unit", where: { productId: { [Op.col]: "ecommerceProduct.productId" } } },
+      { model: db.Tagging, as: "tagging" }
+    ]
+  });
+  if (!item) {
+    throw badRequest("ecommerceProduct", FIELD_ERROR.INVALID, "Invalid Ecommerce Product");
+  }
+  return item;
 }
 
 export function getListTags(query, order, offset, limit) {
