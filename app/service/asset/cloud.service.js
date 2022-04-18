@@ -22,7 +22,7 @@ export const cronJobUploadIPFS = async () => {
     order: [["id", "asc"]]
   });
   try {
-    schedulerLog.info("Upload to IPFS num of files: ", listAsset.length);
+    schedulerLog.info("Upload to IPFS num of files ", listAsset.length || 0);
     if (listAsset.length) {
       await db.Asset.update({
         syncStatus: ASSET_SYNC_STATUS.PROCESSING

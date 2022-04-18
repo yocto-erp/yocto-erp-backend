@@ -6,15 +6,16 @@ import { TAGGING_TYPE } from "../../db/models/tagging/tagging-item-type";
 import { auditAction } from "../audit/audit.service";
 import { PERMISSION } from "../../db/models/acl/acl-action";
 import { addTaggingQueue } from "../../queue/tagging.queue";
-import { createDebtBalance, updateDebtBalance, updateDebtBalanceWhenDeleteDebt } from "./debt-subject-balance.service";
-import { DEBT_TYPE } from "../../db/models/debt/debt";
+import {
+  updateOrCreateDebtBalance
+} from "./debt-subject-balance.service";
 import { isArrayHasLength } from "../../util/func.util";
 
 const { Op } = db.Sequelize;
 
 export function debts(user, query, { order, offset, limit }) {
-  const { search, debtType, subject } = query;
-  console.log(subject)
+  const { search, type, subject } = query;
+  console.log(query);
   const where = { companyId: user.companyId };
   let isRequiredSubject = false;
   const whereSubject = {};
@@ -23,8 +24,8 @@ export function debts(user, query, { order, offset, limit }) {
     whereSubject.id = subject.id;
     isRequiredSubject = true;
   }
-  if (debtType) {
-    where.type = debtType;
+  if (type) {
+    where.type = type;
   }
   if (hasText(search)) {
     where[Op.or] = [
@@ -35,6 +36,7 @@ export function debts(user, query, { order, offset, limit }) {
       }
     ];
   }
+  console.log(where)
   return db.Debt.findAndCountAll({
     where,
     include: [
@@ -75,13 +77,14 @@ export function debts(user, query, { order, offset, limit }) {
 }
 
 export async function getDebt(user, dId) {
-  const debt = await db.Debt.scope("search").findOne({
+  const debt = await db.Debt.findOne({
     where: {
       id: dId,
       companyId: user.companyId
     },
     include: [
       { model: db.Tagging, as: "tagging" },
+      { model: db.Debt, as: "settleDebt" },
       {
         model: db.Subject,
         as: "subject",
@@ -110,7 +113,7 @@ export async function storeDebt(user, createForm, transaction) {
     subject,
     amount,
     tagging,
-    settleDebtId,
+    settleDebt,
     relateId,
     purposeType
   } = createForm;
@@ -123,7 +126,7 @@ export async function storeDebt(user, createForm, transaction) {
     companyId: user.companyId,
     createdDate: new Date(),
     createdById: user.id,
-    settleDebtId: Number(type) === DEBT_TYPE.RECOVERY_PUBLIC_DEBT || Number(type) === DEBT_TYPE.PAID_DEBT ? settleDebtId.id : null
+    settleDebtId: settleDebt?.id
   }, { transaction });
 
   if (relateId && purposeType) {
@@ -134,18 +137,7 @@ export async function storeDebt(user, createForm, transaction) {
     }, { transaction });
   }
 
-  const checkDebtSubjectBalance = await db.DebtSubjectBalance.findOne({
-    where: {
-      companyId: user.companyId,
-      subjectId: subject.id
-    }
-  }, { transaction });
-
-  if (!checkDebtSubjectBalance) {
-    await createDebtBalance(user, subject.id, type, amount, transaction);
-  } else {
-    await updateDebtBalance(user, type, amount, checkDebtSubjectBalance, transaction);
-  }
+  await updateOrCreateDebtBalance(subject.id, user.companyId, null, amount, Number(type), transaction);
 
   if (isArrayHasLength(tagging)) {
     await updateItemTags({
@@ -194,11 +186,12 @@ export async function updateDebt(dId, user, updateForm) {
     subject,
     amount,
     tagging,
-    settleDebtId
+    settleDebt
   } = updateForm;
-  const existedDebt = await getDebt(dId, user);
+  const existedDebt = await getDebt(user, dId);
   const transaction = await db.sequelize.transaction();
   try {
+    await updateOrCreateDebtBalance(subject.id, user.companyId, existedDebt, amount, Number(type), transaction);
     await existedDebt.update({
       name,
       type: Number(type),
@@ -207,22 +200,8 @@ export async function updateDebt(dId, user, updateForm) {
       amount,
       companyId: user.companyId,
       createdById: user.id,
-      settleDebtId: DEBT_TYPE.RECOVERY_PUBLIC_DEBT || DEBT_TYPE.PAID_DEBT ? settleDebtId.id : null
+      settleDebtId: settleDebt?.id
     }, transaction);
-
-    const checkDebtSubjectBalance = await db.DebtSubjectBalance.findOne({
-      where: {
-        companyId: user.companyId,
-        subjectId: subject.id
-      }
-    });
-
-    if (!checkDebtSubjectBalance) {
-      await createDebtBalance(user, subject.id, type, amount, transaction);
-    } else {
-      await updateDebtBalance(user, type, amount, checkDebtSubjectBalance, transaction);
-    }
-
     let listUpdateTags = [];
     if ((tagging && tagging.length) || (existedDebt.tagging && existedDebt.tagging.length)) {
       await updateItemTags({
@@ -259,7 +238,7 @@ export async function removeDebt(user, dId) {
 
   const transaction = await db.sequelize.transaction();
   try {
-    await updateDebtBalanceWhenDeleteDebt(user, checkDebt, transaction);
+    await updateOrCreateDebtBalance(checkDebt.subjectId, user.companyId, checkDebt, 0, checkDebt.type, transaction);
     await checkDebt.destroy({ transaction });
     let listUpdateTags = [];
     if (isArrayHasLength(checkDebt.tagging)) {
@@ -270,7 +249,7 @@ export async function removeDebt(user, dId) {
         },
         transaction
       });
-      listUpdateTags = [...new Set(((checkDebt.checkDebt || []).map(t => t.id)))];
+      listUpdateTags = [...new Set(((checkDebt.tagging || []).map(t => t.id)))];
     }
     await transaction.commit();
     auditAction({

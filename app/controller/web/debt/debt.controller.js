@@ -14,7 +14,7 @@ debt.get('/', [hasPermission(PERMISSION.PRODUCT.READ),
   });
 
 debt.get('/common', [hasPermission(PERMISSION.PRODUCT.READ),
-    pagingParse({column: 'id', dir: 'asc'})],
+    pagingParse({column: 'lastModifiedDate', dir: 'desc'})],
   (req, res, next) => {
     return commonDebts(req.user, req.query, req.paging)
       .then(result => res.status(200).json(result)).catch(next);
