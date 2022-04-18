@@ -1,5 +1,3 @@
-import { dbLog } from "./winston";
-
 const pool = {
   max: 50,
   min: 0,
@@ -13,7 +11,7 @@ const dialectOptions = {
 
 // eslint-disable-next-line no-unused-vars
 function dbLogging(str, time) {
-  dbLog.info(str, time);
+  // dbLog.info(str, time);
   // dbLog.info(`Timed: ${time} ms`);
 }
 

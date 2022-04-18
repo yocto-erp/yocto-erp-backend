@@ -1,8 +1,5 @@
 import express from 'express';
 import {pagingParse} from '../../middleware/paging.middleware';
-import {
-  updateProduct
-} from '../../../service/product/product.service';
 import {hasPermission} from '../../middleware/permission';
 import {PERMISSION} from '../../../db/models/acl/acl-action';
 import { commonDebts, createDebt, debts, getDebt, removeDebt, updateDebt } from '../../../service/debt/debt.service';
@@ -17,7 +14,7 @@ debt.get('/', [hasPermission(PERMISSION.PRODUCT.READ),
   });
 
 debt.get('/common', [hasPermission(PERMISSION.PRODUCT.READ),
-    pagingParse({column: 'id', dir: 'asc'})],
+    pagingParse({column: 'lastModifiedDate', dir: 'desc'})],
   (req, res, next) => {
     return commonDebts(req.user, req.query, req.paging)
       .then(result => res.status(200).json(result)).catch(next);

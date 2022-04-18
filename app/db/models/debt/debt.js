@@ -36,6 +36,7 @@ export default class Debt extends Sequelize.Model {
 
   static associate(models) {
     this.belongsTo(models.User, {foreignKey: 'createdById', as: 'createdBy'});
+    this.belongsTo(models.Debt, {foreignKey: 'settleDebtId', as: 'settleDebt'});
     this.belongsTo(models.Subject, {
       foreignKey: 'subjectId',
       as: 'subject'
