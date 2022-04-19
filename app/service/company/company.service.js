@@ -148,3 +148,15 @@ export async function removeCompany(cId, user) {
     throw error;
   }
 }
+
+export async function getCompanyByPublicId(publicId) {
+  const company = await db.Company.findOne({
+    where: {
+     publicId
+    }
+  });
+  if (!company) {
+    throw badRequest("company", FIELD_ERROR.INVALID, "Company not found");
+  }
+  return company;
+}
