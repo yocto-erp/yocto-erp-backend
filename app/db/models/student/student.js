@@ -51,6 +51,7 @@ export default class Student extends Sequelize.Model {
     this.belongsTo(models.Person, {foreignKey: 'personId', as: 'child'});
     this.belongsTo(models.Person, {foreignKey: 'fatherId', as: 'father'});
     this.belongsTo(models.Person, {foreignKey: 'motherId', as: 'mother'});
-    this.belongsTo(models.DebtSubjectBalance, {foreignKey: "subjectId", as: "debt"})
+    this.belongsTo(models.DebtSubjectBalance, {foreignKey: "subjectId", as: "debt"});
+    this.hasOne(models.StudentDailyTracking, {foreignKey: 'studentId', as: 'tracking'})
   }
 }

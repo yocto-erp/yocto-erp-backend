@@ -1,6 +1,34 @@
 import {Op} from 'sequelize'
 import {hasText} from "./string.util";
-import {beginningOfDate, endOfDate} from "./date.util";
+import {
+  beginningOfDate,
+  DEFAULT_TIMEZONE,
+  endOfDate,
+  getEndDateUtcOfTimezoneDate,
+  getStartDateUtcOfTimezoneDate
+} from "./date.util";
+
+export function buildDateTimezoneRangeQuery(fromDate, toDate, tz = DEFAULT_TIMEZONE) {
+  if (hasText(fromDate) && hasText(toDate)) {
+    return {
+      [Op.and]: {
+        [Op.gte]: getStartDateUtcOfTimezoneDate(new Date(fromDate), tz),
+        [Op.lte]: getEndDateUtcOfTimezoneDate(toDate)
+      }
+    }
+  }
+  if (hasText(fromDate)) {
+    return {
+      [Op.gte]: getStartDateUtcOfTimezoneDate(fromDate)
+    }
+  }
+  if (hasText(toDate)) {
+    return {
+      [Op.lte]: getEndDateUtcOfTimezoneDate(toDate)
+    }
+  }
+  return null;
+}
 
 export function buildDateRangeQuery(fromDate, toDate) {
   if (hasText(fromDate) && hasText(toDate)) {
