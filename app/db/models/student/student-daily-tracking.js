@@ -24,7 +24,10 @@ export default class StudentDailyTracking extends Sequelize.Model {
       checkOutIP: { type: DataTypes.STRING(100) },
       checkOutDeviceId: { type: DataTypes.STRING(100) },
       checkOutCoordinate: { type: DataTypes.GEOMETRY("POINT") },
-      checkOutRemark: { type: DataTypes.TEXT }
+      checkOutRemark: { type: DataTypes.TEXT },
+      lastModifiedDate: { type: DataTypes.DATE },
+      checkInUserAgent: { type: DataTypes.TEXT },
+      checkOutUserAgent: { type: DataTypes.TEXT }
     }, {
       tableName: "student_daily_tracking",
       modelName: "studentDailyTracking",
