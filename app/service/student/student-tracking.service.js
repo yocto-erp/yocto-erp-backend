@@ -93,15 +93,22 @@ const SIGN_TYPE = {
 
 export async function sign(user, form, ip, deviceId, userAgent) {
   const countryTz = user.timezone || DEFAULT_TIMEZONE;
-  const { date, type, signature, bus, studentId, lng, lat } = form;
+  const { date, type, signature, bus, studentId, location } = form;
   const dateObj = getStartDateUtcOfTimezoneDate(new Date(date), countryTz);
   let studentTracking = await db.StudentDailyTracking.findOne({
     where: {
       studentId, trackingDate: dateObj, companyId: user.companyId
     }
   });
-  const fromBusId = Number(type) === SIGN_TYPE.CHECK_IN ? bus : 0;
-  const toBusId = Number(type) === SIGN_TYPE.CHECK_OUT ? bus : 0;
+
+  let coords = null;
+  const typeNumber = Number(type);
+  if (location) {
+    const { latitude, longitude } = location;
+    coords = [longitude, latitude];
+  }
+  const fromBusId = typeNumber === SIGN_TYPE.CHECK_IN ? bus : 0;
+  const toBusId = typeNumber === SIGN_TYPE.CHECK_OUT ? bus : 0;
   const storeSignatureFile = storeFileFromBase64(signature);
   const transaction = await db.sequelize.transaction();
   try {
@@ -115,18 +122,20 @@ export async function sign(user, form, ip, deviceId, userAgent) {
       createdById: user.id,
       createdDate: new Date()
     }, { transaction });
-    const checkInSignatureId = Number(type) === SIGN_TYPE.CHECK_IN ? newAsset.id : null;
-    const checkOutSignatureId = Number(type) === SIGN_TYPE.CHECK_OUT ? newAsset.id : null;
-    const checkInIP = Number(type) === SIGN_TYPE.CHECK_IN ? ip : "";
-    const checkOutIP = Number(type) === SIGN_TYPE.CHECK_OUT ? ip : "";
-    const checkInDeviceId = Number(type) === SIGN_TYPE.CHECK_IN ? deviceId : "";
-    const checkOutDeviceId = Number(type) === SIGN_TYPE.CHECK_OUT ? deviceId : "";
-    const checkInUserAgent = Number(type) === SIGN_TYPE.CHECK_IN ? userAgent : null;
-    const checkOutUserAgent = Number(type) === SIGN_TYPE.CHECK_OUT ? userAgent : null;
-    const checkInDate = Number(type) === SIGN_TYPE.CHECK_IN ? new Date() : null;
-    const checkOutDate = Number(type) === SIGN_TYPE.CHECK_OUT ? new Date() : null;
-    const checkInWithId = Number(type) === SIGN_TYPE.CHECK_IN ? user.id : null;
-    const checkOutWithId = Number(type) === SIGN_TYPE.CHECK_OUT ? user.id : null;
+    const checkInSignatureId = typeNumber === SIGN_TYPE.CHECK_IN ? newAsset.id : null;
+    const checkOutSignatureId = typeNumber === SIGN_TYPE.CHECK_OUT ? newAsset.id : null;
+    const checkInIP = typeNumber === SIGN_TYPE.CHECK_IN ? ip : "";
+    const checkOutIP = typeNumber === SIGN_TYPE.CHECK_OUT ? ip : "";
+    const checkInDeviceId = typeNumber === SIGN_TYPE.CHECK_IN ? deviceId : "";
+    const checkOutDeviceId = typeNumber === SIGN_TYPE.CHECK_OUT ? deviceId : "";
+    const checkInUserAgent = typeNumber === SIGN_TYPE.CHECK_IN ? userAgent : null;
+    const checkOutUserAgent = typeNumber === SIGN_TYPE.CHECK_OUT ? userAgent : null;
+    const checkInDate = typeNumber === SIGN_TYPE.CHECK_IN ? new Date() : null;
+    const checkOutDate = typeNumber === SIGN_TYPE.CHECK_OUT ? new Date() : null;
+    const checkInWithId = typeNumber === SIGN_TYPE.CHECK_IN ? user.id : null;
+    const checkOutWithId = typeNumber === SIGN_TYPE.CHECK_OUT ? user.id : null;
+    const checkInCoordinate = typeNumber === SIGN_TYPE.CHECK_IN ? coords : null;
+    const checkOutCoordinate = typeNumber === SIGN_TYPE.CHECK_OUT ? coords : null;
     if (!studentTracking) {
       studentTracking = await db.StudentDailyTracking.create({
         companyId: user.companyId,
@@ -145,9 +154,11 @@ export async function sign(user, form, ip, deviceId, userAgent) {
         checkOutIP,
         checkOutDeviceId,
         checkInUserAgent,
-        checkOutUserAgent
+        checkOutUserAgent,
+        checkInCoordinate,
+        checkOutCoordinate
       }, { transaction });
-    } else if (Number(type) === SIGN_TYPE.CHECK_IN) {
+    } else if (typeNumber === SIGN_TYPE.CHECK_IN) {
       await studentTracking.update({
         fromBusId,
         checkInDate,
@@ -156,6 +167,7 @@ export async function sign(user, form, ip, deviceId, userAgent) {
         checkInIP,
         checkInUserAgent,
         checkInDeviceId,
+        checkInCoordinate,
         lastModifiedDate: new Date()
       }, { transaction });
     } else {
@@ -166,6 +178,7 @@ export async function sign(user, form, ip, deviceId, userAgent) {
         checkOutSignatureId,
         checkOutIP,
         checkOutDeviceId,
+        checkOutCoordinate,
         lastModifiedDate: new Date(),
         checkOutUserAgent
       }, { transaction });
