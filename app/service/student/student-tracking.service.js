@@ -156,7 +156,8 @@ export async function sign(user, form, ip, deviceId, userAgent) {
         checkInUserAgent,
         checkOutUserAgent,
         checkInCoordinate,
-        checkOutCoordinate
+        checkOutCoordinate,
+        lastModifiedDate: new Date()
       }, { transaction });
     } else if (typeNumber === SIGN_TYPE.CHECK_IN) {
       await studentTracking.update({
