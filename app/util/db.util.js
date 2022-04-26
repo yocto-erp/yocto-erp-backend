@@ -13,18 +13,18 @@ export function buildDateTimezoneRangeQuery(fromDate, toDate, tz = DEFAULT_TIMEZ
     return {
       [Op.and]: {
         [Op.gte]: getStartDateUtcOfTimezoneDate(new Date(fromDate), tz),
-        [Op.lte]: getEndDateUtcOfTimezoneDate(toDate)
+        [Op.lte]: getEndDateUtcOfTimezoneDate(new Date(toDate), tz)
       }
     }
   }
   if (hasText(fromDate)) {
     return {
-      [Op.gte]: getStartDateUtcOfTimezoneDate(fromDate)
+      [Op.gte]: getStartDateUtcOfTimezoneDate(new Date(fromDate), tz)
     }
   }
   if (hasText(toDate)) {
     return {
-      [Op.lte]: getEndDateUtcOfTimezoneDate(toDate)
+      [Op.lte]: getEndDateUtcOfTimezoneDate(new Date(toDate), tz)
     }
   }
   return null;

@@ -110,3 +110,14 @@ export function getStartDateUtcOfTimezoneDate(date, tz) {
 export function getEndDateUtcOfTimezoneDate(date, tz){
   return moment(date).tz(tz).endOf("date").toDate();
 }
+
+export const getDatesBetween = (startDate, endDate, includeEndDate) => {
+  const dates = [];
+  const currentDate = startDate;
+  while (currentDate < endDate) {
+    dates.push(new Date(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  if (includeEndDate) dates.push(endDate);
+  return dates;
+};

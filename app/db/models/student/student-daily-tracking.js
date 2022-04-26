@@ -2,6 +2,11 @@ import Sequelize from "sequelize";
 
 const { DataTypes } = Sequelize;
 
+export const STUDENT_DAILY_STATUS = {
+  PRESENT: 1,
+  ABSENT: 2
+};
+
 export default class StudentDailyTracking extends Sequelize.Model {
   static init(sequelize, opts) {
     return super.init({
@@ -27,7 +32,8 @@ export default class StudentDailyTracking extends Sequelize.Model {
       checkOutRemark: { type: DataTypes.TEXT },
       lastModifiedDate: { type: DataTypes.DATE },
       checkInUserAgent: { type: DataTypes.TEXT },
-      checkOutUserAgent: { type: DataTypes.TEXT }
+      checkOutUserAgent: { type: DataTypes.TEXT },
+      status: { type: DataTypes.INTEGER }
     }, {
       tableName: "student_daily_tracking",
       modelName: "studentDailyTracking",
@@ -37,6 +43,7 @@ export default class StudentDailyTracking extends Sequelize.Model {
   }
 
   static associate(models) {
+    this.belongsTo(models.Student, { foreignKey: "studentId", as: "student" });
     this.belongsTo(models.User, { foreignKey: "checkInWithId", as: "checkInWith" });
     this.belongsTo(models.User, { foreignKey: "checkOutWithId", as: "checkOutWith" });
     this.belongsTo(models.Asset, { foreignKey: "checkInSignatureId", as: "checkInSignature" });
