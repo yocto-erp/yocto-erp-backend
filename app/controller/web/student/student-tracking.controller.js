@@ -3,6 +3,7 @@ import express from "express";
 import { isAuthenticated } from "../../middleware/permission";
 
 import {
+  dailyTrackingSummary,
   getListStudentTracking,
   listStudentTracking,
   sign, studentTrackingStatusSummary,
@@ -44,7 +45,11 @@ router.get("/summary", [isAuthenticated()], (req, res, next) => {
     .then(t => res.status(200).json(t))
     .catch(next);
 });
-
+router.get("/daily/summary", [isAuthenticated()], (req, res, next) => {
+  return dailyTrackingSummary(req.user, req.query)
+    .then(t => res.status(200).json(t))
+    .catch(next);
+});
 
 export function initWebStudentTrackingController(app) {
   app.use("/api/student-tracking", router);

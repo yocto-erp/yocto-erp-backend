@@ -13,7 +13,78 @@ import { STUDENT_DAILY_STATUS } from "../../db/models/student/student-daily-trac
 
 const { Op } = db.Sequelize;
 
-export async function getListStudentTracking(user, { date, bus, search }) {
+const BUS_DIRECTION = {
+  GO: 1,
+  BACK: 2
+};
+
+export async function dailyTrackingSummary(user, { date, direction }) {
+  const where = {
+    companyId: user.companyId,
+    status: STUDENT_STATUS.ACTIVE,
+    enableBus: true
+  };
+  const whereTracking = {};
+
+  const countryTz = user.timezone || DEFAULT_TIMEZONE;
+
+  whereTracking.trackingDate = getStartDateUtcOfTimezoneDate(date, countryTz);
+
+  const listAll = await db.Student.findAll({
+    where,
+    include: [
+      { model: db.StudentBusStop, as: "toSchoolBusStop" },
+      { model: db.StudentBusStop, as: "toHomeBusStop" },
+      {
+        required: false,
+        model: db.StudentDailyTracking, as: "tracking", where: whereTracking,
+        include: [
+          { model: db.StudentBusStop, as: "checkInFromBus" },
+          { model: db.StudentBusStop, as: "checkOutAtBus" }
+        ]
+      }
+    ],
+    order: [["alias", "asc"]]
+  });
+
+  const rs = [];
+  for (let i = 0; i < listAll.length; i += 1) {
+    const { tracking, toSchoolBusStop, toHomeBusStop } = listAll[i];
+    let bus = tracking?.checkInFromBus || toSchoolBusStop;
+
+    if (Number(direction) === BUS_DIRECTION.BACK) {
+      bus = tracking?.checkOutAtBus || toHomeBusStop;
+    }
+    let exist = rs.find(t => t.bus.id === bus.id);
+    if (!exist) {
+      exist = { bus, signed: 0, unsigned: 0, total: 0, offline: 0 };
+      rs.push(exist);
+    }
+    exist.total += 1;
+    if (tracking?.status === STUDENT_DAILY_STATUS.ABSENT) {
+      exist.offline += 1;
+    }
+    if (Number(direction) === BUS_DIRECTION.GO) {
+      if (tracking?.checkInDate) {
+        exist.signed += 1;
+      } else {
+        exist.unsigned += 1;
+      }
+    } else if (tracking?.checkOutDate) {
+      exist.signed += 1;
+    } else {
+      exist.unsigned += 1;
+    }
+  }
+  return rs;
+}
+
+export async function getListStudentTracking(user, {
+  date, bus, search, direction = BUS_DIRECTION.GO,
+  showUnsigned,
+  showSigned
+}) {
+  console.log(direction, showSigned, showUnsigned);
   const where = {
     companyId: user.companyId,
     status: STUDENT_STATUS.ACTIVE,
@@ -27,17 +98,55 @@ export async function getListStudentTracking(user, { date, bus, search }) {
     searchDate = new Date(date);
   }
   console.log(date, searchDate, new Date(date));
+
   whereTracking.trackingDate = getStartDateUtcOfTimezoneDate(searchDate, countryTz);
+  const isShowSigned = showSigned === "true";
+  const isShowUnSigned = showUnsigned === "true";
+
+  if (!(isShowSigned && isShowUnSigned)) {
+    if (Number(direction) === BUS_DIRECTION.GO) {
+      if (isShowSigned) {
+        where[`$tracking.checkInDate$`] = {
+          [Op.ne]: null
+        };
+      } else {
+        where[`$tracking.checkInDate$`] = {
+          [Op.eq]: null
+        };
+      }
+    } else if (isShowSigned) {
+      where[`$tracking.checkOutDate$`] = {
+        [Op.ne]: null
+      };
+    } else {
+      where[`$tracking.checkOutDate$`] = {
+        [Op.eq]: null
+      };
+    }
+
+  }
 
   if (hasText(bus)) {
-    where[Op.or] = [
-      {
-        toHomeBusStopId: bus
-      }, {
-        toSchoolBusStopId: bus
-      }
-    ];
+    if (Number(direction) === BUS_DIRECTION.GO) {
+      where[Op.or] = [
+        {
+          toSchoolBusStopId: bus
+        }, {
+          "$tracking.fromBusId$": bus
+        }
+      ];
+    } else {
+      where[Op.or] = [
+        {
+          toHomeBusStopId: bus
+        },
+        {
+          "$tracking.toBusId$": bus
+        }
+      ];
+    }
   }
+
   if (hasText(search)) {
     where[Op.or] = [
       {
@@ -113,11 +222,6 @@ export async function getListStudentTracking(user, { date, bus, search }) {
   });
 }
 
-const SIGN_TYPE = {
-  CHECK_IN: 1,
-  CHECK_OUT: 2
-};
-
 export async function sign(user, form, ip, deviceId, userAgent) {
   const countryTz = user.timezone || DEFAULT_TIMEZONE;
   console.log(form);
@@ -135,8 +239,8 @@ export async function sign(user, form, ip, deviceId, userAgent) {
     const { latitude, longitude } = location;
     coords = { type: "Point", coordinates: [longitude, latitude] };
   }
-  const fromBusId = typeNumber === SIGN_TYPE.CHECK_IN ? bus : 0;
-  const toBusId = typeNumber === SIGN_TYPE.CHECK_OUT ? bus : 0;
+  const fromBusId = typeNumber === BUS_DIRECTION.GO ? bus : 0;
+  const toBusId = typeNumber === BUS_DIRECTION.BACK ? bus : 0;
   const storeSignatureFile = storeFileFromBase64(signature);
   const transaction = await db.sequelize.transaction();
   try {
@@ -150,20 +254,20 @@ export async function sign(user, form, ip, deviceId, userAgent) {
       createdById: user.id,
       createdDate: new Date()
     }, { transaction });
-    const checkInSignatureId = typeNumber === SIGN_TYPE.CHECK_IN ? newAsset.id : null;
-    const checkOutSignatureId = typeNumber === SIGN_TYPE.CHECK_OUT ? newAsset.id : null;
-    const checkInIP = typeNumber === SIGN_TYPE.CHECK_IN ? ip : "";
-    const checkOutIP = typeNumber === SIGN_TYPE.CHECK_OUT ? ip : "";
-    const checkInDeviceId = typeNumber === SIGN_TYPE.CHECK_IN ? deviceId : "";
-    const checkOutDeviceId = typeNumber === SIGN_TYPE.CHECK_OUT ? deviceId : "";
-    const checkInUserAgent = typeNumber === SIGN_TYPE.CHECK_IN ? userAgent : null;
-    const checkOutUserAgent = typeNumber === SIGN_TYPE.CHECK_OUT ? userAgent : null;
-    const checkInDate = typeNumber === SIGN_TYPE.CHECK_IN ? new Date() : null;
-    const checkOutDate = typeNumber === SIGN_TYPE.CHECK_OUT ? new Date() : null;
-    const checkInWithId = typeNumber === SIGN_TYPE.CHECK_IN ? user.id : null;
-    const checkOutWithId = typeNumber === SIGN_TYPE.CHECK_OUT ? user.id : null;
-    const checkInCoordinate = typeNumber === SIGN_TYPE.CHECK_IN ? coords : null;
-    const checkOutCoordinate = typeNumber === SIGN_TYPE.CHECK_OUT ? coords : null;
+    const checkInSignatureId = typeNumber === BUS_DIRECTION.GO ? newAsset.id : null;
+    const checkOutSignatureId = typeNumber === BUS_DIRECTION.BACK ? newAsset.id : null;
+    const checkInIP = typeNumber === BUS_DIRECTION.GO ? ip : "";
+    const checkOutIP = typeNumber === BUS_DIRECTION.BACK ? ip : "";
+    const checkInDeviceId = typeNumber === BUS_DIRECTION.GO ? deviceId : "";
+    const checkOutDeviceId = typeNumber === BUS_DIRECTION.BACK ? deviceId : "";
+    const checkInUserAgent = typeNumber === BUS_DIRECTION.GO ? userAgent : null;
+    const checkOutUserAgent = typeNumber === BUS_DIRECTION.BACK ? userAgent : null;
+    const checkInDate = typeNumber === BUS_DIRECTION.GO ? new Date() : null;
+    const checkOutDate = typeNumber === BUS_DIRECTION.BACK ? new Date() : null;
+    const checkInWithId = typeNumber === BUS_DIRECTION.GO ? user.id : null;
+    const checkOutWithId = typeNumber === BUS_DIRECTION.BACK ? user.id : null;
+    const checkInCoordinate = typeNumber === BUS_DIRECTION.GO ? coords : null;
+    const checkOutCoordinate = typeNumber === BUS_DIRECTION.BACK ? coords : null;
     if (!studentTracking) {
       studentTracking = await db.StudentDailyTracking.create({
         companyId: user.companyId,
@@ -187,7 +291,7 @@ export async function sign(user, form, ip, deviceId, userAgent) {
         checkOutCoordinate,
         lastModifiedDate: new Date()
       }, { transaction });
-    } else if (typeNumber === SIGN_TYPE.CHECK_IN) {
+    } else if (typeNumber === BUS_DIRECTION.GO) {
       await studentTracking.update({
         fromBusId,
         checkInDate,
@@ -221,7 +325,15 @@ export async function sign(user, form, ip, deviceId, userAgent) {
   }
 }
 
-export async function listStudentTracking(user, { studentId, fromDate, toDate }) {
+export async function listStudentTracking(user, {
+  studentId,
+  fromDate,
+  toDate,
+  direction = BUS_DIRECTION.GO,
+  showUnsigned = true,
+  showSigned = true
+}) {
+  console.log(direction, showUnsigned, showSigned);
   const where = {
     companyId: user.companyId,
     studentId: studentId
@@ -230,6 +342,24 @@ export async function listStudentTracking(user, { studentId, fromDate, toDate })
   const dateRange = buildDateTimezoneRangeQuery(fromDate, toDate, countryTz);
   if (dateRange) {
     where.trackingDate = dateRange;
+  }
+
+  if (!(showUnsigned && showSigned)) {
+    if (direction === BUS_DIRECTION.GO) {
+      if (showUnsigned) {
+        where.checkInDate = null;
+      } else {
+        where.checkInDate = {
+          [Op.ne]: null
+        };
+      }
+    } else if (showUnsigned) {
+      where.checkOutDate = null;
+    } else {
+      where.checkOutDate = {
+        [Op.ne]: null
+      };
+    }
   }
 
   return db.StudentDailyTracking.findAll({

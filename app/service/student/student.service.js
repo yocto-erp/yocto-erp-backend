@@ -31,6 +31,24 @@ export function students(query, order, offset, limit, user) {
           studentId: {
             [Op.eq]: `${search}`
           }
+        },
+        {
+          '$father.firstName$': {
+            [Op.like]: `%${search}%`
+          }
+        }, {
+          '$father.lastName$': {
+            [Op.like]: `%${search}%`
+          }
+        },
+        {
+          '$mother.firstName$': {
+            [Op.like]: `%${search}%`
+          }
+        }, {
+          '$mother.lastName$': {
+            [Op.like]: `%${search}%`
+          }
         }
       ]
     };
