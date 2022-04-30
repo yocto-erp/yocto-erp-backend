@@ -1,16 +1,17 @@
-import {smtpClient} from "./smtp.service";
-import {mailgunClient} from "./mailgun.service";
-import db from '../../db/models';
-import {EMAIL_STATUS} from "../../db/models/email/email-send";
-import {getEmailConfigure} from "../configuration/configuration.service";
+import { smtpClient } from "./smtp.service";
+import { mailgunClient } from "./mailgun.service";
+import db from "../../db/models";
+import { EMAIL_STATUS } from "../../db/models/email/email-send";
+import { getEmailConfigure } from "../configuration/configuration.service";
+import { badRequest, FIELD_ERROR } from "../../config/error";
 
 export const EMAIL_PROVIDER = {
-  SMTP: 'SMTP',
-  MAILGUN: 'MAILGUN'
-}
+  SMTP: "SMTP",
+  MAILGUN: "MAILGUN"
+};
 
 const getEmailClient = (configure) => {
-  const {mailProvider} = configure;
+  const { mailProvider } = configure;
   switch (mailProvider) {
     case EMAIL_PROVIDER.MAILGUN:
       return mailgunClient(configure);
@@ -19,36 +20,36 @@ const getEmailClient = (configure) => {
     default:
       throw new Error(`Not support email client ${mailProvider}`);
   }
-}
+};
 
 export async function addEmailQueue(emailMessage, companyId, userId) {
-  const {from, to, subject, message, attachments, bcc, cc} = emailMessage;
+  const { from, to, subject, message, attachments, bcc, cc } = emailMessage;
   const transaction = await db.sequelize.transaction();
   try {
     const email = await db.EmailSend.create({
       from: from,
       to: to,
-      cc: cc || '',
-      bcc: bcc || '',
+      cc: cc || "",
+      bcc: bcc || "",
       subject: subject,
       content: message,
       status: EMAIL_STATUS.PENDING,
       retry: 0,
       totalAttach: attachments ? attachments.length : 0
-    }, {transaction});
+    }, { transaction });
     await db.EmailCompany.create({
       emailId: email.id,
       companyId,
       userId,
       createdDate: new Date()
-    }, {transaction});
+    }, { transaction });
     if (attachments && attachments.length) {
       await db.EmailAttachment.bulkCreate(attachments.map((t, i) => ({
         id: i,
         emailId: email.id,
         type: t.type,
         data: t.data
-      })), {transaction})
+      })), { transaction });
     }
 
     await transaction.commit();
@@ -59,8 +60,14 @@ export async function addEmailQueue(emailMessage, companyId, userId) {
   }
 }
 
-export function sendTestEmail(configure, {from, to, subject, message}) {
-  return getEmailClient(configure).send({from, to, subject, html: message});
+export async function sendTestEmail(configure, { from, to, subject, message }) {
+  try {
+    const rs = await getEmailClient(configure).send({ from, to, subject, html: message });
+    return rs;
+  } catch (e) {
+    console.log("Send email error", e);
+    throw badRequest("email", FIELD_ERROR.INVALID, e.response || e.message);
+  }
 }
 
 export async function sendCompanyEmail(emailId, companyId) {
@@ -68,14 +75,14 @@ export async function sendCompanyEmail(emailId, companyId) {
   try {
     const email = await db.EmailSend.findByPk(emailId, {
       include: [
-        {model: db.EmailAttachment, as: 'attachments'}
+        { model: db.EmailAttachment, as: "attachments" }
       ],
       transaction,
       lock: transaction.LOCK.UPDATE
-    })
-    const {from, to, cc, bcc, content, subject, attachments} = email;
+    });
+    const { from, to, cc, bcc, content, subject, attachments } = email;
     // eslint-disable-next-line no-await-in-loop
-    const emailConfigure = await getEmailConfigure(companyId)
+    const emailConfigure = await getEmailConfigure(companyId);
     const emailMsg = {
       from, to, cc, bcc, html: content, subject, attachments: attachments.map(at => ({
         type: at.type,
@@ -93,7 +100,7 @@ export async function sendCompanyEmail(emailId, companyId) {
 
     email.api_response = JSON.stringify(resp);
     email.sent_date = new Date();
-    await email.save({transaction});
+    await email.save({ transaction });
     await transaction.commit();
   } catch (e) {
     console.log(e);
@@ -106,7 +113,7 @@ export async function emailQueueProcessing() {
     const listEmails = await db.EmailCompany.findAll({
       include: [
         {
-          model: db.EmailSend, as: 'email', where: {
+          model: db.EmailSend, as: "email", where: {
             status: EMAIL_STATUS.PENDING
           }
         }
