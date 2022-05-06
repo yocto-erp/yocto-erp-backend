@@ -87,8 +87,7 @@ export async function getListStudentTracking(user, {
   console.log(direction, showSigned, showUnsigned);
   const where = {
     companyId: user.companyId,
-    status: STUDENT_STATUS.ACTIVE,
-    enableBus: true
+    status: STUDENT_STATUS.ACTIVE
   };
   const whereTracking = {};
 
@@ -218,7 +217,7 @@ export async function getListStudentTracking(user, {
         ]
       }
     ],
-    order: [["alias", "asc"]]
+    order: [["enableBus", "desc"], ["alias", "asc"]]
   });
 }
 
@@ -412,7 +411,6 @@ const updateOrCreateStudentTracking = async (companyId, student, date, remark, s
 
 export async function updateStudentTrackingStatus(user, { listDate, status, student, remark }) {
   const countryTz = user.timezone || DEFAULT_TIMEZONE;
-  console.log(listDate, student);
   const transaction = await db.sequelize.transaction();
   try {
     for (let i = 0; i < listDate.length; i += 1) {
