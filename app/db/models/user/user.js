@@ -22,7 +22,7 @@ export default class User extends Model {
         id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
         email: {type: DataTypes.STRING(100), unique: true},
         displayName: {type: DataTypes.STRING(250)},
-        imageUrl: {type: DataTypes.TEXT},
+        avatarId: {type: DataTypes.BIGINT},
         pwd: {type: DataTypes.STRING(256)},
         createdDate: {type: DataTypes.DATE},
         groupId: {type: DataTypes.INTEGER},
@@ -54,6 +54,10 @@ export default class User extends Model {
     this.belongsTo(models.Person, {
       foreignKey: 'personId',
       as: 'person'
+    });
+    this.belongsTo(models.Asset, {
+      foreignKey: 'avatarId',
+      as: 'avatar'
     });
     this.belongsToMany(models.Company, {
       through: models.UserCompany,

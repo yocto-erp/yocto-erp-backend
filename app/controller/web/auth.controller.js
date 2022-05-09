@@ -21,6 +21,11 @@ auth.get('/information', isAuthenticated(), (req, res) => {
   return res.status(200).json(req.user);
 });
 
+auth.get("/information/mobile", isAuthenticated(), (req, res, next) => {
+  return selectCompany(req.user, req.user.companyId).then(resp => res.status(200).json(resp))
+    .catch(next);
+});
+
 auth.get('/select-company', isAuthenticated(), (req, res, next) => {
   return selectCompany(req.user, Number(req.query.id)).then(resp => res.status(200).json(resp)).catch(next);
 });

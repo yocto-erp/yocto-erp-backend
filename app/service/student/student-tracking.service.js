@@ -383,7 +383,7 @@ export async function listStudentTracking(user, {
   });
 }
 
-const updateOrCreateStudentTracking = async (companyId, student, date, remark, status, transaction) => {
+const updateOrCreateStudentTracking = async (companyId, student, date, remark, checkinPlace, checkoutPlace, status, transaction) => {
   const existed = await db.StudentDailyTracking.findOne({
     where: {
       trackingDate: date,
@@ -396,6 +396,8 @@ const updateOrCreateStudentTracking = async (companyId, student, date, remark, s
     return db.StudentDailyTracking.create({
       studentId: student.id,
       companyId,
+      fromBusId: checkinPlace?.id,
+      toBusId: checkoutPlace?.id,
       trackingDate: date,
       checkInRemark: remark,
       lastModifiedDate: new Date(),
@@ -404,19 +406,22 @@ const updateOrCreateStudentTracking = async (companyId, student, date, remark, s
   }
   existed.checkInRemark = remark;
   existed.status = status;
-  existed.trackingDate = date;
+  existed.toBusId = checkoutPlace?.id;
+  existed.fromBusId = checkinPlace?.id;
   existed.lastModifiedDate = new Date();
   return existed.save({ transaction });
 };
 
-export async function updateStudentTrackingStatus(user, { listDate, status, student, remark }) {
+export async function updateStudentTrackingStatus(user, form) {
+  console.log(form)
+  const { listDate, status, student, remark, checkinPlace, checkoutPlace } = form;
   const countryTz = user.timezone || DEFAULT_TIMEZONE;
   const transaction = await db.sequelize.transaction();
   try {
     for (let i = 0; i < listDate.length; i += 1) {
       const date = listDate[i];
       // eslint-disable-next-line no-await-in-loop
-      await updateOrCreateStudentTracking(user.companyId, student, getStartDateUtcOfTimezoneDate(date, countryTz), remark, status, transaction);
+      await updateOrCreateStudentTracking(user.companyId, student, getStartDateUtcOfTimezoneDate(date, countryTz), remark, checkinPlace, checkoutPlace, status, transaction);
     }
     await transaction.commit();
     return true;

@@ -11,6 +11,7 @@ import { hasPermission } from "../middleware/permission";
 import { PERMISSION } from "../../db/models/acl/acl-action";
 import { pagingParse } from "../middleware/paging.middleware";
 import { handleMultiUpload } from "../../service/file/storage.service";
+import { API_PATH } from "./constants";
 
 const imageRouter = express.Router();
 
@@ -62,5 +63,5 @@ imageRouter.delete("/:ids", hasPermission(PERMISSION.ASSET.DELETE), (req, res, n
 });
 
 export function initWebAssetController(app) {
-  app.use("/api/image", imageRouter);
+  app.use(`${API_PATH}/image`, imageRouter);
 }

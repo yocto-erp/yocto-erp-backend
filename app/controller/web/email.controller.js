@@ -1,6 +1,7 @@
 import express from 'express';
 import {isAuthenticated} from "../middleware/permission";
 import {addEmailQueue} from "../../service/email/company-email.service";
+import { API_PATH } from "./constants";
 
 const emailRouter = express.Router();
 
@@ -31,5 +32,5 @@ emailRouter.post('/', isAuthenticated(), async (req, res, next) => {
 });
 
 export function initEmailController(app) {
-  app.use('/api/email', emailRouter);
+  app.use(`${API_PATH}/email`, emailRouter);
 }

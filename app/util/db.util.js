@@ -30,6 +30,28 @@ export function buildDateTimezoneRangeQuery(fromDate, toDate, tz = DEFAULT_TIMEZ
   return null;
 }
 
+export function buildDateObjTimezoneRangeQuery(fromDate, toDate, tz = DEFAULT_TIMEZONE) {
+  if (fromDate && toDate) {
+    return {
+      [Op.and]: {
+        [Op.gte]: getStartDateUtcOfTimezoneDate(fromDate, tz),
+        [Op.lte]: getEndDateUtcOfTimezoneDate(toDate, tz)
+      }
+    }
+  }
+  if (fromDate) {
+    return {
+      [Op.gte]: getStartDateUtcOfTimezoneDate(fromDate, tz)
+    }
+  }
+  if (toDate) {
+    return {
+      [Op.lte]: getEndDateUtcOfTimezoneDate(toDate, tz)
+    }
+  }
+  return null;
+}
+
 export function buildDateRangeQuery(fromDate, toDate) {
   if (hasText(fromDate) && hasText(toDate)) {
     return {

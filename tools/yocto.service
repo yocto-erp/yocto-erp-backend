@@ -1,0 +1,30 @@
+[Unit]
+Description=Yocto ERP - Simple management
+Documentation=https://yoctoerp.com
+After=network.target
+
+[Service]
+Environment=DB_HOST=127.0.0.1
+Environment=DB_USERNAME=root
+Environment=DB_PASSWORD=mondex1@#$
+Environment=DB_PORT=3306
+Environment=DB_NAME=yocto_erp
+Environment=PORT=3001
+Environment=WEB_URL=http://yoctoerp.com
+Environment=ETHER_PRIVATE_KEY=0xb7b49348157a97cfc5c4403a9b8b6a8f7b1203e123cd6e6fec59158c2503570d
+Environment=ETHER_SMART_CONTRACT=0x688Ff2472c992F0849e765083F75E85564f86483
+Environment=ETHER_PUBLIC_KEY=0xE8fb426AFeDC4cdC5239b8F59F6dE22513746Fc5
+Environment=TELEGRAM_BOT=1392293447:AAHh043lAVEaA0qjn3TZikvdgi4KiZP8l4k
+Environment=WEB3STORAGE_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDlhZUY3N0RkOGYzNjYwNzIwNDkwMTE1NUMzNzBBRGFCOTQzMTRjOUEiLCJpc3MiOiJ3ZWIzLXN0b3JhZ2UiLCJpYXQiOjE2NDkyMTM5NjY2ODIsIm5hbWUiOiJZb2N0byJ9.R7CNLOFfvEoF5WF-NQrQYRDYTTDWE9SBhHsQ_gy9Uoc
+Environment=MAILGUN_API_KEY=
+Environment=MAILGUN_DOMAIN=
+Type=simple
+User=root
+StandardOutput=append:/usr/project/instance/yocto/app.log
+StandardError=append:/usr/project/instance/yocto/error.log
+WorkingDirectory=/usr/project/instance/yocto
+ExecStart=/root/.nvm/versions/node/v17.9.0/bin/node /usr/project/yocto-erp/backend/dist/server.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
