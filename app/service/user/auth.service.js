@@ -98,6 +98,8 @@ export async function selectCompany(user, companyId) {
       }
     ]
   });
+  existedUser.lastLogin = new Date();
+  await existedUser.save();
   return getUserToken(existedUser, companyId);
 }
 
@@ -128,6 +130,8 @@ export async function signIn({ email, password }) {
     throw badRequest("credential", FIELD_ERROR.EMAIL_NOT_ACTIVE, "User not active");
   }
 
+  user.lastLogin = new Date();
+  await user.save();
   return getUserToken(user);
 }
 

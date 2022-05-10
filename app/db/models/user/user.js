@@ -1,5 +1,5 @@
-import {DataTypes, Model} from 'sequelize';
-import bcrypt from 'bcrypt';
+import { DataTypes, Model } from "sequelize";
+import bcrypt from "bcrypt";
 
 const saltRounds = 10;
 
@@ -19,22 +19,23 @@ export default class User extends Model {
   static init(sequelize, opts) {
     return super.init(
       {
-        id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
-        email: {type: DataTypes.STRING(100), unique: true},
-        displayName: {type: DataTypes.STRING(250)},
-        avatarId: {type: DataTypes.BIGINT},
-        pwd: {type: DataTypes.STRING(256)},
-        createdDate: {type: DataTypes.DATE},
-        groupId: {type: DataTypes.INTEGER},
-        email_active: {type: DataTypes.BOOLEAN},
-        remark: {type: DataTypes.TEXT},
-        status: {type: DataTypes.INTEGER},
-        createdById: {type: DataTypes.BIGINT},
-        personId: {type: DataTypes.BIGINT}
+        id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+        email: { type: DataTypes.STRING(100), unique: true },
+        displayName: { type: DataTypes.STRING(250) },
+        avatarId: { type: DataTypes.BIGINT },
+        pwd: { type: DataTypes.STRING(256) },
+        createdDate: { type: DataTypes.DATE },
+        groupId: { type: DataTypes.INTEGER },
+        email_active: { type: DataTypes.BOOLEAN },
+        remark: { type: DataTypes.TEXT },
+        status: { type: DataTypes.INTEGER },
+        createdById: { type: DataTypes.BIGINT },
+        personId: { type: DataTypes.BIGINT },
+        lastLogin: { type: DataTypes.DATE }
       },
       {
-        tableName: 'user',
-        modelName: 'user',
+        tableName: "user",
+        modelName: "user",
         timestamps: false,
         sequelize, ...opts
       }
@@ -52,18 +53,18 @@ export default class User extends Model {
 
   static associate(models) {
     this.belongsTo(models.Person, {
-      foreignKey: 'personId',
-      as: 'person'
+      foreignKey: "personId",
+      as: "person"
     });
     this.belongsTo(models.Asset, {
-      foreignKey: 'avatarId',
-      as: 'avatar'
+      foreignKey: "avatarId",
+      as: "avatar"
     });
     this.belongsToMany(models.Company, {
       through: models.UserCompany,
-      foreignKey: 'userId',
-      otherKey: 'companyId',
-      as: 'userCompanies'
+      foreignKey: "userId",
+      otherKey: "companyId",
+      as: "userCompanies"
     });
   }
 
