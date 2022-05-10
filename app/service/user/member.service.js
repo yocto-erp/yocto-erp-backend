@@ -19,30 +19,33 @@ export async function getUserProfile(user) {
 }
 
 export async function updateUserProfile(user, form, avatar) {
-  console.log(avatar)
-  const { fullName, phone } = form;
+  console.log(form);
+  const { fullName, phone, isUpdateAvatar } = form;
   const existed = await getUserProfile(user);
   const transaction = await db.sequelize.transaction();
   let newAvatar = null;
   try {
-    if (avatar) {
-      newAvatar = await db.Asset.create({
-        name: avatar.originalname,
-        type: ASSET_TYPE.FILE,
-        size: avatar.size,
-        fileId: avatar.filename,
-        companyId: user.companyId,
-        mimeType: avatar.mimetype,
-        createdById: user.id,
-        createdDate: new Date()
-      }, { transaction });
+    if (isUpdateAvatar === "1") {
       if (existed.avatar) {
         existed.avatar.systemStatus = SYSTEM_STATUS.DELETED;
         existed.avatar.lastModifiedDate = new Date();
         await existed.avatar.save({ transaction });
       }
-
-      existed.avatarId = newAvatar.id;
+      if (avatar) {
+        newAvatar = await db.Asset.create({
+          name: avatar.originalname,
+          type: ASSET_TYPE.FILE,
+          size: avatar.size,
+          fileId: avatar.filename,
+          companyId: user.companyId,
+          mimeType: avatar.mimetype,
+          createdById: user.id,
+          createdDate: new Date()
+        }, { transaction });
+        existed.avatarId = newAvatar.id;
+      } else {
+        existed.avatarId = null;
+      }
     }
 
     const infos = fullName.split(" ");
@@ -70,7 +73,12 @@ export async function updateUserProfile(user, form, avatar) {
     existed.displayName = fullName;
     await existed.save({ transaction });
     await transaction.commit();
-    return { displayName: existed.displayName, newAvatar };
+    return {
+      displayName: existed.displayName,
+      gsm: phone,
+      newAvatar,
+      isUpdateAvatar: isUpdateAvatar === "1"
+    };
   } catch (e) {
     await transaction.rollback();
     throw e;
