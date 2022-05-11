@@ -258,7 +258,7 @@ export async function removeCost(cId, user) {
       }, { transaction });
     }
     await removeCostPurpose(checkCost.id, transaction);
-    const cost = db.Cost.destroy({
+    const cost = await db.Cost.destroy({
       where: { id: checkCost.id }
     }, { transaction });
     await transaction.commit();

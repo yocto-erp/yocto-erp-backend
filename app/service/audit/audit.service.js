@@ -1,16 +1,18 @@
-import db from '../../db/models';
+import db from "../../db/models";
 
 export function auditAction({
                               actionId,
+                              name = "",
                               user,
                               partnerPersonId = 0,
                               partnerCompanyId = 0,
-                              remark = '',
-                              relativeId = '',
+                              remark = "",
+                              relativeId = "",
                               subject
                             }) {
   return db.Audit.create({
     actionId,
+    name,
     userId: user.id,
     partnerCompanyId,
     partnerPersonId,
@@ -22,7 +24,7 @@ export function auditAction({
   });
 }
 
-export function filter({paging: {offset, limit, order}, user}) {
+export function filter({ paging: { offset, limit, order }, user }) {
   const where = {
     companyId: user.companyId
   };
@@ -30,10 +32,13 @@ export function filter({paging: {offset, limit, order}, user}) {
   return db.Audit.findAndCountAll({
     where,
     include: [
-      {model: db.Person, as: 'partnerPerson'},
-      {model: db.Subject, as: 'subject'},
-      {model: db.Company, as: 'partnerCompany'},
-      {model: db.User, as: 'createdBy'}
+      {
+        model: db.Subject, as: "subject", include: [
+          { model: db.Person, as: "person" },
+          { model: db.Company, as: "company" }
+        ]
+      },
+      { model: db.User, as: "createdBy" }
     ],
     offset,
     limit,

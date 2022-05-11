@@ -35,6 +35,7 @@ import { initFinanceController } from "./finance";
 import { initWebDebtController } from "./debt/debt.controller";
 import { initDashboardController } from "./dashboard";
 import { initWebMemberController } from "./user/member.controller";
+import { initWebProvidersController } from "./provider";
 
 export function initWebController(app) {
   initWebAuthController(app);
@@ -73,6 +74,7 @@ export function initWebController(app) {
   initFinanceController(app);
   initWebDebtController(app);
   initDashboardController(app);
-  initWebMemberController(app)
+  initWebMemberController(app);
   // initWebDebtCommonController(app);
+  initWebProvidersController(app);
 }

@@ -7,6 +7,7 @@ export const DEBT_PURPOSE = {
 };
 
 export const DEFAULT_INCLUDE_USER_ATTRS = ["id", "displayName", "email"];
+export const DEFAULT_INCLUDE_TAGGING_ATTRS = ['id', 'label', 'color'];
 
 export const SYSTEM_STATUS = {
   NORMAL: 1,

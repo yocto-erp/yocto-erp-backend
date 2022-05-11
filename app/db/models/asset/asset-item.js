@@ -5,7 +5,8 @@ const { DataTypes } = Sequelize;
 export const ASSET_ITEM_TYPE = {
   COST: 1,
   PRODUCT: 2,
-  ECOMMERCE_PRODUCT: 3
+  ECOMMERCE_PRODUCT: 3,
+  PROVIDER: 4
 };
 
 export default class AssetItem extends Sequelize.Model {
