@@ -47,12 +47,20 @@ export async function listProvider(query, user, { order, offset, limit }) {
     order,
     where,
     include: [
+      { model: db.User, as: "createdBy", attributes: DEFAULT_INCLUDE_USER_ATTRS },
       {
-        model: db.Tagging, as: "tagging",
-        required: isTaggingRequired,
-        where: whereTagging, attributes: DEFAULT_INCLUDE_TAGGING_ATTRS
-      },
-      { model: db.User, as: "createdBy", attributes: DEFAULT_INCLUDE_USER_ATTRS }
+        model: db.Subject, as: "subject",
+        required: true,
+        include: [
+          {
+            model: db.Tagging, as: "tagging",
+            required: isTaggingRequired,
+            where: whereTagging, attributes: DEFAULT_INCLUDE_TAGGING_ATTRS
+          },
+          { model: db.Person, as: "person" },
+          { model: db.Company, as: "company" }
+        ]
+      }
     ],
     offset,
     limit,
@@ -66,7 +74,18 @@ export async function listProvider(query, user, { order, offset, limit }) {
 }
 
 export async function createProvider(user, createForm) {
-  const { name, remark, rating, subject, assets, tagging, contractStartDate, contractEndDate, status } = createForm;
+  const {
+    name,
+    remark,
+    rating,
+    subject,
+    assets,
+    tagging,
+    contractStartDate,
+    contractEndDate,
+    status,
+    products
+  } = createForm;
   const transaction = await db.sequelize.transaction();
 
   try {
@@ -103,6 +122,13 @@ export async function createProvider(user, createForm) {
         transaction,
         newTags: tagging
       });
+    }
+
+    if (isArrayHasLength(products)) {
+      await db.ProviderProduct.bulkCreate(products.map(p => ({
+        providerId: newProvider.id,
+        productId: p.id
+      })), { transaction });
     }
 
     await transaction.commit();
@@ -144,7 +170,8 @@ export async function getProvider(cId, user) {
           }
         ]
       },
-      { model: db.Tagging, as: "tagging" }
+      { model: db.Tagging, as: "tagging" },
+      { model: db.Product, as: "products" }
     ]
   });
   if (!item) {
@@ -155,7 +182,18 @@ export async function getProvider(cId, user) {
 
 export async function updateProvider(cId, user, updateForm) {
   const existed = await getProvider(cId, user);
-  const { name, remark, rating, subject, assets, tagging, contractStartDate, contractEndDate, status } = updateForm;
+  const {
+    name,
+    remark,
+    rating,
+    subject,
+    assets,
+    tagging,
+    contractStartDate,
+    contractEndDate,
+    status,
+    products
+  } = updateForm;
   const transaction = await db.sequelize.transaction();
   try {
     await existed.update({
@@ -188,6 +226,19 @@ export async function updateProvider(cId, user, updateForm) {
         }),
         { transaction }
       );
+    }
+
+    await db.ProviderProduct.destroy({
+      where: {
+        providerId: existed.id
+      }
+    }, { transaction });
+
+    if (isArrayHasLength(products)) {
+      await db.ProviderProduct.bulkCreate(products.map(p => ({
+        providerId: existed.id,
+        productId: p.id
+      })), { transaction });
     }
 
     let listUpdateTags = [];

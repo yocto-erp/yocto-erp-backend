@@ -10,7 +10,7 @@ export default class ProviderProduct extends Sequelize.Model {
         productId: { type: DataTypes.BIGINT, primaryKey: true }
       },
       {
-        tableName: "provider",
+        tableName: "provider_product",
         modelName: "providerProduct",
         timestamps: false,
         sequelize, ...opts

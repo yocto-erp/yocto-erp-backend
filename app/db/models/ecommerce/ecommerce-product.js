@@ -63,7 +63,7 @@ export default class EcommerceProduct extends Sequelize.Model {
       through: {
         model: models.AssetItem,
         scope: {
-          itemType: ASSET_ITEM_TYPE.ECOMMERCE_PRODUCT
+          assetItemType: ASSET_ITEM_TYPE.ECOMMERCE_PRODUCT
         }
       },
       foreignKey: "itemId",

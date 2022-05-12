@@ -26,6 +26,7 @@ export default class Provider extends Sequelize.Model {
         lastModifiedDate: { type: DataTypes.DATE },
         lastModifiedById: { type: DataTypes.BIGINT },
         status: { type: DataTypes.INTEGER },
+        isApproved: { type: DataTypes.BOOLEAN },
         approvedDate: { type: DataTypes.DATE },
         approvedById: { type: DataTypes.BIGINT },
         contractStartDate: { type: DataTypes.DATE },
@@ -42,12 +43,13 @@ export default class Provider extends Sequelize.Model {
   static associate(models) {
     this.belongsTo(models.User, { foreignKey: "createdById", as: "createdBy" });
     this.belongsTo(models.User, { foreignKey: "lastModifiedById", as: "lastModifiedBy" });
+    this.belongsTo(models.User, { foreignKey: "approvedById", as: "approvedBy" });
     this.belongsTo(models.Subject, { foreignKey: "subjectId", as: "subject" });
     this.belongsToMany(models.Asset, {
       through: {
         model: models.AssetItem,
         scope: {
-          itemType: ASSET_ITEM_TYPE.PROVIDER
+          assetItemType: ASSET_ITEM_TYPE.PROVIDER
         }
       },
       foreignKey: "itemId",
