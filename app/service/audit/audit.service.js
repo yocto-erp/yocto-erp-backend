@@ -8,7 +8,8 @@ export function auditAction({
                               partnerCompanyId = 0,
                               remark = "",
                               relativeId = "",
-                              subject
+                              subject,
+                              tracking = {}
                             }) {
   return db.Audit.create({
     actionId,
@@ -20,7 +21,9 @@ export function auditAction({
     subjectId: subject?.id,
     createdDate: new Date(),
     companyId: user.companyId,
-    relativeId
+    relativeId,
+    ip: tracking?.id,
+    userAgent: tracking?.userAgent
   });
 }
 

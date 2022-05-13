@@ -1,31 +1,31 @@
-import http from 'http';
-import express from 'express';
-import bodyParser from 'body-parser';
-import passport from 'passport';
-import morgan from 'morgan';
-import {appLog, httpStream} from './config/winston';
-import appConf from './config/application';
+import http from "http";
+import express from "express";
+import bodyParser from "body-parser";
+import passport from "passport";
+import morgan from "morgan";
+import { appLog, httpStream } from "./config/winston";
+import appConf from "./config/application";
 
-import {FormError, HttpError, isSystemError} from './config/error';
-import {loadConfigure, SYSTEM_CONFIG} from './config/system';
-import {initWebController} from './controller/web';
-import {initMobileController} from "./controller/mobile";
+import { FormError, HttpError, isSystemError } from "./config/error";
+import { loadConfigure, SYSTEM_CONFIG } from "./config/system";
+import { initWebController } from "./controller/web";
+import { initMobileController } from "./controller/mobile";
 
-import service from './service/passport';
-import {initCronTasks} from "./cron";
-import {initSwagger} from "./swagger";
-import {initSocket} from "./event/socket";
+import service from "./service/passport";
+import { initCronTasks } from "./cron";
+import { initSwagger } from "./swagger";
+import { initSocket } from "./event/socket";
 
 service(passport);
 export const app = express();
 
-app.use(morgan('combined', {stream: httpStream}));
+app.use(morgan("combined", { stream: httpStream }));
 app.use(passport.initialize());
-app.use(bodyParser.json({limit: '50mb'}));
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ extended: false }));
 
 /* eslint-enable no-unused-vars */
-app.get('/', (req, res) => res.send({message: 'Welcome to the default API route'}));
+app.get("/", (req, res) => res.send({ message: "Welcome to the default API route" }));
 
 /* MOBILE */
 initMobileController(app);
@@ -50,11 +50,11 @@ app.use((err, req, res, next) => {
       .json(err.errors);
   } else if (err instanceof HttpError) {
     res.status(err.code)
-      .json({error: err.message});
+      .json({ error: err.message });
   } else if (!isSystemError(err)) {
     res.statusMessage = err.message;
     res.status(500)
-      .json({error: err.message});
+      .json({ error: err.message });
   }
 });
 
@@ -66,9 +66,10 @@ initSocket(server);
 const PORT = process.env.PORT || appConf.port;
 server.listen(PORT, appConf.hostname, async () => {
   await loadConfigure().then(systemConfigure => {
-    appLog.info(`System Configure Load: ${JSON.stringify(systemConfigure)}`)
-    app.use('/upload', express.static(SYSTEM_CONFIG.PUBLIC_FOLDER));
-    app.use('/thumbnail', express.static(`${SYSTEM_CONFIG.PUBLIC_FOLDER}/thumbnail`));
+    appLog.info(`System Configure Load: ${JSON.stringify(systemConfigure)}`);
+    appLog.info(`Env ${JSON.stringify(process.env)}`);
+    app.use("/upload", express.static(SYSTEM_CONFIG.PUBLIC_FOLDER));
+    app.use("/thumbnail", express.static(`${SYSTEM_CONFIG.PUBLIC_FOLDER}/thumbnail`));
   });
   initCronTasks();
   // initIPFS().then();

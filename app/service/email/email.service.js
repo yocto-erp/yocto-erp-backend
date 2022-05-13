@@ -1,14 +1,15 @@
-import {client} from 'mailgun.js';
-import fs from 'fs';
-import path from 'path';
-import {emailLog} from "../../config/winston";
-import {SYSTEM_CONFIG} from '../../config/system';
-import db from '../../db/models';
-import {EMAIL_STATUS} from "../../db/models/email/email-send";
+import { client } from "mailgun.js";
+import fs from "fs";
+import path from "path";
+import { emailLog } from "../../config/winston";
+import { SYSTEM_CONFIG } from "../../config/system";
+import db from "../../db/models";
+import { EMAIL_STATUS } from "../../db/models/email/email-send";
+import { sendErrorMessage } from "../partner/telegram";
 
 function getMailGunClient() {
   return client({
-    username: 'api',
+    username: "api",
     key: process.env.MAILGUN_API_KEY
   });
 }
@@ -23,14 +24,14 @@ const systemEmail = {
 };
 
 function getTemplateFile(templateName) {
-  return path.join(__dirname, '..', '..', 'template', 'email', `${templateName}.html`);
+  return path.join(__dirname, "..", "..", "template", "email", `${templateName}.html`);
 }
 
 export function buildTemplate(templateName, params) {
   const templatePath = getTemplateFile(templateName);
   emailLog.info(`Template Path: ${templatePath} - Params: ${JSON.stringify(params)}`);
   return new Promise((resolve, reject) => {
-    fs.readFile(templatePath, 'utf-8', (err, html) => {
+    fs.readFile(templatePath, "utf-8", (err, html) => {
       let emailMessage = html;
       if (err) {
         reject(err);
@@ -38,7 +39,7 @@ export function buildTemplate(templateName, params) {
       if (params) {
         Object.keys(params).forEach((key) => {
           const value = params[key];
-          emailMessage = emailMessage.replace(new RegExp(`{{${key}}}`, 'g'), value);
+          emailMessage = emailMessage.replace(new RegExp(`{{${key}}}`, "g"), value);
         });
       }
       resolve(emailMessage);
@@ -66,8 +67,8 @@ export async function sendHtml({
     db.EmailSend.create({
       from: from,
       to: to,
-      cc: cc || '',
-      bcc: bcc || '',
+      cc: cc || "",
+      bcc: bcc || "",
       subject: subject,
       content: html,
       status: EMAIL_STATUS.SUCCESS,
@@ -77,12 +78,12 @@ export async function sendHtml({
     });
     return true;
   } catch (error) {
-    console.log('Email Errror', error);
+    sendErrorMessage(error.stack).then();
     db.EmailSend.create({
       from: from,
       to: to,
-      cc: cc || '',
-      bcc: bcc || '',
+      cc: cc || "",
+      bcc: bcc || "",
       subject: subject,
       content: html,
       status: EMAIL_STATUS.FAIL,
@@ -97,9 +98,9 @@ export async function sendHtml({
 
 export async function resendEmail(emailId) {
   const email = await db.EmailSend.findByPk(emailId);
-  const {from, to, cc, bcc, subject} = email;
+  const { from, to, cc, bcc, subject } = email;
   const html = email.content;
-  return getMailGunClient().messages.create(domain, {from, to, cc, bcc, subject, html})
+  return getMailGunClient().messages.create(domain, { from, to, cc, bcc, subject, html })
     .then((t) => {
       email.status = 1;
       email.retry += 1;
@@ -110,9 +111,9 @@ export async function resendEmail(emailId) {
 
 export function sendRegister(email, displayName, url) {
   try {
-    const templatePath = getTemplateFile('email-confirm');
+    const templatePath = getTemplateFile("email-confirm");
     emailLog.info(`Template Path: ${templatePath}`);
-    fs.readFile(templatePath, 'utf-8', (err, html) => {
+    fs.readFile(templatePath, "utf-8", (err, html) => {
       if (err) {
         emailLog.info(err.message);
         throw err;
@@ -120,11 +121,11 @@ export function sendRegister(email, displayName, url) {
 
       const emailMsg = html
         .replace(/{{email_confirm_url}}/g, url)
-        .replace(/{{displayName}}/g, displayName)
+        .replace(/{{displayName}}/g, displayName);
       const sendInfo = {
         from: systemEmail.register,
         to: email,
-        subject: 'Welcome to YOCTO-ERP',
+        subject: "Welcome to YOCTO-ERP",
         html: emailMsg
       };
       if (!DEBUG) {
@@ -140,9 +141,9 @@ export function sendRegister(email, displayName, url) {
 
 export function sendInviteUser(email, companyName, url) {
   try {
-    const templatePath = getTemplateFile('invite-user');
+    const templatePath = getTemplateFile("invite-user");
     emailLog.info(`Template Path: ${templatePath}`);
-    fs.readFile(templatePath, 'utf-8', (err, html) => {
+    fs.readFile(templatePath, "utf-8", (err, html) => {
       if (err) {
         emailLog.info(err.message);
         throw err;
@@ -150,7 +151,7 @@ export function sendInviteUser(email, companyName, url) {
 
       const emailMsg = html
         .replace(/{{email_confirm_url}}/g, url)
-        .replaceAll(/{{companyName}}/g, companyName)
+        .replaceAll(/{{companyName}}/g, companyName);
       const sendInfo = {
         from: systemEmail.register,
         to: email,
@@ -170,14 +171,14 @@ export function sendInviteUser(email, companyName, url) {
 
 export async function sendResetPassword(email, token, origin) {
   const url = `${origin}/forgot-password/reset?token=${token}`;
-  const msg = await buildTemplate('reset-password', {
+  const msg = await buildTemplate("reset-password", {
     resetPasswordLink: url,
     email: email
   });
   const sendInfo = {
     from: systemEmail.password,
     to: email,
-    subject: 'YOCTO ERP Password Reset!!',
+    subject: "YOCTO ERP Password Reset!!",
     html: msg
   };
   return sendHtml(sendInfo);
@@ -185,7 +186,7 @@ export async function sendResetPassword(email, token, origin) {
 
 export function emails(search, order, offset, limit) {
   let where = {};
-  const {Op} = db.Sequelize;
+  const { Op } = db.Sequelize;
 
   if (search) {
     if (search.fromOrTo) {

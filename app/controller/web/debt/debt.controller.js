@@ -3,6 +3,7 @@ import {pagingParse} from '../../middleware/paging.middleware';
 import {hasPermission} from '../../middleware/permission';
 import {PERMISSION} from '../../../db/models/acl/acl-action';
 import { commonDebts, createDebt, debts, getDebt, removeDebt, updateDebt } from '../../../service/debt/debt.service';
+import { trackingMiddleware } from "../../middleware/tracking.middleware";
 
 const debt = express.Router();
 
@@ -27,7 +28,7 @@ debt.get('/:id(\\d+)', hasPermission(PERMISSION.PRODUCT.READ), (req, res, next) 
 });
 
 
-debt.post('/', [hasPermission(PERMISSION.PRODUCT.CREATE)], (req, res, next) => {
+debt.post('/', [hasPermission(PERMISSION.PRODUCT.CREATE), trackingMiddleware], (req, res, next) => {
   return createDebt(req.user, req.body)
     .then(result => res.status(200).json(result)).catch(next);
 });

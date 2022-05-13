@@ -65,6 +65,7 @@ import { initPartnerModel } from "./partner";
 import { initScope } from "./scope";
 import { initAssetModel } from "./asset";
 import { initProviderModel } from "./provider";
+import Comment from "./comment/comment";
 
 
 const env = process.env.NODE_ENV || "development";
@@ -193,7 +194,10 @@ const models = {
   ...initTaxModel(sequelize),
 
   // Provider
-  ...initProviderModel(sequelize)
+  ...initProviderModel(sequelize),
+
+  // Comment
+  Comment: Comment.init(sequelize)
 };
 
 Object.values(models)

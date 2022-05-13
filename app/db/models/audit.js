@@ -16,7 +16,9 @@ export default class Audit extends Sequelize.Model {
         partnerPersonId: { type: DataTypes.BIGINT },
         subjectId: { type: DataTypes.BIGINT },
         partnerCompanyId: { type: DataTypes.BIGINT },
-        relativeId: { type: DataTypes.STRING(128) }
+        relativeId: { type: DataTypes.STRING(128) },
+        ip: { type: DataTypes.STRING(100) },
+        userAgent: { type: DataTypes.TEXT }
       },
       {
         tableName: "audit",

@@ -36,7 +36,7 @@ export function debts(user, query, { order, offset, limit }) {
       }
     ];
   }
-  console.log(where)
+  console.log(where);
   return db.Debt.findAndCountAll({
     where,
     include: [
@@ -150,7 +150,7 @@ export async function storeDebt(user, createForm, transaction) {
   return newDebt;
 }
 
-export async function createDebt(user, createForm) {
+export async function createDebt(user, createForm, tracking = {}) {
   const {
     subject,
     tagging
@@ -164,7 +164,8 @@ export async function createDebt(user, createForm) {
       actionId: PERMISSION.DEBT.CREATE,
       user,
       subject,
-      relativeId: String(newDebt.id)
+      relativeId: String(newDebt.id),
+      tracking
     }).then();
     if (tagging && tagging.length) {
       addTaggingQueue([...new Set(tagging.map(t => t.id))]);
