@@ -160,6 +160,39 @@ export const PERMISSION = {
     CREATE: 98,
     DELETE: 99,
     UPDATE: 100
+  },
+  STUDENT: {
+    READ: 101,
+    CREATE: 102,
+    DELETE: 103,
+    UPDATE: 104
+  },
+  STUDENT_MONTHLY_FEE: {
+    READ: 105,
+    CREATE: 106,
+    DELETE: 107,
+    UPDATE: 108,
+    PAID: 109
+  },
+  STUDENT_BUS: {
+    READ: 110,
+    CREATE: 111,
+    DELETE: 112,
+    UPDATE: 113,
+    PAID: 114
+  },
+  STUDENT_CLASS: {
+    READ: 115,
+    CREATE: 116,
+    DELETE: 117,
+    UPDATE: 118,
+    PAID: 119
+  },
+  STUDENT_TRACKING: {
+    READ: 120,
+    CREATE: 121,
+    SIGN: 122,
+    UPDATE: 123
   }
 };
 

@@ -3,6 +3,7 @@ import { pagingParse } from "../../middleware/paging.middleware";
 import { hasPermission } from "../../middleware/permission";
 import { PERMISSION } from "../../../db/models/acl/acl-action";
 import {
+  approveProvider,
   createProvider,
   getProvider,
   listProvider,
@@ -30,6 +31,10 @@ router.post("/", [hasPermission(PERMISSION.PROVIDER.CREATE), providerValidator],
 
 router.post("/:id(\\d+)", [hasPermission(PERMISSION.PROVIDER.UPDATE), providerValidator], (req, res, next) => {
   return updateProvider(req.params.id, req.user, req.body).then(result => res.status(200).json(result)).catch(next);
+});
+
+router.post("/:id(\\d+)/approve", [hasPermission(PERMISSION.PROVIDER.APPROVE)], (req, res, next) => {
+  return approveProvider(req.user, req.params.id, req.body).then(result => res.status(200).json(result)).catch(next);
 });
 
 router.delete("/:id(\\d+)", hasPermission(PERMISSION.PROVIDER.DELETE), (req, res, next) => {

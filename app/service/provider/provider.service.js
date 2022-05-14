@@ -49,6 +49,10 @@ export async function listProvider(query, user, { order, offset, limit }) {
     include: [
       { model: db.User, as: "createdBy", attributes: DEFAULT_INCLUDE_USER_ATTRS },
       {
+        model: db.User,
+        as: "approvedBy", attributes: DEFAULT_INCLUDE_USER_ATTRS
+      },
+      {
         model: db.Subject, as: "subject",
         required: true,
         include: [
@@ -159,6 +163,10 @@ export async function getProvider(cId, user) {
         model: db.Asset,
         as: "assets",
         through: { attributes: [] }
+      },
+      {
+        model: db.User,
+        as: "approvedBy"
       },
       {
         model: db.Subject, as: "subject", include: [
@@ -291,4 +299,13 @@ export async function removeProvider(cId, user) {
     await transaction.rollback();
     throw error;
   }
+}
+
+export async function approveProvider(user, id, { approve }) {
+  const existed = await getProvider(id, user);
+  existed.isApproved = approve;
+  existed.approvedDate = new Date();
+  existed.approvedById = user.id;
+  existed.save();
+  return existed;
 }

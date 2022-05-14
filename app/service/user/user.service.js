@@ -1,31 +1,34 @@
-import db from '../../db/models';
-import {badRequest, FIELD_ERROR} from '../../config/error';
-import {USER_EVENT, userEmitter} from "../../event/user.event";
-import {USER_INVITE_STATUS} from "../../db/models/user/user-company";
-import {USER_STATUS} from "../../db/models/user/user";
+import md5 from "md5";
+import db from "../../db/models";
+import { badRequest, FIELD_ERROR } from "../../config/error";
+import { USER_EVENT, userEmitter } from "../../event/user.event";
+import { USER_INVITE_STATUS } from "../../db/models/user/user-company";
+import { USER_STATUS } from "../../db/models/user/user";
+import * as emailService from "../email/email.service";
+import { differentHour } from "../../util/date.util";
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
 export function updatePassword(uId, newPwd) {
   return db.User.update(
-    {password: db.User.hashPassword(newPwd)},
-    {where: {id: uId}}
+    { password: db.User.hashPassword(newPwd) },
+    { where: { id: uId } }
   );
 }
 
 export async function checkPassword(uId, pwd) {
   const user = await db.User.findOne({
-    where: {id: uId},
-    attributes: ['password']
+    where: { id: uId },
+    attributes: ["password"]
   });
   return db.User.comparePassword(pwd, user.password);
 }
 
 export function users(user, query, order, offset, limit) {
-  const {search} = query;
+  const { search } = query;
   let where = {
     companyId: user.companyId,
-    '$user.id$': {
+    "$user.id$": {
       [Op.ne]: user.id
     }
   };
@@ -33,11 +36,11 @@ export function users(user, query, order, offset, limit) {
     ...where,
     [Op.or]: [
       {
-        '$user.displayName$': {
+        "$user.displayName$": {
           [Op.like]: `%${search}%`
         }
       }, {
-        '$user.email$': {
+        "$user.email$": {
           [Op.like]: `%${search}%`
         }
       }
@@ -46,15 +49,15 @@ export function users(user, query, order, offset, limit) {
   console.log(order);
   const mappingOrder = order.map(t => ([{
     model: db.User,
-    as: 'user'
-  }, ...t]))
+    as: "user"
+  }, ...t]));
   return db.UserCompany.findAndCountAll({
     order: mappingOrder,
     where,
     offset,
     include: [
-      {model: db.User, as: 'user'},
-      {model: db.ACLGroup, as: 'group'}
+      { model: db.User, as: "user" },
+      { model: db.ACLGroup, as: "group" }
     ],
     limit
   });
@@ -67,16 +70,16 @@ export async function getUser(user, uId) {
       companyId: user.companyId
     },
     include: [
-      {model: db.User, as: 'user'},
-      {model: db.Company, as: 'company'},
+      { model: db.User, as: "user" },
+      { model: db.Company, as: "company" },
       {
-        model: db.ACLGroup, as: 'group'
+        model: db.ACLGroup, as: "group"
       },
-      {model: db.ACLGroupAction, as: 'permissions'}
+      { model: db.ACLGroupAction, as: "permissions" }
     ]
   });
   if (!findUser) {
-    throw badRequest('user', FIELD_ERROR.INVALID, 'user not found');
+    throw badRequest("user", FIELD_ERROR.INVALID, "user not found");
   }
   return {
     user: findUser.user, group: findUser.group, permissions: findUser.permissions,
@@ -87,7 +90,7 @@ export async function getUser(user, uId) {
 export async function editUser(user, uId, permissions) {
   const rs = await getUser(user, uId);
   if (!rs || !rs.user || !rs.group) {
-    throw badRequest('permission', FIELD_ERROR.INVALID, 'permission not found');
+    throw badRequest("permission", FIELD_ERROR.INVALID, "permission not found");
   }
   const transaction = await db.sequelize.transaction();
   try {
@@ -95,7 +98,7 @@ export async function editUser(user, uId, permissions) {
       where: {
         groupId: rs.group.id
       }
-    },{transaction});
+    }, { transaction });
     const permissionsForm = [];
     for (let index = 0; index < permissions.length; index += 1) {
       const result = permissions[index];
@@ -105,7 +108,7 @@ export async function editUser(user, uId, permissions) {
         actionId: result.actionId ? result.actionId : result.id
       });
     }
-    const details = await db.ACLGroupAction.bulkCreate(permissionsForm, {transaction});
+    const details = await db.ACLGroupAction.bulkCreate(permissionsForm, { transaction });
     await transaction.commit();
     return details;
   } catch (e) {
@@ -119,7 +122,7 @@ export async function removeUser(user, uId) {
     userId: uId, companyId: user.companyId
   });
   if (!userCompany) {
-    throw badRequest('user', FIELD_ERROR.INVALID, 'user not found');
+    throw badRequest("user", FIELD_ERROR.INVALID, "user not found");
   }
   const transaction = await db.sequelize.transaction();
   try {
@@ -132,12 +135,12 @@ export async function removeUser(user, uId) {
       where: {
         id: userCompany.groupId
       }
-    })
+    });
     await db.UserCompany.destroy({
-      where: {userId: uId, companyId: user.companyId}
+      where: { userId: uId, companyId: user.companyId }
     });
     await transaction.commit();
-    return {id: uId};
+    return { id: uId };
   } catch (e) {
     await transaction.rollback();
     throw e;
@@ -146,7 +149,7 @@ export async function removeUser(user, uId) {
 
 export async function inviteUser(origin, user, form) {
   console.log(user);
-  const {emails, permissions} = form;
+  const { emails, permissions } = form;
   const rs = [];
   const transaction = await db.sequelize.transaction();
   try {
@@ -177,26 +180,26 @@ export async function inviteUser(origin, user, form) {
           email_active: false,
           createdById: user.id,
           status: USER_STATUS.INVITED
-        }, {transaction})
+        }, { transaction });
       }
       const permissionKey = Object.keys(permissions);
       // eslint-disable-next-line no-await-in-loop
       const group = await db.ACLGroup.create({
-        name: 'COMPANY_GROUP',
-        remark: 'Default group for master access',
+        name: "COMPANY_GROUP",
+        remark: `Default group for invite user ${existedUser.email}`,
         createdById: user.id,
         totalPermission: permissionKey.length
-      }, {transaction});
+      }, { transaction });
       const actions = permissionKey.map(k => {
         const perm = permissions[k];
         return {
           groupId: group.id,
           actionId: perm.id,
           type: perm.type
-        }
+        };
       });
       // eslint-disable-next-line no-await-in-loop
-      await db.ACLGroupAction.bulkCreate(actions, {transaction});
+      await db.ACLGroupAction.bulkCreate(actions, { transaction });
 
       // eslint-disable-next-line no-await-in-loop
       await db.UserCompany.create({
@@ -205,7 +208,7 @@ export async function inviteUser(origin, user, form) {
         groupId: group.id,
         inviteStatus: USER_INVITE_STATUS.INVITED,
         invitedDate: new Date()
-      }, {transaction});
+      }, { transaction });
       // eslint-disable-next-line no-await-in-loop
       await transaction.commit();
       userEmitter.emit(USER_EVENT.INVITE, origin, existedUser, user.company);
@@ -218,17 +221,26 @@ export async function inviteUser(origin, user, form) {
   return rs;
 }
 
-export async function verifyInvite({email, token, companyId}) {
+export async function verifyInvite({ email, token, companyId }) {
+  // TODO: Not yet check for token time expired, now allow unlimited
   const userActive = await db.UserActivate.findOne({
     where: {
-      active_code: token
+      active_code: token,
+      [Op.or]: [
+        { isConfirmed: false },
+        {
+          isConfirmed: {
+            [Op.eq]: null
+          }
+        }
+      ]
     },
     include: [
-      {model: db.User, as: 'user', required: true}
+      { model: db.User, as: "user", required: true }
     ]
   });
   if (!userActive || userActive.user.email !== email) {
-    throw badRequest('user', FIELD_ERROR.INVALID, 'Invalid User Token');
+    throw badRequest("user", FIELD_ERROR.INVALID, "Invalid User Token");
   }
   const invitation = await db.UserCompany.findOne({
     where: {
@@ -237,20 +249,67 @@ export async function verifyInvite({email, token, companyId}) {
       inviteStatus: USER_INVITE_STATUS.INVITED
     },
     include: [
-      {model: db.Company, as: 'company'}
+      { model: db.Company, as: "company" }
     ]
   });
-  console.log(userActive.user, companyId, invitation)
+  console.log(userActive.user, companyId, invitation);
   if (!invitation) {
-    throw badRequest('user', FIELD_ERROR.INVALID, 'Invalid Invitation');
+    throw badRequest("user", FIELD_ERROR.INVALID, "Invalid Invitation");
   }
 
-  return {userActive, invitation};
+  return { userActive, invitation };
 }
 
-export async function confirmInvitation({email, token, companyId, firstName, lastName, password}) {
-  const checkInvitation = await verifyInvite({email, token, companyId});
-  const {userActive: {user}, invitation} = checkInvitation;
+export async function resendInvite(user, userId, origin) {
+  let existedActivate = await db.UserActivate.findOne({
+    where: {
+      user_id: userId,
+      [Op.or]: [
+        { isConfirmed: false },
+        {
+          isConfirmed: {
+            [Op.eq]: null
+          }
+        }
+      ]
+    },
+    include: [
+      { model: db.User, as: "user", required: true }
+    ],
+    order: [["id", "desc"]]
+  });
+  let token = "";
+  if (existedActivate) {
+    if (existedActivate.lastResentDate && differentHour(existedActivate.lastResentDate, new Date()) < 24) {
+      throw badRequest("RESEND", FIELD_ERROR.INVALID, "You had resent in 24h, please try again later");
+    }
+    token = existedActivate.active_code;
+    existedActivate.lastResentDate = new Date();
+    await existedActivate.save();
+  } else {
+    token = md5(`${existedActivate.user.email}-${new Date()}`);
+    existedActivate = await db.UserActivate.create({
+      user_id: existedActivate.user.id,
+      active_code: token,
+      date_inserted: new Date(),
+      isConfirmed: false
+    });
+  }
+
+  const company = await db.Company.findOne({
+    where: {
+      id: user.companyId
+    }
+  });
+  const url = `${origin || process.env.WEB_URL}/invite-confirm?email=${existedActivate.user.email}&token=${token}&companyId=${company.id}`;
+  await emailService.sendInviteUser(existedActivate.user.email, company.name, url);
+  return existedActivate;
+}
+
+export async function confirmInvitation({ email, token, companyId, firstName, lastName, password }) {
+  const checkInvitation = await verifyInvite({ email, token, companyId });
+  const { userActive, invitation } = checkInvitation;
+  const { user } = userActive;
   const transaction = await db.sequelize.transaction();
   try {
     if (user.status === USER_STATUS.INVITED && user.personId === null) {
@@ -260,16 +319,20 @@ export async function confirmInvitation({email, token, companyId, firstName, las
         email,
         createdById: 0,
         createdDate: new Date()
-      }, {transaction});
+      }, { transaction });
       user.pwd = db.User.hashPassword(password);
       user.displayName = `${firstName} ${lastName}`;
       user.status = USER_STATUS.ACTIVE;
       user.email_active = true;
       user.personId = person.id;
-      await user.save({transaction});
+      await user.save({ transaction });
     }
     invitation.inviteStatus = USER_INVITE_STATUS.CONFIRMED;
-    await invitation.save({transaction});
+    invitation.confirmedDate = new Date();
+    userActive.isConfirmed = true;
+    userActive.confirmedDate = new Date();
+    await userActive.save({ transaction });
+    await invitation.save({ transaction });
     await transaction.commit();
   } catch (e) {
     await transaction.rollback();

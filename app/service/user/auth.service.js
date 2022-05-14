@@ -157,54 +157,50 @@ export async function register(registerForm, origin) {
     );
   }
 
-  return db.sequelize.transaction()
-    .then(async (t) => {
-      try {
-        const person = await db.Person.create({
-          firstName: registerForm.firstName,
-          lastName: registerForm.lastName,
+  const transaction = await db.sequelize.transaction();
+  try {
+    const person = await db.Person.create({
+      firstName: registerForm.firstName,
+      lastName: registerForm.lastName,
+      email: registerForm.email,
+      createdById: 0,
+      createdDate: new Date()
+    }, { transaction });
+
+    let newUser;
+    if (!currentUsername) {
+      newUser = await db.User.create(
+        {
           email: registerForm.email,
-          createdById: 0,
-          createdDate: new Date()
-        }, { transaction: t });
+          pwd: db.User.hashPassword(registerForm.password),
+          displayName: `${registerForm.firstName} ${registerForm.lastName}`,
+          status: USER_STATUS.ACTIVE,
+          createdDate: new Date(),
+          email_active: false,
+          personId: person.id
+        },
+        { transaction }
+      );
+    } else {
+      currentUsername.pwd = db.User.hashPassword(registerForm.password);
+      currentUsername.displayName = `${registerForm.firstName} ${registerForm.lastName}`;
+      currentUsername.status = USER_STATUS.ACTIVE;
+      currentUsername.personId = person.id;
+      await currentUsername.save({ transaction });
+      newUser = currentUsername;
+    }
 
-        let newUser;
-        if (!currentUsername) {
-          newUser = await db.User.create(
-            {
-              email: registerForm.email,
-              pwd: db.User.hashPassword(registerForm.password),
-              displayName: `${registerForm.firstName} ${registerForm.lastName}`,
-              status: USER_STATUS.ACTIVE,
-              createdDate: new Date(),
-              email_active: false,
-              personId: person.id
-            },
-            { transaction: t }
-          );
-        } else {
-          currentUsername.pwd = db.User.hashPassword(registerForm.password);
-          currentUsername.displayName = `${registerForm.firstName} ${registerForm.lastName}`;
-          currentUsername.status = USER_STATUS.ACTIVE;
-          currentUsername.personId = person.id;
-          await currentUsername.save({ transaction: t });
-          newUser = currentUsername;
-        }
+    await transaction.commit();
 
-        await t.commit();
-        appLog.info(`Send event user:register ${JSON.stringify(newUser)}`);
+    if (process.env.NODE_ENV !== "test") {
+      userEmitter.emit(USER_EVENT.REGISTER, newUser, origin);
+    }
 
-        if (process.env.NODE_ENV !== "test") {
-          userEmitter.emit(USER_EVENT.REGISTER, newUser, origin);
-        }
-
-        return newUser;
-      } catch (e) {
-        appLog.error(e.message, e);
-        await t.rollback();
-        throw e;
-      }
-    });
+    return newUser;
+  } catch (e) {
+    await transaction.rollback();
+    throw e;
+  }
 }
 
 export async function userExisted(email) {
@@ -247,7 +243,8 @@ export async function confirmEmail(email, token) {
   appLog.info(`confirm email ${email} - ${token}`);
   const activeToken = await db.UserActivate.findOne({
     where: {
-      active_code: token
+      active_code: token,
+      isConfirmed: false
     },
     order: [["date_inserted", "DESC"]]
   });
@@ -280,7 +277,8 @@ export async function resendEmailActive(email, origin) {
       return db.UserActivate.create({
         user_id: user.id,
         active_code: token,
-        date_inserted: new Date()
+        date_inserted: new Date(),
+        isConfirmed: false
       })
         .then(async () => {
           await emailService.sendRegister(user.email, user.displayName || user.email, url);

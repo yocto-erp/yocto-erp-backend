@@ -33,6 +33,10 @@ export function differentMonth(date, date1) {
   return Math.ceil(moment(date).diff(moment(date1), "months", true));
 }
 
+export function differentHour(fromDate, toDate) {
+  return Math.abs(moment(toDate).diff(moment(fromDate), "hours"));
+}
+
 export function getHourRange(date) {
   const hourBegin = date ? new Date(date.getTime()) : new Date();
   const hourTo = date ? new Date(date.getTime()) : new Date();
@@ -107,7 +111,7 @@ export function getStartDateUtcOfTimezoneDate(date, tz) {
   return moment(date).tz(tz).startOf("date").toDate();
 }
 
-export function getEndDateUtcOfTimezoneDate(date, tz){
+export function getEndDateUtcOfTimezoneDate(date, tz) {
   return moment(date).tz(tz).endOf("date").toDate();
 }
 

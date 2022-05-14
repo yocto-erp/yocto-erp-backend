@@ -1,12 +1,12 @@
-import EventEmitter from 'events';
-import md5 from 'md5';
-import {eventLog} from "../config/winston";
-import db from '../db/models';
-import * as emailService from '../service/email/email.service';
+import EventEmitter from "events";
+import md5 from "md5";
+import { eventLog } from "../config/winston";
+import db from "../db/models";
+import * as emailService from "../service/email/email.service";
 
 export const USER_EVENT = Object.freeze({
-  REGISTER: 'user:register',
-  INVITE: 'user:invite'
+  REGISTER: "user:register",
+  INVITE: "user:invite"
 });
 export const userEmitter = new EventEmitter();
 
@@ -18,7 +18,8 @@ function emailRegister(user, origin) {
     db.UserActivate.create({
       user_id: user.id,
       active_code: token,
-      date_inserted: new Date()
+      date_inserted: new Date(),
+      isConfirmed: false
     })
       .then(async () => {
         await emailService.sendRegister(user.email, user.displayName, url);
@@ -38,7 +39,8 @@ function emailUserInvited(origin, user, company) {
     db.UserActivate.create({
       user_id: user.id,
       active_code: token,
-      date_inserted: new Date()
+      date_inserted: new Date(),
+      isConfirmed: false
     })
       .then(async () => {
         await emailService.sendInviteUser(user.email, company.name, url);
