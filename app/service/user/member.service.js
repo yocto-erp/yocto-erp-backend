@@ -20,7 +20,7 @@ export async function getUserProfile(user) {
 
 export async function updateUserProfile(user, form, avatar) {
   console.log(form);
-  const { fullName, phone, isUpdateAvatar } = form;
+  const { fullName, phone, isUpdateAvatar, address } = form;
   const existed = await getUserProfile(user);
   const transaction = await db.sequelize.transaction();
   let newAvatar = null;
@@ -55,6 +55,7 @@ export async function updateUserProfile(user, form, avatar) {
       existed.person.fullName = fullName;
       existed.person.lastName = lastName;
       existed.person.firstName = firstName;
+      existed.person.address = address;
       existed.person.gsm = phone;
       existed.person.lastModifiedDate = new Date();
       await existed.person.save({ transaction });
@@ -63,6 +64,7 @@ export async function updateUserProfile(user, form, avatar) {
         firstName,
         lastName,
         fullName,
+        address,
         email: existed.email,
         gsm: phone,
         createdById: 0,
