@@ -13,7 +13,7 @@ import { ASSET_ITEM_TYPE } from "../../db/models/asset/asset-item";
 const { Op } = db.Sequelize;
 
 export async function listProvider(query, user, { order, offset, limit }) {
-  const { tagging, search } = query;
+  const { tagging, search, isApprove } = query;
   const where = { companyId: user.companyId };
   const whereTagging = {};
   let isTaggingRequired = false;
@@ -37,12 +37,17 @@ export async function listProvider(query, user, { order, offset, limit }) {
     ];
   }
 
+  if (hasText(isApprove)) {
+    where.isApproved = isApprove === "1";
+  }
+
   if (tagging && tagging.id) {
     whereTagging.id = {
       [Op.in]: isArray(tagging.id) ? tagging.id : [tagging.id]
     };
     isTaggingRequired = true;
   }
+
   return db.Provider.findAndCountAll({
     order,
     where,

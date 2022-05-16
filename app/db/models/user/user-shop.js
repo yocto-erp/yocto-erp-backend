@@ -1,19 +1,23 @@
-import Sequelize from 'sequelize';
+import Sequelize from "sequelize";
 
-const {DataTypes} = Sequelize;
+const { DataTypes } = Sequelize;
 
-export default class UserShop extends Sequelize.Model{
+export default class UserShop extends Sequelize.Model {
   static init(sequelize, opts) {
     return super.init(
       {
-        userId: {type: DataTypes.BIGINT, primaryKey: true},
-        shopId: {type: DataTypes.BIGINT, primaryKey: true}
+        userId: { type: DataTypes.BIGINT, primaryKey: true },
+        shopId: { type: DataTypes.BIGINT, primaryKey: true }
       },
       {
-        tableName: 'user_shop',
-        modelName: 'userShop',
+        tableName: "user_shop",
+        modelName: "userShop",
         timestamps: false,
         sequelize, ...opts
-      })
+      });
+  }
+
+  static associate(models) {
+    this.belongsTo(models.Shop, { foreignKey: "shopId", as: "shop" });
   }
 }
