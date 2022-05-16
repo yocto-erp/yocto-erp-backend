@@ -162,7 +162,10 @@ export async function getProvider(cId, user) {
       {
         model: db.Asset,
         as: "assets",
-        through: { attributes: [] }
+        through: { attributes: [] },
+        include: [
+          { model: db.AssetIpfs, as: "ipfs" }
+        ]
       },
       {
         model: db.User,

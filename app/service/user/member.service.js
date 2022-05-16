@@ -37,7 +37,7 @@ export async function updateUserProfile(user, form, avatar) {
           type: ASSET_TYPE.FILE,
           size: avatar.size,
           fileId: avatar.filename,
-          companyId: user.companyId,
+          companyId: 0,
           mimeType: avatar.mimetype,
           createdById: user.id,
           createdDate: new Date()

@@ -44,7 +44,7 @@ imageRouter.get("/:uuid", async (req, res, next) => {
     const asset = await getAssetByUUID(req.params.uuid);
     const s = fs.createReadStream(`${ASSET_STORE_FOLDER}/${asset.fileId}`);
     s.on("open", function onOpen() {
-      res.set("Content-Type", asset.type || "application/octet-stream");
+      res.set("Content-Type", asset.mimeType || "application/octet-stream");
       s.pipe(res);
     });
     s.on("error", function onError() {
