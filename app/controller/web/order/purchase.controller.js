@@ -13,7 +13,7 @@ const purchase = express.Router();
 purchase.get("/", [hasPermission(PERMISSION.ORDER.PURCHASE.READ),
     pagingParse({ column: "id", dir: "asc" })],
   (req, res, next) => {
-    return orders(ORDER_TYPE.PURCHASE, req.query, req.paging.order, req.paging.offset, req.paging.size, req.user)
+    return orders(ORDER_TYPE.PURCHASE, req.query, req.paging, req.user)
       .then(result => res.status(200).json(result))
       .catch(next);
   });

@@ -1,55 +1,58 @@
-import db from '../../db/models';
-import {badRequest, FIELD_ERROR} from '../../config/error';
-import {TAGGING_TYPE} from '../../db/models/tagging/tagging-item-type';
-import {updateItemTags} from '../tagging/tagging.service';
-import {ORDER_TYPE} from '../../db/models/order/order';
-import {hasText} from '../../util/string.util';
-import {buildDateRangeQuery} from "../../util/db.util";
-import {auditAction} from "../audit/audit.service";
-import {PERMISSION} from "../../db/models/acl/acl-action";
-import {addTaggingQueue} from "../../queue/tagging.queue";
+import db from "../../db/models";
+import { badRequest, FIELD_ERROR } from "../../config/error";
+import { TAGGING_TYPE } from "../../db/models/tagging/tagging-item-type";
+import { updateItemTags } from "../tagging/tagging.service";
+import { ORDER_TYPE } from "../../db/models/order/order";
+import { hasText } from "../../util/string.util";
+import { buildDateTimezoneRangeQuery } from "../../util/db.util";
+import { auditAction } from "../audit/audit.service";
+import { PERMISSION } from "../../db/models/acl/acl-action";
+import { addTaggingQueue } from "../../queue/tagging.queue";
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
 export function sumTotalProduct(orderDetailsForm) {
   return orderDetailsForm.reduce((valOld, valNew) => valOld + (valNew.quantity * valNew.price), 0);
 }
 
-export function orders(type, search, order, offset, limit, user) {
-  const where = {type};
-  if (search) {
-    if (hasText(search.search)) {
-      where.name = {
-        [Op.like]: `%${search.search}%`
-      };
-    }
-    if (search.subject) {
-      where.subjectId = search.subject.id;
-    }
+export function orders(type, { search, shop, subject, startDate, endDate }, { order, offset, limit }, user) {
+  const where = { type };
 
-    if (hasText(search.startDate) && hasText(search.endDate)) {
-      const rangeDate = buildDateRangeQuery(search.startDate, search.endDate);
-      if (rangeDate != null) {
-        where.createdDate = rangeDate;
-      }
+  if (hasText(search)) {
+    where.name = {
+      [Op.like]: `%${search}%`
+    };
+  }
+  if (subject) {
+    where.subjectId = subject.id;
+  }
+  if (shop) {
+    where.shopId = shop.id;
+  }
+
+  if (hasText(startDate) && hasText(endDate)) {
+    const rangeDate = buildDateTimezoneRangeQuery(startDate, endDate);
+    if (rangeDate != null) {
+      where.createdDate = rangeDate;
     }
   }
+
   where.companyId = user.companyId;
   return db.Order.scope("search").findAndCountAll({
     order,
     include: [
       {
-        model: db.Tagging, as: 'tagging',
+        model: db.Tagging, as: "tagging",
         required: false
       },
       {
-        model: db.Shop, as: 'shop'
+        model: db.Shop, as: "shop"
       }
     ],
     where,
     offset,
     limit,
-    group: ['id']
+    group: ["id"]
   }).then((resp) => {
     return ({
       count: resp.count.length,
@@ -66,24 +69,24 @@ export async function getOrder(oId, user) {
     },
     include: [
       {
-        model: db.OrderDetail, as: 'details',
+        model: db.OrderDetail, as: "details",
         include: [
-          {model: db.Product, as: 'product', attributes: ['id', 'name', 'remark']},
+          { model: db.Product, as: "product", attributes: ["id", "name", "remark"] },
           {
-            model: db.ProductUnit, as: 'unit',
+            model: db.ProductUnit, as: "unit",
             where: {
               productId: {
-                [Op.eq]: db.Sequelize.col('details.productId')
+                [Op.eq]: db.Sequelize.col("details.productId")
               }
             }
           }
         ]
       },
-      {model: db.Tagging, as: 'tagging', required: false}
+      { model: db.Tagging, as: "tagging", required: false }
     ]
   });
   if (!order) {
-    throw badRequest('order', FIELD_ERROR.INVALID, 'order not found');
+    throw badRequest("order", FIELD_ERROR.INVALID, "order not found");
   }
   return order;
 }
@@ -102,7 +105,7 @@ export async function createOrder(user, type, createForm) {
       type: type,
       totalAmount: totalAmount,
       createdDate: new Date()
-    }, {transaction});
+    }, { transaction });
 
     await db.OrderDetail.bulkCreate(createForm.details.map((result, index) => {
       return {
@@ -113,8 +116,8 @@ export async function createOrder(user, type, createForm) {
         quantity: result.quantity,
         remark: result.remark,
         price: result.price
-      }
-    }), {transaction})
+      };
+    }), { transaction });
 
     if (createForm.tagging && createForm.tagging.length) {
       await updateItemTags({
@@ -165,7 +168,7 @@ export async function updateOrder(oId, user, type, updateForm) {
           where: {
             orderId: existedOrder.id
           }
-        }, {transaction}
+        }, { transaction }
       );
       await db.OrderDetail.bulkCreate(updateForm.details.map((result, index) => {
         return {
@@ -176,10 +179,10 @@ export async function updateOrder(oId, user, type, updateForm) {
           quantity: result.quantity,
           remark: result.remark,
           price: result.price
-        }
-      }), {transaction})
+        };
+      }), { transaction });
     }
-    let listUpdateTags = []
+    let listUpdateTags = [];
     if ((updateForm.tagging && updateForm.tagging.length) || (existedOrder.tagging && existedOrder.tagging.length)) {
       await updateItemTags({
         id: existedOrder.id,
@@ -189,7 +192,7 @@ export async function updateOrder(oId, user, type, updateForm) {
       });
 
       listUpdateTags = [...new Set([...((updateForm.tagging || []).map(t => t.id)),
-        ...((existedOrder.tagging || []).map(t => t.id))])]
+        ...((existedOrder.tagging || []).map(t => t.id))])];
     }
     await transaction.commit();
 
@@ -211,9 +214,9 @@ export async function updateOrder(oId, user, type, updateForm) {
 }
 
 export async function removeOrder(oId, user) {
-  const checkOrder = await getOrder(oId, user)
+  const checkOrder = await getOrder(oId, user);
   try {
-    await checkOrder.destroy()
+    await checkOrder.destroy();
 
     if (checkOrder.tagging && checkOrder.tagging.length) {
       addTaggingQueue([...new Set(checkOrder.tagging.map(t => t.id))]);
