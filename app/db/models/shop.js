@@ -33,5 +33,6 @@ export default class Shop extends Sequelize.Model {
       otherKey: "userId",
       as: "users"
     });
+    this.belongsTo(models.Company, { foreignKey: "companyId", as: "company" });
   }
 }

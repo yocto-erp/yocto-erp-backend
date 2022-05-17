@@ -60,6 +60,12 @@ export default class User extends Model {
       foreignKey: "avatarId",
       as: "avatar"
     });
+    this.belongsToMany(models.Shop, {
+      through: models.UserShop,
+      foreignKey: "userId",
+      otherKey: "shopId",
+      as: "shops"
+    });
     this.belongsToMany(models.Company, {
       through: models.UserCompany,
       foreignKey: "userId",

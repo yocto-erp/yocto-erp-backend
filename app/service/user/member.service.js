@@ -13,6 +13,12 @@ export async function getUserProfile(user) {
         model: db.Asset, as: "avatar", include: [
           { model: db.AssetIpfs, as: "ipfs" }
         ]
+      },
+      {
+        model: db.Shop, as: "shops",
+        include: [
+          { model: db.Company, as: "company" }
+        ]
       }
     ]
   });
