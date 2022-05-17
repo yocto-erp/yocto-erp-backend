@@ -6,7 +6,6 @@ export const orderValidator = validator(yup.object().shape({
   details: yup.array().of(yup.object({
     product: yup.object().required(),
     unit: yup.object().required(),
-    price: yup.number().moreThan(0).required(),
     quantity: yup.number().moreThan(0).required()
   })).required()
 }), validatorType.BODY);

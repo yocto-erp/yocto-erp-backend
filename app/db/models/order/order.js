@@ -69,6 +69,7 @@ export default class Order extends Sequelize.Model {
       foreignKey: "orderId",
       as: "details"
     });
+    this.belongsTo(models.Shop, { foreignKey: "shopId", as: "shop" });
     this.hasMany(models.TaggingItem, {
       foreignKey: "itemId",
       as: "taggingItems"

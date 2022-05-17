@@ -41,6 +41,9 @@ export function orders(type, search, order, offset, limit, user) {
       {
         model: db.Tagging, as: 'tagging',
         required: false
+      },
+      {
+        model: db.Shop, as: 'shop'
       }
     ],
     where,

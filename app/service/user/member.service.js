@@ -92,3 +92,26 @@ export async function updateUserProfile(user, form, avatar) {
     throw e;
   }
 }
+
+export function getUserShop(user) {
+  return db.UserShop.findAll({
+    where: {
+      userId: user.id
+    },
+    include: [
+      {
+        model: db.Shop, as: "shop", where: {
+          companyId: user.companyId
+        }, required: true
+      }
+    ]
+  }).then(t => t.map(item => item.shop));
+}
+
+export async function getCurrentUserShop(user){
+  const listUserShop = await getUserShop(user)
+  if(listUserShop.length){
+    return listUserShop[0]
+  }
+  return null
+}

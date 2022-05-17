@@ -1,7 +1,7 @@
 import express from "express";
 import { isAuthenticated } from "../../middleware/permission";
 import { handleMultiUpload } from "../../../service/file/storage.service";
-import { getUserProfile, updateUserProfile } from "../../../service/user/member.service";
+import { getUserProfile, getUserShop, updateUserProfile } from "../../../service/user/member.service";
 
 const router = express.Router();
 
@@ -19,6 +19,12 @@ router.post("/profile", [isAuthenticated(), handleMultiUpload.single("avatar")],
       .catch(next);
   });
 
+router.get("/shop", isAuthenticated(),
+  (req, res, next) => {
+    return getUserShop(req.user)
+      .then(result => res.status(200).json(result))
+      .catch(next);
+  });
 
 export function initWebMemberController(app) {
   app.use("/api/member", router);
