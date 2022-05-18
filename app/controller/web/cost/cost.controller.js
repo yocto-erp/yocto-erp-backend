@@ -9,7 +9,7 @@ const cost = express.Router();
 cost.get('/',
     pagingParse({column: 'id', dir: 'desc'}), hasPermission(PERMISSION.COST.READ),
     (req, res, next) => {
-    return costs(req.query, req.paging.order, req.paging.offset, req.paging.size, req.user)
+    return costs(req.query, req.paging, req.user)
       .then(result => res.status(200).json(result)).catch(next);
     });
 

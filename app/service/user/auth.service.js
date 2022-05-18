@@ -114,6 +114,12 @@ export async function signIn({ email, password }) {
     include: [
       {
         model: db.Company, as: "userCompanies"
+      },
+      {
+        model: db.Asset, as: "avatar",
+        include: [
+          { model: db.AssetIpfs, as: "ipfs" }
+        ]
       }
     ]
   });

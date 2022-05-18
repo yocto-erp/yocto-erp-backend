@@ -11,12 +11,12 @@ import { hasText } from "../../util/string.util";
 import { isGt0 } from "../../util/number.util";
 import { isArray, isArrayHasLength } from "../../util/func.util";
 import CostAsset from "../../db/models/cost/cost-asset";
-import { buildDateRangeQuery } from "../../util/db.util";
+import { buildDateTimezoneRangeQuery } from "../../util/db.util";
 
 const { Op } = db.Sequelize;
 
-export async function costs(query, order, offset, limit, user) {
-  const { tagging, search, subject, startDate, endDate, type } = query;
+export async function costs(query, { order, offset, limit }, user) {
+  const { tagging, search, subject, dateRange: { startDate, endDate }, type } = query;
   const where = { companyId: user.companyId };
   const whereTagging = {
     itemType: {
@@ -33,7 +33,7 @@ export async function costs(query, order, offset, limit, user) {
     where.subjectId = subject.id;
   }
   if (hasText(startDate) && hasText(endDate)) {
-    const dateTime = buildDateRangeQuery(startDate, endDate);
+    const dateTime = buildDateTimezoneRangeQuery(startDate, endDate);
     if (dateTime) {
       where.createdDate = dateTime;
     }
