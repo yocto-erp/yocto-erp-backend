@@ -16,7 +16,7 @@ import { buildDateTimezoneRangeQuery } from "../../util/db.util";
 const { Op } = db.Sequelize;
 
 export async function costs(query, { order, offset, limit }, user) {
-  const { tagging, search, subject, dateRange: { startDate, endDate }, type } = query;
+  const { tagging, search, subject, dateRange, type } = query;
   const where = { companyId: user.companyId };
   const whereTagging = {
     itemType: {
@@ -32,8 +32,8 @@ export async function costs(query, { order, offset, limit }, user) {
   if (subject && subject.id) {
     where.subjectId = subject.id;
   }
-  if (hasText(startDate) && hasText(endDate)) {
-    const dateTime = buildDateTimezoneRangeQuery(startDate, endDate);
+  if (dateRange && hasText(dateRange.startDate) && hasText(dateRange.endDate)) {
+    const dateTime = buildDateTimezoneRangeQuery(dateRange.startDate, dateRange.endDate);
     if (dateTime) {
       where.createdDate = dateTime;
     }
