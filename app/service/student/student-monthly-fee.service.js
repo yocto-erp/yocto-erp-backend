@@ -313,7 +313,7 @@ export async function toPrintData(id, companyId) {
   const studentFee = {
     monthFee: monthStr,
     trialDate: fee.trialDate,
-    trialDateFee: fee.trialDateFee,
+    trialDateFee: formatTemplateMoney(fee.trialDateFee),
     yearFee: fee.yearFee,
     toMonth: toMonthStr,
     toYear: fee.toYear,
