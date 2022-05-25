@@ -303,7 +303,7 @@ export async function toPrintData(id, companyId) {
   let toMonthStr = "";
   if (fee.toMonth > 0) {
     toMonthStr = `0${fee.toMonth + 1}`;
-    toMonthStr = toMonthStr.substr(toMonthStr.length - 2, 2);
+    toMonthStr = toMonthStr.substring(toMonthStr.length - 2);
   }
 
   const debt = fee.student?.debt?.debit || 0;
@@ -311,7 +311,9 @@ export async function toPrintData(id, companyId) {
   const total = fee.totalAmount + debt - credit;
 
   const studentFee = {
-    monthFee: monthStr.substr(monthStr.length - 2, 2),
+    monthFee: monthStr,
+    trialDate: fee.trialDate,
+    trialDateFee: fee.trialDateFee,
     yearFee: fee.yearFee,
     toMonth: toMonthStr,
     toYear: fee.toYear,
