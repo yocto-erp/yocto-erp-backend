@@ -103,7 +103,7 @@ export async function updateCompany(cId, updateForm, user) {
       email: updateForm.email,
       address: updateForm.address,
       remark: updateForm.remark
-    }, transaction);
+    }, { transaction });
     if (company.subject) {
       company.subject.name = updateForm.name;
       company.subject.gsm = updateForm.gsm;
@@ -152,7 +152,7 @@ export async function removeCompany(cId, user) {
 export async function getCompanyByPublicId(publicId) {
   const company = await db.Company.findOne({
     where: {
-     publicId
+      publicId
     }
   });
   if (!company) {

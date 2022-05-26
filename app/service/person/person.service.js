@@ -120,7 +120,7 @@ export async function updatePerson(pId, updateForm, user) {
       email: updateForm.email,
       birthday: updateForm.birthday,
       sex: updateForm.sex || null
-    }, transaction);
+    }, { transaction });
     if (person.subject) {
       person.subject.name = updateForm.name;
       person.subject.gsm = updateForm.gsm;

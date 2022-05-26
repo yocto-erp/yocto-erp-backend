@@ -1,13 +1,13 @@
-import EventEmitter from 'events';
-import { eventLog } from '../config/winston';
-import db from '../db/models';
-import { INVENTORY_TYPE } from '../db/models/inventory/inventory';
+import EventEmitter from "events";
+import { eventLog } from "../config/winston";
+import db from "../db/models";
+import { INVENTORY_TYPE } from "../db/models/inventory/inventory";
 
 
 export const INVENTORY_EVENT = Object.freeze({
-  CREATE: 'inventory:create_inventory_summary',
-  UPDATE: 'inventory:update_inventory_summary',
-  DELETE: 'inventory:delete_inventory_summary'
+  CREATE: "inventory:create_inventory_summary",
+  UPDATE: "inventory:update_inventory_summary",
+  DELETE: "inventory:delete_inventory_summary"
 });
 export const inventoryEmitter = new EventEmitter();
 
@@ -49,7 +49,7 @@ export async function createInventorySummary(inventory) {
       // eslint-disable-next-line no-restricted-syntax
       for (const i of inventoryDetails) {
         // eslint-disable-next-line no-await-in-loop
-        const {quantity, unitBaseId} = await unitBaseAndSumQuantity(i.productId, i.unitId, i.quantity, transaction);
+        const { quantity, unitBaseId } = await unitBaseAndSumQuantity(i.productId, i.unitId, i.quantity, transaction);
         // eslint-disable-next-line no-await-in-loop
         const checkInventorySummary = await db.InventorySummary.findOne({
           where: {
@@ -72,7 +72,7 @@ export async function createInventorySummary(inventory) {
             companyId: inventory.companyId,
             lastModifiedDate: new Date(),
             lastModifiedById: inventory.createdById
-          }, transaction);
+          }, { transaction });
 
         } else if (!checkInventorySummary && inventory.type === INVENTORY_TYPE.IN) {
           // eslint-disable-next-line no-await-in-loop
@@ -84,7 +84,7 @@ export async function createInventorySummary(inventory) {
             companyId: inventory.companyId,
             lastModifiedDate: new Date(),
             lastModifiedById: inventory.createdById
-          }, {transaction});
+          }, { transaction });
         }
       }
     }
@@ -103,14 +103,14 @@ inventoryEmitter.on(INVENTORY_EVENT.CREATE, (inventory) => {
   });
 });
 
-export async function updateInventorySummaryOld({inventoryOld}) {
+export async function updateInventorySummaryOld({ inventoryOld }) {
   const transaction = await db.sequelize.transaction();
   try {
     if (inventoryOld.details && inventoryOld.details.length) {
       // eslint-disable-next-line no-restricted-syntax
       for (const i of inventoryOld.details) {
         // eslint-disable-next-line no-await-in-loop
-        const {quantity} = await unitBaseAndSumQuantity(i.productId, i.unitId, i.quantity, transaction);
+        const { quantity } = await unitBaseAndSumQuantity(i.productId, i.unitId, i.quantity, transaction);
         // eslint-disable-next-line no-await-in-loop
         const checkInventorySummary = await db.InventorySummary.findOne({
           where: {
@@ -127,7 +127,7 @@ export async function updateInventorySummaryOld({inventoryOld}) {
           await checkInventorySummary.update({
             quantity: checkInventorySummary.quantity,
             lastModifiedDate: new Date()
-          }, transaction);
+          }, { transaction });
         }
       }
     }
@@ -139,14 +139,14 @@ export async function updateInventorySummaryOld({inventoryOld}) {
   }
 }
 
-export async function updateInventorySummaryNew({inventoryNew}) {
+export async function updateInventorySummaryNew({ inventoryNew }) {
   const transaction = await db.sequelize.transaction();
   try {
     if (inventoryNew.details && inventoryNew.details.length) {
       // eslint-disable-next-line no-restricted-syntax
       for (const i of inventoryNew.details) {
         // eslint-disable-next-line no-await-in-loop
-        const {quantity, unitBaseId} = await unitBaseAndSumQuantity(i.productId, i.unitId, i.quantity, transaction);
+        const { quantity, unitBaseId } = await unitBaseAndSumQuantity(i.productId, i.unitId, i.quantity, transaction);
         // eslint-disable-next-line no-await-in-loop
         const checkInventorySummary = await db.InventorySummary.findOne({
           where: {
@@ -169,7 +169,7 @@ export async function updateInventorySummaryNew({inventoryNew}) {
             companyId: inventoryNew.companyId,
             lastModifiedDate: new Date(),
             lastModifiedById: inventoryNew.createdById
-          }, transaction);
+          }, { transaction });
 
         } else if (!checkInventorySummary && inventoryNew.type === INVENTORY_TYPE.IN) {
           // eslint-disable-next-line no-await-in-loop
@@ -181,7 +181,7 @@ export async function updateInventorySummaryNew({inventoryNew}) {
             companyId: inventoryNew.companyId,
             lastModifiedDate: new Date(),
             lastModifiedById: inventoryNew.createdById
-          }, {transaction});
+          }, { transaction });
         }
       }
     }
@@ -193,11 +193,11 @@ export async function updateInventorySummaryNew({inventoryNew}) {
   }
 }
 
-inventoryEmitter.on(INVENTORY_EVENT.UPDATE, ({inventoryOld, inventoryNew}) => {
-  eventLog.info(`Event inventory:update_inventory_summary ${JSON.stringify({inventoryOld, inventoryNew})}`);
+inventoryEmitter.on(INVENTORY_EVENT.UPDATE, ({ inventoryOld, inventoryNew }) => {
+  eventLog.info(`Event inventory:update_inventory_summary ${JSON.stringify({ inventoryOld, inventoryNew })}`);
   setImmediate(async () => {
-    await updateInventorySummaryOld({inventoryOld});
-    await updateInventorySummaryNew({inventoryNew});
+    await updateInventorySummaryOld({ inventoryOld });
+    await updateInventorySummaryNew({ inventoryNew });
   });
 });
 
@@ -208,7 +208,7 @@ export async function deleteInventorySummary(inventory) {
       // eslint-disable-next-line no-restricted-syntax
       for (const i of inventory.details) {
         // eslint-disable-next-line no-await-in-loop
-        const {quantity} = await unitBaseAndSumQuantity(i.productId, i.unitId, i.quantity, transaction);
+        const { quantity } = await unitBaseAndSumQuantity(i.productId, i.unitId, i.quantity, transaction);
         // eslint-disable-next-line no-await-in-loop
         const checkInventorySummary = await db.InventorySummary.findOne({
           where: {
@@ -226,7 +226,7 @@ export async function deleteInventorySummary(inventory) {
           await checkInventorySummary.update({
             quantity: checkInventorySummary.quantity,
             lastModifiedDate: new Date()
-          }, transaction);
+          }, { transaction });
         }
       }
     }

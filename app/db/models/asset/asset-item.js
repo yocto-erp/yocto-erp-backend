@@ -8,7 +8,8 @@ export const ASSET_ITEM_TYPE = {
   ECOMMERCE_PRODUCT: 3,
   PROVIDER: 4,
   COMMENT: 5,
-  PROJECT: 6
+  PROJECT: 6,
+  PROJECT_TASK: 7
 };
 
 export default class AssetItem extends Sequelize.Model {

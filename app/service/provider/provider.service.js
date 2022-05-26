@@ -220,7 +220,7 @@ export async function updateProvider(cId, user, updateForm) {
       contractStartDate, contractEndDate, status,
       lastModifiedDate: new Date(),
       lastModifiedById: user.id
-    }, transaction);
+    }, { transaction });
 
     if (isArrayHasLength(existed.assets)) {
       await db.AssetItem.destroy({

@@ -2,8 +2,7 @@ import http from "http";
 import express from "express";
 import bodyParser from "body-parser";
 import passport from "passport";
-import morgan from "morgan";
-import { appLog, httpStream } from "./config/winston";
+import { appLog } from "./config/winston";
 import appConf from "./config/application";
 
 import { FormError, HttpError, isSystemError } from "./config/error";
@@ -19,9 +18,9 @@ import { initSocket } from "./event/socket";
 service(passport);
 export const app = express();
 
-app.use(morgan("combined", { stream: httpStream }));
-app.use(passport.initialize());
-app.use(bodyParser.json({ limit: "50mb" }));
+// app.use(morgan("combined", { stream: httpStream }));
+app.use(passport.initialize(null));
+app.use(bodyParser.json({ limit: "500mb" }));
 app.use(bodyParser.urlencoded({ extended: false }));
 
 /* eslint-enable no-unused-vars */
@@ -67,11 +66,10 @@ const PORT = process.env.PORT || appConf.port;
 server.listen(PORT, appConf.hostname, async () => {
   await loadConfigure().then(systemConfigure => {
     appLog.info(`System Configure Load: ${JSON.stringify(systemConfigure)}`);
-    appLog.info(`Env ${JSON.stringify(process.env)}`);
+    // appLog.info(`Env ${JSON.stringify(process.env)}`);
     app.use("/upload", express.static(SYSTEM_CONFIG.PUBLIC_FOLDER));
     app.use("/thumbnail", express.static(`${SYSTEM_CONFIG.PUBLIC_FOLDER}/thumbnail`));
   });
   initCronTasks();
-  // initIPFS().then();
   appLog.info(`Server running at http://${appConf.hostname}:${PORT}/`);
 });

@@ -174,7 +174,7 @@ export async function updateCost(cId, user, updateForm) {
       amount: updateForm.amount,
       lastModifiedDate: new Date(),
       lastModifiedById: user.id
-    }, transaction);
+    }, { transaction });
 
     if (updateForm.purposeId && updateForm.relativeId) {
       return db.CostPurpose.update({

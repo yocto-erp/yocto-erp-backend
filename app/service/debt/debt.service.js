@@ -202,7 +202,7 @@ export async function updateDebt(dId, user, updateForm) {
       companyId: user.companyId,
       createdById: user.id,
       settleDebtId: settleDebt?.id
-    }, transaction);
+    }, { transaction });
     let listUpdateTags = [];
     if ((tagging && tagging.length) || (existedDebt.tagging && existedDebt.tagging.length)) {
       await updateItemTags({

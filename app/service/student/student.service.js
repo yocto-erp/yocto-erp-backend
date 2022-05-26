@@ -1,26 +1,26 @@
-import db from '../../db/models';
-import {badRequest, FIELD_ERROR} from '../../config/error';
-import {hasText} from "../../util/string.util";
-import {MAIN_CONTACT_TYPE} from "../../db/models/student/student";
-import {SUBJECT_CATEGORY} from "../../db/models/partner/subject";
-import {getOrCreatePersonalSubject} from "../subject/subject.service";
+import db from "../../db/models";
+import { badRequest, FIELD_ERROR } from "../../config/error";
+import { hasText } from "../../util/string.util";
+import { MAIN_CONTACT_TYPE } from "../../db/models/student/student";
+import { SUBJECT_CATEGORY } from "../../db/models/partner/subject";
+import { getOrCreatePersonalSubject } from "../subject/subject.service";
 import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
 export function students(query, order, offset, limit, user) {
-  const {search, class: studentClass, status} = query;
+  const { search, class: studentClass, status } = query;
   const where = {};
   let wherePerson = {};
   if (search && search.length) {
     wherePerson = {
       [Op.or]: [
         {
-          '$child.firstName$': {
+          "$child.firstName$": {
             [Op.like]: `%${search}%`
           }
         }, {
-          '$child.lastName$': {
+          "$child.lastName$": {
             [Op.like]: `%${search}%`
           }
         }, {
@@ -33,20 +33,20 @@ export function students(query, order, offset, limit, user) {
           }
         },
         {
-          '$father.firstName$': {
+          "$father.firstName$": {
             [Op.like]: `%${search}%`
           }
         }, {
-          '$father.lastName$': {
+          "$father.lastName$": {
             [Op.like]: `%${search}%`
           }
         },
         {
-          '$mother.firstName$': {
+          "$mother.firstName$": {
             [Op.like]: `%${search}%`
           }
         }, {
-          '$mother.lastName$': {
+          "$mother.lastName$": {
             [Op.like]: `%${search}%`
           }
         }
@@ -55,47 +55,47 @@ export function students(query, order, offset, limit, user) {
   }
   where.companyId = user.companyId;
   if (studentClass) {
-    console.log('StudentClass', studentClass)
+    console.log("StudentClass", studentClass);
     wherePerson.classId = Number(studentClass.id);
   }
   if (hasText(status)) {
-    where.status = Number(status)
+    where.status = Number(status);
   }
   console.log(order);
   const _order = order.map(t => {
     const [name, dir] = t;
-    if (name === 'name') {
+    if (name === "name") {
       return [{
-        model: db.Person, as: 'child'
-      }, 'lastName', dir]
+        model: db.Person, as: "child"
+      }, "lastName", dir];
     }
     return t;
   });
   return db.Student.findAndCountAll({
     order: _order,
-    where: {...where, ...wherePerson},
+    where: { ...where, ...wherePerson },
     include: [
       {
-        model: db.User, as: 'createdBy',
+        model: db.User, as: "createdBy",
         attributes: DEFAULT_INCLUDE_USER_ATTRS
       },
       {
-        model: db.StudentBusStop, as: 'toSchoolBusStop'
+        model: db.StudentBusStop, as: "toSchoolBusStop"
       },
       {
-        model: db.StudentBusStop, as: 'toHomeBusStop'
+        model: db.StudentBusStop, as: "toHomeBusStop"
       },
       {
-        model: db.StudentClass, as: 'class'
+        model: db.StudentClass, as: "class"
       },
       {
-        model: db.Person, as: 'child'
+        model: db.Person, as: "child"
       },
       {
-        model: db.Person, as: 'father'
+        model: db.Person, as: "father"
       },
       {
-        model: db.Person, as: 'mother'
+        model: db.Person, as: "mother"
       }
     ],
     offset,
@@ -111,30 +111,30 @@ export async function getStudent(sId, user) {
     },
     include: [
       {
-        model: db.Person, as: 'child'
+        model: db.Person, as: "child"
       },
       {
-        model: db.User, as: 'createdBy'
+        model: db.User, as: "createdBy"
       },
       {
-        model: db.StudentBusStop, as: 'toSchoolBusStop'
+        model: db.StudentBusStop, as: "toSchoolBusStop"
       },
       {
-        model: db.StudentBusStop, as: 'toHomeBusStop'
+        model: db.StudentBusStop, as: "toHomeBusStop"
       },
       {
-        model: db.StudentClass, as: 'class'
+        model: db.StudentClass, as: "class"
       },
       {
-        model: db.Person, as: 'father'
+        model: db.Person, as: "father"
       },
       {
-        model: db.Person, as: 'mother'
+        model: db.Person, as: "mother"
       }
     ]
   });
   if (!student) {
-    throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
+    throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
   }
   return student;
 }
@@ -146,16 +146,16 @@ export async function createStudent(user, createForm) {
     }
   });
   if (existedStudent) {
-    throw badRequest('studentId', 'EXISTED', 'Student Id existed !')
+    throw badRequest("studentId", "EXISTED", "Student Id existed !");
   }
   const transaction = await db.sequelize.transaction();
   try {
-    const splitFullName = createForm.fullName.trim().split(' ');
-    let firstName = '';
+    const splitFullName = createForm.fullName.trim().split(" ");
+    let firstName = "";
     const lastName = splitFullName[splitFullName.length - 1];
     if (splitFullName.length > 1) {
       splitFullName.splice(splitFullName.length - 1, 1);
-      firstName = splitFullName.join(' ');
+      firstName = splitFullName.join(" ");
     }
 
     const person = await db.Person.create(
@@ -167,14 +167,14 @@ export async function createStudent(user, createForm) {
         sex: createForm.sex ? createForm.sex : null,
         createdById: user.id,
         createdDate: new Date()
-      }, {transaction}
+      }, { transaction }
     );
 
     let mainContactSubject;
     if (Number(createForm.mainContact) === MAIN_CONTACT_TYPE.MOTHER) {
-      mainContactSubject = await getOrCreatePersonalSubject(user, createForm.mother.id, SUBJECT_CATEGORY.PARENT)
+      mainContactSubject = await getOrCreatePersonalSubject(user, createForm.mother.id, SUBJECT_CATEGORY.PARENT);
     } else {
-      mainContactSubject = await getOrCreatePersonalSubject(user, createForm.father.id, SUBJECT_CATEGORY.PARENT)
+      mainContactSubject = await getOrCreatePersonalSubject(user, createForm.father.id, SUBJECT_CATEGORY.PARENT);
     }
 
     const student = await db.Student.create(
@@ -199,7 +199,7 @@ export async function createStudent(user, createForm) {
         subjectId: mainContactSubject.id,
         createdById: user.id,
         createdDate: new Date()
-      }, {transaction}
+      }, { transaction }
     );
     await transaction.commit();
     return student;
@@ -217,7 +217,7 @@ export async function updateStudent(sId, updateForm, user) {
     }
   });
   if (!student) {
-    throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
+    throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
   }
 
   const person = await db.Person.findOne({
@@ -226,17 +226,17 @@ export async function updateStudent(sId, updateForm, user) {
     }
   });
   if (!person) {
-    throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
+    throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
   }
 
   const transaction = await db.sequelize.transaction();
   try {
-    const splitFullName = updateForm.fullName.trim().split(' ');
-    let firstName = '';
+    const splitFullName = updateForm.fullName.trim().split(" ");
+    let firstName = "";
     const lastName = splitFullName[splitFullName.length - 1];
     if (splitFullName.length > 1) {
       splitFullName.splice(splitFullName.length - 1, 1);
-      firstName = splitFullName.join(' ');
+      firstName = splitFullName.join(" ");
     }
 
     await person.update({
@@ -245,13 +245,13 @@ export async function updateStudent(sId, updateForm, user) {
       fullName: updateForm.fullName,
       birthday: updateForm.birthday,
       sex: updateForm.sex ? updateForm.sex : null
-    }, transaction);
+    }, { transaction });
 
     let mainContactSubject;
     if (Number(updateForm.mainContact) === MAIN_CONTACT_TYPE.MOTHER) {
-      mainContactSubject = await getOrCreatePersonalSubject(user, updateForm.mother.id, SUBJECT_CATEGORY.PARENT)
+      mainContactSubject = await getOrCreatePersonalSubject(user, updateForm.mother.id, SUBJECT_CATEGORY.PARENT);
     } else {
-      mainContactSubject = await getOrCreatePersonalSubject(user, updateForm.father.id, SUBJECT_CATEGORY.PARENT)
+      mainContactSubject = await getOrCreatePersonalSubject(user, updateForm.father.id, SUBJECT_CATEGORY.PARENT);
     }
 
     const studentUpdate = await db.Student.update({
@@ -275,7 +275,7 @@ export async function updateStudent(sId, updateForm, user) {
       subjectId: mainContactSubject.id,
       lastModifiedById: user.id,
       lastModifiedDate: new Date()
-    }, {where: {id: sId}}, {transaction});
+    }, { where: { id: sId } }, { transaction });
 
     await transaction.commit();
     return studentUpdate;
@@ -293,7 +293,7 @@ export async function removeStudent(sId, user) {
     }
   });
   if (!checkStudent) {
-    throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
+    throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
   }
 
   const checkPerson = await db.Person.findOne({
@@ -302,7 +302,7 @@ export async function removeStudent(sId, user) {
     }
   });
   if (!checkPerson) {
-    throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
+    throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
   }
   const transaction = await db.sequelize.transaction();
   try {
@@ -310,12 +310,12 @@ export async function removeStudent(sId, user) {
       where: {
         id: checkPerson.id
       }
-    }, {transaction});
+    }, { transaction });
     await db.Student.destroy({
       where: {
         id: sId
       }
-    }, {transaction});
+    }, { transaction });
     await transaction.commit();
     return checkStudent;
   } catch (error) {

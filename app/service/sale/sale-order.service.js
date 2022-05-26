@@ -157,7 +157,7 @@ export async function updateOrder(oId, user, type, updateForm) {
       totalAmount: totalAmount,
       lastModifiedDate: new Date(),
       lastModifiedById: user.id
-    }, transaction);
+    }, { transaction });
 
     if (updateForm.details && updateForm.details.length) {
       await db.OrderDetail.destroy(

@@ -172,7 +172,8 @@ export async function updateProject(pId, user, updateForm) {
 
     await db.AssetItem.destroy({
       where: {
-        itemId: existed.id
+        itemId: existed.id,
+        assetItemType: ASSET_ITEM_TYPE.PROJECT
       }
     }, { transaction });
 
