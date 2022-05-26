@@ -4,37 +4,27 @@ import { ASSET_ITEM_TYPE } from "../asset/asset-item";
 
 const { DataTypes } = Sequelize;
 
-export const PROVIDER_STATUS = {
-  PENDING: 1,
-  PROCESSING: 2,
-  DONE: 3,
-  CANCEL: 4
-};
-
-export default class Provider extends Sequelize.Model {
+export default class Project extends Sequelize.Model {
   static init(sequelize, opts) {
     return super.init(
       {
         id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
         companyId: { type: DataTypes.BIGINT },
-        name: { type: DataTypes.STRING },
+        name: { type: DataTypes.STRING(250) },
         remark: { type: DataTypes.TEXT },
-        rating: { type: DataTypes.INTEGER },
-        subjectId: { type: DataTypes.BIGINT, unique: true },
+        subjectId: { type: DataTypes.BIGINT },
+        status: { type: DataTypes.TINYINT },
+        startDate: { type: DataTypes.DATE },
+        finishDate: { type: DataTypes.DATE },
+        progress: { type: DataTypes.DECIMAL(6, 2) },
+        createdById: { type: DataTypes.INTEGER },
         createdDate: { type: DataTypes.DATE },
-        createdById: { type: DataTypes.BIGINT },
         lastModifiedDate: { type: DataTypes.DATE },
-        lastModifiedById: { type: DataTypes.BIGINT },
-        status: { type: DataTypes.INTEGER },
-        isApproved: { type: DataTypes.BOOLEAN },
-        approvedDate: { type: DataTypes.DATE },
-        approvedById: { type: DataTypes.BIGINT },
-        contractStartDate: { type: DataTypes.DATE },
-        contractEndDate: { type: DataTypes.DATE }
+        lastModifiedById: { type: DataTypes.BIGINT }
       },
       {
-        tableName: "provider",
-        modelName: "provider",
+        tableName: "project",
+        modelName: "project",
         timestamps: false,
         sequelize, ...opts
       });
@@ -43,13 +33,11 @@ export default class Provider extends Sequelize.Model {
   static associate(models) {
     this.belongsTo(models.User, { foreignKey: "createdById", as: "createdBy" });
     this.belongsTo(models.User, { foreignKey: "lastModifiedById", as: "lastModifiedBy" });
-    this.belongsTo(models.User, { foreignKey: "approvedById", as: "approvedBy" });
-    this.belongsTo(models.Subject, { foreignKey: "subjectId", as: "subject" });
     this.belongsToMany(models.Asset, {
       through: {
         model: models.AssetItem,
         scope: {
-          assetItemType: ASSET_ITEM_TYPE.PROVIDER
+          assetItemType: ASSET_ITEM_TYPE.PROJECT
         }
       },
       foreignKey: "itemId",
@@ -60,19 +48,18 @@ export default class Provider extends Sequelize.Model {
       through: {
         model: models.TaggingItem,
         scope: {
-          itemType: TAGGING_TYPE.PROVIDER
+          itemType: TAGGING_TYPE.PROJECT
         }
       },
       foreignKey: "itemId",
+      otherKey: "taggingId",
       as: "tagging"
     });
-    this.belongsToMany(models.Product, {
-      through: {
-        model: models.ProviderProduct
-      },
-      foreignKey: "providerId",
-      otherKey: "productId",
-      as: "products"
+    this.belongsTo(models.Subject, { foreignKey: "subjectId", as: "provider" });
+    this.hasMany(models.AssetItem, {
+      foreignKey: "itemId",
+      as: "assetItems",
+      scope: { assetItemType: ASSET_ITEM_TYPE.PROJECT }
     });
   }
 }

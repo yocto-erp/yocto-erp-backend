@@ -6,7 +6,7 @@ import { TAGGING_TYPE } from "../../db/models/tagging/tagging-item-type";
 import { addTaggingQueue } from "../../queue/tagging.queue";
 import { auditAction } from "../audit/audit.service";
 import { PERMISSION } from "../../db/models/acl/acl-action";
-import { isArray } from "../../util/func.util";
+import { isArray, isArrayHasLength } from "../../util/func.util";
 import { hasText } from "../../util/string.util";
 import ProductAsset from "../../db/models/product/product-asset";
 
@@ -287,7 +287,7 @@ export async function updateProduct(pId, user, updateForm) {
 
     let listUpdateTags = [];
 
-    if (updateForm.tagging && updateForm.tagging.length) {
+    if (isArrayHasLength(updateForm.tagging) || isArrayHasLength(existedProduct.tagging)) {
       await updateItemTags({
         id: pId,
         type: TAGGING_TYPE.PRODUCT,

@@ -7,7 +7,7 @@ export default class TaggingItem extends Sequelize.Model {
     return super.init(
       {
         taggingId: {type: DataTypes.BIGINT, primaryKey: true},
-        itemType: {type: DataTypes.BIGINT, primaryKey: true},
+        itemType: {type: DataTypes.INTEGER, primaryKey: true},
         itemId: {type: DataTypes.BIGINT, primaryKey: true}
       },
       {

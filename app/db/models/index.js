@@ -21,9 +21,6 @@ import InventoryDetail from "./inventory/inventory-detail";
 import InventoryPurpose from "./inventory/inventory-purpose";
 import InventorySummary from "./inventory/inventory-summary";
 import Person from "./person";
-import Product from "./product/product";
-import ProductAsset from "./product/product-asset";
-import ProductUnit from "./product/product-unit";
 import Shop from "./shop";
 import UserCompany from "./user/user-company";
 import UserShop from "./user/user-shop";
@@ -66,6 +63,8 @@ import { initScope } from "./scope";
 import { initAssetModel } from "./asset";
 import { initProviderModel } from "./provider";
 import Comment from "./comment/comment";
+import { initProductModel } from "./product";
+import { initProjectModel } from "./project";
 
 
 const env = process.env.NODE_ENV || "development";
@@ -120,9 +119,7 @@ const models = {
   ...initPartnerModel(sequelize),
 
   // Product
-  Product: Product.init(sequelize),
-  ProductAsset: ProductAsset.init(sequelize),
-  ProductUnit: ProductUnit.init(sequelize),
+  ...initProductModel(sequelize),
 
   // User
   User: User.init(sequelize),
@@ -197,7 +194,10 @@ const models = {
   ...initProviderModel(sequelize),
 
   // Comment
-  Comment: Comment.init(sequelize)
+  Comment: Comment.init(sequelize),
+
+  // Project
+  ...initProjectModel(sequelize)
 };
 
 Object.values(models)

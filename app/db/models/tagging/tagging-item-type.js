@@ -16,6 +16,7 @@ export const TAGGING_TYPE = {
   ECOMMERCE_PRODUCT: 11,
   DEBT: 12,
   PROVIDER: 13,
+  PROJECT: 14,
   OTHER: 100
 };
 
