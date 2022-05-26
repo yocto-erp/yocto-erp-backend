@@ -37,6 +37,7 @@ import { initDashboardController } from "./dashboard";
 import { initWebMemberController } from "./user/member.controller";
 import { initWebProvidersController } from "./provider";
 import { initWebCommentController } from "./comment.controller";
+import { initWebWorkspaceController } from "./workspace.controller";
 
 export function initWebController(app) {
   initWebAuthController(app);
@@ -79,4 +80,5 @@ export function initWebController(app) {
   // initWebDebtCommonController(app);
   initWebProvidersController(app);
   initWebCommentController(app);
+  initWebWorkspaceController(app);
 }
