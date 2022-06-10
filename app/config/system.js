@@ -11,13 +11,13 @@ export const SYSTEM_CONFIG = {
   ADMIN_EMAIL: '',
   CALLING_CARD: 4000,
   PERIOD: 168,
-  NOTIFY_REGISTER_EMAIL: 'info@yoctoerp.com',
-  NOTIFY_CHANGE_PASSWORD_EMAIL: 'info@yoctoerp.com',
-  NOTIFY_WITHDRAW_EMAIL: 'info@yoctoerp.com',
-  NOTIFY_ADD_FUND_EMAIL: 'info@yoctoerp.com',
-  NOTIFY_KYC: 'info@yoctoerp.com',
-  NOTIFY_AUTO_REPLY_EMAIL: 'info@yoctoerp.com',
-  NOTIFY_NOTICE_EMAIL: 'info@yoctoerp.com'
+  NOTIFY_REGISTER_EMAIL: 'Yocto ERP <info@yoctoerp.com>',
+  NOTIFY_CHANGE_PASSWORD_EMAIL: 'Yocto ERP <info@yoctoerp.com>',
+  NOTIFY_WITHDRAW_EMAIL: 'Yocto ERP <info@yoctoerp.com>',
+  NOTIFY_ADD_FUND_EMAIL: 'Yocto ERP <info@yoctoerp.com>',
+  NOTIFY_KYC: 'Yocto ERP <info@yoctoerp.com>',
+  NOTIFY_AUTO_REPLY_EMAIL: 'Yocto ERP <info@yoctoerp.com>',
+  NOTIFY_NOTICE_EMAIL: 'Yocto ERP <info@yoctoerp.com>'
 };
 
 export function loadConfigure() {

@@ -24,10 +24,15 @@ const getEmailClient = (configure) => {
 
 export async function addEmailQueue(emailMessage, companyId, userId) {
   const { from, to, subject, message, attachments, bcc, cc } = emailMessage;
+  const company = await db.Company.findOne({
+    where: {
+      id: companyId
+    }
+  });
   const transaction = await db.sequelize.transaction();
   try {
     const email = await db.EmailSend.create({
-      from: from,
+      from: `${company?.name} <${from}>`,
       to: to,
       cc: cc || "",
       bcc: bcc || "",
