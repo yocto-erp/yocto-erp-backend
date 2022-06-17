@@ -79,7 +79,7 @@ async function getUserToken(userInform, selectCompanyId = null) {
   }
 
 
-  return { token: jwt.sign(userJson, APP_CONFIG.JWT.secret), user: userJson };
+  return { token: jwt.sign(userJson, APP_CONFIG.JWT.secret, { expiresIn: '24h' }), user: userJson };
 }
 
 export async function selectCompany(user, companyId) {

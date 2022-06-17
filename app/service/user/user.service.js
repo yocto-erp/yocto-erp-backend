@@ -210,15 +210,16 @@ export async function inviteUser(origin, user, form) {
         invitedDate: new Date()
       }, { transaction });
       // eslint-disable-next-line no-await-in-loop
-      await transaction.commit();
-      userEmitter.emit(USER_EVENT.INVITE, origin, existedUser, user.company);
-      rs.push(email);
+      rs.push(existedUser);
     }
+    await transaction.commit();
+    rs.forEach(t => userEmitter.emit(USER_EVENT.INVITE, origin, t, user.company));
+    return rs;
   } catch (e) {
+    console.error(e);
     await transaction.rollback();
     throw e;
   }
-  return rs;
 }
 
 export async function verifyInvite({ email, token, companyId }) {
