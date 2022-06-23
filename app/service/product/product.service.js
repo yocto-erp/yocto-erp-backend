@@ -41,7 +41,6 @@ export function listProduct(user, query, { order, offset, limit }) {
     isTaggingRequired = true;
   }
   return db.Product.findAndCountAll({
-    attributes: ["id", "name", "remark", "thumbnail", "createdDate"],
     where,
     include: [
       {
