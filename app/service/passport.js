@@ -10,7 +10,7 @@ export default passport => {
       jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
       secretOrKey: APP_CONFIG.JWT.secret,
       ignoreExpiration: true,
-      maxAge: '1m'
+      maxAge: '1d'
     },
     (jwtPayload, cb) => cb(null, jwtPayload)
   ));
