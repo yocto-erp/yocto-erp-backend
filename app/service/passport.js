@@ -9,7 +9,8 @@ export default passport => {
   passport.use(new JWTStrategy({
       jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
       secretOrKey: APP_CONFIG.JWT.secret,
-      maxAge: '1d'
+      ignoreExpiration: true,
+      maxAge: '1m'
     },
     (jwtPayload, cb) => cb(null, jwtPayload)
   ));
