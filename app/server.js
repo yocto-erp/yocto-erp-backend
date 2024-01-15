@@ -59,7 +59,7 @@ app.use((err, req, res, next) => {
 // setup express application
 const server = http.createServer(app);
 
-initSocket(server);
+// initSocket(server);
 
 const PORT = process.env.PORT || appConf.port;
 server.listen(PORT, appConf.hostname, async () => {
