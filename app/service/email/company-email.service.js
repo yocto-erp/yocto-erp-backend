@@ -1,9 +1,9 @@
-import { smtpClient } from "./smtp.service";
-import { mailgunClient } from "./mailgun.service";
-import db from "../../db/models";
-import { EMAIL_STATUS } from "../../db/models/email/email-send";
-import { getEmailConfigure } from "../configuration/configuration.service";
-import { badRequest, FIELD_ERROR } from "../../config/error";
+import { smtpClient } from './smtp.service';
+import { mailgunClient } from './mailgun.service';
+import db from '../../db/models';
+import { EMAIL_STATUS } from '../../db/models/email/email-send';
+import { getEmailConfigure } from '../configuration/configuration.service';
+import { badRequest, FIELD_ERROR } from '../../config/error';
 
 export const EMAIL_PROVIDER = {
   SMTP: "SMTP",
@@ -67,8 +67,7 @@ export async function addEmailQueue(emailMessage, companyId, userId) {
 
 export async function sendTestEmail(configure, { from, to, subject, message }) {
   try {
-    const rs = await getEmailClient(configure).send({ from, to, subject, html: message });
-    return rs;
+    return await getEmailClient(configure).send({ from, to, subject, html: message });
   } catch (e) {
     console.log("Send email error", e);
     throw badRequest("email", FIELD_ERROR.INVALID, e.response || e.message);
@@ -94,7 +93,7 @@ export async function sendCompanyEmail(emailId, companyId) {
         data: at.data
       }))
     };
-    let resp = {};
+    let resp;
     try {
       resp = await getEmailClient(emailConfigure).send(emailMsg);
       email.status = EMAIL_STATUS.SUCCESS;
