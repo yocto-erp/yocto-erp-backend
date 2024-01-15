@@ -13,7 +13,6 @@ import { initMobileController } from "./controller/mobile";
 import service from "./service/passport";
 import { initCronTasks } from "./cron";
 import { initSwagger } from "./swagger";
-import { initSocket } from "./event/socket";
 
 service(passport);
 export const app = express();
