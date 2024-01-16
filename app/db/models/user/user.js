@@ -15,6 +15,8 @@ export const USER_SEX = Object.freeze({
   OTHER: 2
 });
 
+export const USER_ATTR_VIEW = ['id', 'email', 'displayName'];
+
 export default class User extends Model {
   static init(sequelize, opts) {
     return super.init(

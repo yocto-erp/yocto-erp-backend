@@ -7,6 +7,7 @@ import { ASSET_ITEM_TYPE } from "../../db/models/asset/asset-item";
 import { auditAction } from "../audit/audit.service";
 import { PERMISSION } from "../../db/models/acl/acl-action";
 import { addTaggingQueue } from "../../queue/tagging.queue";
+import { USER_ATTR_VIEW } from '../../db/models/user/user';
 
 const { Op } = db.Sequelize;
 
@@ -28,7 +29,7 @@ export async function listECommerceProducts(user, { search }, paging) {
       },
       { model: db.Tagging, as: "tagging" },
       { model: db.TaxSet, as: "taxSet" },
-      { model: db.User, as: "lastModifiedBy" },
+      { model: db.User, as: "lastModifiedBy", attributes: USER_ATTR_VIEW },
       { model: db.ProductUnit, as: "unit", where: { productId: { [Op.col]: "ecommerceProduct.productId" } } }
     ],
     ...paging,
