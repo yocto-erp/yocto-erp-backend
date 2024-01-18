@@ -12,6 +12,7 @@ export default class Form extends Sequelize.Model {
     return super.init(
       {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+        companyId: { type: DataTypes.BIGINT },
         name: { type: DataTypes.STRING(250) },
         description: { type: DataTypes.TEXT },
         createdDate: { type: DataTypes.DATE },
@@ -19,7 +20,8 @@ export default class Form extends Sequelize.Model {
         status: { type: DataTypes.TINYINT },
         setting: { type: DataTypes.JSON },
         publicId: { type: DataTypes.STRING(64) },
-        lastRegister: { type: DataTypes.DATE }
+        lastRegister: { type: DataTypes.DATE },
+        lastModifiedDate: { type: DataTypes.DATE }
       },
       {
         tableName: 'form',

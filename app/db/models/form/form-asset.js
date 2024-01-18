@@ -27,14 +27,10 @@ export default class FormAsset extends Sequelize.Model {
 
   static associate(models) {
     this.belongsTo(models.StudentClass, {
-      foreignKey: 'relativeId', as: 'class', scope: {
-        type: FormAssetType.CLASS
-      }
+      foreignKey: 'relativeId', as: 'class'
     });
     this.belongsTo(models.EcommerceProduct, {
-      foreignKey: 'relativeId', as: 'product', scope: {
-        type: FormAssetType.PRODUCT
-      }
+      foreignKey: 'relativeId', as: 'product'
     });
   }
 }

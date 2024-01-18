@@ -1,20 +1,20 @@
-import passport from "passport";
-import { HTTP_ERROR, HttpError } from "../../config/error";
+import passport from 'passport';
+import { HTTP_ERROR, HttpError } from '../../config/error';
 
-export const passportJWT = () => passport.authenticate("jwt", { session: false });
+export const passportJWT = () => passport.authenticate('jwt', { session: false });
 
-export function isAuthenticated() {
+export function isAuthenticated(isCheckAuth = true) {
   return [passportJWT(), (req, res, next) => {
-    if (req.isAuthenticated()) {
+    if (req.isAuthenticated() || !isCheckAuth) {
       next();
     } else {
-      throw new HttpError(HTTP_ERROR.NOT_AUTHENTICATE, "Not Authenticated", null);
+      throw new HttpError(HTTP_ERROR.NOT_AUTHENTICATE, 'Not Authenticated', null);
     }
   }];
 }
 
 export function hasPermission(permission) {
-  return [isAuthenticated(), (req, res, next) => {
+  return [...isAuthenticated(), (req, res, next) => {
     const { permissions } = req.user;
     let isValid = true;
     if (permissions) {
@@ -37,7 +37,7 @@ export function hasPermission(permission) {
     if (isValid) {
       next();
     } else {
-      throw new HttpError(HTTP_ERROR.ACCESS_DENIED, "AccessDenied", "You have not permission to do this.");
+      throw new HttpError(HTTP_ERROR.ACCESS_DENIED, 'AccessDenied', 'You have not permission to do this.');
     }
   }];
 }

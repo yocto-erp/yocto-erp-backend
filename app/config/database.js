@@ -1,3 +1,5 @@
+import { dbLog } from './winston';
+
 const pool = {
   max: 50,
   min: 0,

@@ -2,12 +2,10 @@ import { FieldError, HTTP_ERROR, HttpError } from '../../config/error';
 
 const validator = (schema, property) => {
   return async (req, res, next) => {
-    console.log(req[property]);
     try {
       await schema.validate(req[property], { stripUnknown: true, abortEarly: false });
       return next();
     } catch (validationErrors) {
-      console.log(validationErrors);
       if (validationErrors.inner && validationErrors.inner.length) {
         const allErrors = validationErrors.inner.map(value => {
           const name = value.path;
