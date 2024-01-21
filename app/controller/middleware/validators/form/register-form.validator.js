@@ -17,8 +17,8 @@ export const registerFormValidator = validator(Yup.object()
     name: 'asset',
     exclusive: false,
     message: 'Vui lòng chọn lớp hoặc sản phẩm',
-    test: (value, testContext) => {
-      console.log(value, testContext);
+    test: (value) => {
+      // console.log(value, testContext);
       return (
         (value.classes && value.classes.length > 0) ||
         (value.products && value.products.length > 0)

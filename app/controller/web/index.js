@@ -26,7 +26,6 @@ import { initAuditController } from './audit/audit.controller';
 import { initWebUserController } from './user/user.controller';
 import { initEcommerceController } from './ecommerce';
 import { initConfigureController } from './configuration';
-import { initWebEcommerceShopController } from './public/ecommerce-shop.controller';
 import { initStudentController } from './student';
 import { initWebSaleController } from './sale';
 import { initTaxController } from './tax';
@@ -39,6 +38,7 @@ import { initWebProvidersController } from './provider';
 import { initWebCommentController } from './comment.controller';
 import { initWebWorkspaceController } from './workspace.controller';
 import { initFormController } from './form';
+import { initApiPublicController } from './public';
 
 export function initWebController(app) {
   initWebAuthController(app);
@@ -70,7 +70,6 @@ export function initWebController(app) {
   initAuditController(app);
   initWebUserController(app);
   initEcommerceController(app);
-  initWebEcommerceShopController(app);
   initWebSaleController(app);
   initTaxController(app);
   initWebPartnerController(app);
@@ -83,4 +82,7 @@ export function initWebController(app) {
   initWebCommentController(app);
   initWebWorkspaceController(app);
   initFormController(app);
+
+  // for public API
+  initApiPublicController(app);
 }

@@ -28,10 +28,11 @@ export const listForm = async (user, search, paging) => {
  *  - isAllowCreateUser
  */
 export const createFormRegister = async (user, bodyForm) => {
-  const { name, classes, products, banner, isAllowCreateUser, introduction, status } = bodyForm;
+  const { name, classes, products, banner, isAllowCreateUser, introduction, status, ...other } = bodyForm;
   const setting = {
     banner,
-    isAllowCreateUser
+    isAllowCreateUser,
+    ...other
   };
   const transaction = await db.sequelize.transaction();
   try {
@@ -92,10 +93,11 @@ const getForm = async (user, formId) => {
 };
 
 export const updateFormRegister = async (user, id, bodyForm) => {
-  const { name, classes, products, banner, isAllowCreateUser, introduction, status } = bodyForm;
+  const { name, classes, products, banner, isAllowCreateUser, introduction, status, ...other } = bodyForm;
   const setting = {
     banner,
-    isAllowCreateUser
+    isAllowCreateUser,
+    ...other
   };
   const existedForm = await getForm(user, id);
   const transaction = await db.sequelize.transaction();
@@ -144,63 +146,70 @@ export const updateFormRegister = async (user, id, bodyForm) => {
   }
 };
 
-const getFormInfo = async (form) => {
-  const formAsset = await db.FormAsset.findAll({
-    where: {
-      formId: form.id
-    },
-    include: [
-      {
-        model: db.StudentClass, as: 'class',
-        required: false,
-        where: {
-          '$formAsset.type$': FormAssetType.CLASS
-        },
-        attributes: ['id', 'name', 'tuitionFeePerMonth']
-      },
-      {
-        model: db.EcommerceProduct, as: 'product',
-        required: false,
-        where: {
-          '$formAsset.type$': FormAssetType.PRODUCT
-        },
-        attributes: ['id', 'webDisplayName', 'price', 'productId'],
-        include: [
-          { model: db.Asset, as: 'thumbnail' },
-          { model: db.Product, as: 'product', attributes: ['id', 'productDocumentId'] },
-          {
-            model: db.ProductUnit, as: 'unit', where: {
-              productId: {
-                [db.Sequelize.Op.eq]: db.Sequelize.col('product.productId')
-              }
-            }
-          }
-        ]
-      }
-    ]
-  });
+export const getFormInfo = async (form, includeAsset = true) => {
+
+  const { isAllowCreateUser, banner, ...other } = form.setting;
   const rs = {
     id: form.id,
+    companyId: form.companyId,
     name: form.name,
     introduction: form.description,
     classes: [],
     products: [],
-    isAllowCreateUser: form.setting.isAllowCreateUser,
-    banner: form.setting.banner,
+    isAllowCreateUser,
+    banner,
     publicId: form.publicId,
-    status: form.status
+    status: form.status,
+    ...other
   };
-  if (formAsset && formAsset.length) {
-    formAsset.forEach(asset => {
-      const { class: studentClass, product } = asset;
-      if (studentClass) {
-        rs.classes.push(studentClass);
-      }
-      if (product) {
-        rs.products.push(product);
-      }
+  if (includeAsset) {
+    const formAsset = await db.FormAsset.findAll({
+      where: {
+        formId: form.id
+      },
+      include: [
+        {
+          model: db.StudentClass, as: 'class',
+          required: false,
+          where: {
+            '$formAsset.type$': FormAssetType.CLASS
+          },
+          attributes: ['id', 'name', 'tuitionFeePerMonth']
+        },
+        {
+          model: db.EcommerceProduct, as: 'product',
+          required: false,
+          where: {
+            '$formAsset.type$': FormAssetType.PRODUCT
+          },
+          attributes: ['id', 'webDisplayName', 'price', 'productId'],
+          include: [
+            { model: db.Asset, as: 'thumbnail' },
+            { model: db.Product, as: 'product', attributes: ['id', 'productDocumentId'] },
+            {
+              model: db.ProductUnit, as: 'unit', where: {
+                productId: {
+                  [db.Sequelize.Op.eq]: db.Sequelize.col('product.productId')
+                }
+              }
+            }
+          ]
+        }
+      ]
     });
+    if (formAsset && formAsset.length) {
+      formAsset.forEach(asset => {
+        const { class: studentClass, product } = asset;
+        if (studentClass) {
+          rs.classes.push(studentClass);
+        }
+        if (product) {
+          rs.products.push(product);
+        }
+      });
+    }
   }
+
   return rs;
 };
 

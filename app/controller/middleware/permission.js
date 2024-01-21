@@ -13,6 +13,13 @@ export function isAuthenticated(isCheckAuth = true) {
   }];
 }
 
+export const getAuthUser = (req, res, next) => {
+  passport.authenticate('jwt', { session: false },function(err, user) {
+    req.user = user;
+    next();
+  })(req, res, next);
+};
+
 export function hasPermission(permission) {
   return [...isAuthenticated(), (req, res, next) => {
     const { permissions } = req.user;

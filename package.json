@@ -68,7 +68,9 @@
     "web3.storage": "^4.0.0",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^4.7.1",
-    "yup": "^0.32.11"
+    "yup": "^0.32.11",
+    "@payos/node": "^1.0.6",
+    "hcaptcha": "^0.1.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.8",
@@ -88,12 +90,13 @@
     "eslint-plugin-jsx-a11y": "^6.3.1",
     "eslint-plugin-react": "^7.20.3",
     "eslint-watch": "^4.0.2",
-    "mocha": "^8.0.1",
+    "mocha": "^10.2.0",
     "ncp": "^2.0.0",
     "nodemon": "^1.19.4",
     "nyc": "^15.1.0",
     "prettier": "^2.0.5",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "dotenv": "^16.3.2"
   },
   "nyc": {
     "_comment": "Purpose of this part: to do code coverage within Mocha/Chai using Istanbul",
