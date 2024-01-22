@@ -29,7 +29,7 @@ export const requestPaymentPartner = async ({
 };
 
 /**
- * Depend on Partner, each payment request can be have single or multiple partner payment request
+ * Depend on Partner, each payment request can be having single or multiple partner payment request
  * @param paymentRequest
  * @return {Promise<void>}
  */

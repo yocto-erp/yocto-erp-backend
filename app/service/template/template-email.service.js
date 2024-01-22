@@ -1,9 +1,9 @@
 import db from '../../db/models';
-import {badRequest, FIELD_ERROR} from '../../config/error';
-import {TEMPLATE_TYPE} from "../../db/models/template/template";
-import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
+import { badRequest, FIELD_ERROR } from '../../config/error';
+import { TEMPLATE_TYPE } from '../../db/models/template/template';
+import { DEFAULT_INCLUDE_USER_ATTRS } from '../../db/models/constants';
 
-const {Op} = db.Sequelize;
+const { Op } = db.Sequelize;
 
 export function listEmailTemplate(query, order, offset, limit, user) {
   console.log(order);
@@ -21,10 +21,10 @@ export function listEmailTemplate(query, order, offset, limit, user) {
 
   const _orders = order.map(([name, dir]) => {
     if (name === 'createdDate') {
-      return [{model: db.Template, as: 'template'}, name, dir]
+      return [{ model: db.Template, as: 'template' }, name, dir];
     }
     return [name, dir];
-  })
+  });
 
   where.companyId = user.companyId;
   return db.EmailTemplate.findAndCountAll({
@@ -54,18 +54,18 @@ export function listEmailTemplate(query, order, offset, limit, user) {
           bcc: t.bcc && t.bcc.length ? t.bcc.split(',') : null
         };
       })
-    }
+    };
   });
 }
 
-export async function getEmailTemplate(id, user) {
+export async function getEmailTemplate(id, { companyId }) {
   const rs = await db.EmailTemplate.findOne({
     where: {
       templateId: id
     },
     include: [
       {
-        model: db.Template, required: true, where: {companyId: user.companyId}, as: 'template',
+        model: db.Template, required: true, where: { companyId: companyId }, as: 'template',
         include: [
           {
             model: db.User, as: 'createdBy',
@@ -103,19 +103,19 @@ export async function createEmailTemplate(user, createForm) {
       createdById: user.id,
       lastUpdatedDate: new Date(),
       type: TEMPLATE_TYPE.EMAIL
-    }, {transaction});
+    }, { transaction });
     const emailTemplate = await db.EmailTemplate.create({
       templateId: template.id,
       subject: createForm.subject,
       from: createForm.from,
       cc: createForm.cc ? createForm.cc.join(',') : '',
       bcc: createForm.bcc ? createForm.bcc.join(',') : ''
-    }, {transaction});
+    }, { transaction });
     await transaction.commit();
     return {
-      template: template.get({plain: true}),
-      ...emailTemplate.get({plain: true})
-    }
+      template: template.get({ plain: true }),
+      ...emailTemplate.get({ plain: true })
+    };
   } catch (e) {
     await transaction.rollback();
     throw e;
@@ -130,7 +130,7 @@ export async function updateEmailTemplate(id, user, updateForm) {
     },
     include: [
       {
-        model: db.Template, required: true, where: {companyId: user.companyId}, as: 'template'
+        model: db.Template, required: true, where: { companyId: user.companyId }, as: 'template'
       }
     ]
   });
@@ -153,7 +153,7 @@ export async function updateEmailTemplate(id, user, updateForm) {
     await oldRs.save({
       transaction
     });
-    await oldRs.template.save({transaction});
+    await oldRs.template.save({ transaction });
     await transaction.commit();
     return oldRs;
   } catch (e) {
@@ -169,8 +169,8 @@ export async function removeEmailTemplate(id, user) {
   }
   const transaction = await db.sequelize.transaction();
   try {
-    await oldRs.template.destroy({transaction});
-    await oldRs.destroy({transaction});
+    await oldRs.template.destroy({ transaction });
+    await oldRs.destroy({ transaction });
     await transaction.commit();
     return oldRs;
   } catch (e) {

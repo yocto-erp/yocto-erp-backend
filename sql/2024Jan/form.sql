@@ -51,6 +51,14 @@ create table form_register
       on update cascade on delete cascade
 );
 
+create index form_register_createdDate_index
+  on yocto_erp.form_register (createdDate desc);
+
+create index form_register_name_phone_email_index
+  on yocto_erp.form_register (name, phone, email);
+
+
+
 create table form_register_asset
 (
   formRegisterId int not null,
@@ -136,8 +144,6 @@ create table payment_request_partner_confirm
 
 
 
-
-
 create table cost_payment_request
 (
   costId           bigint not null,
@@ -151,4 +157,11 @@ create table cost_payment_request
 );
 
 insert into template_type (id, name)
-  value (3, 'Register Form Type')
+  value (3, 'Register Form Type');
+
+INSERT INTO template_plugin_variables (id, name, variables)
+VALUES (5, 'Form Register',
+        '[{"key":"name","value":"{{name}}","remark":"Họ và Tên"},{"key":"ip","value":"{{ip}}","remark":"Địa chỉ IP"},{"key":"url","value":"{{url}}","remark":"Web coi thông tin đăng ký"},{"key":"classes","value":"{{classes}}","remark":"Danh sách đăng ký lớp học"},{"key":"products","value":"{{products}}","remark":"Danh sách đăng ký sản phẩm"},{"key":"description","value":"{{description}}","remark":"Góp ý của khách hàng"},{"key":"totalAmount","value":"{{totalAmount}}","remark":"Tổng số tiền"},{"key":"registerData","value":"{{registerData}}","remark":"Thông tin khác"},{"key":"form.name","value":"{{form.name}}","remark":"Tên mẫu đăng ký"}]');
+
+INSERT INTO template_type_plugin (templateTypeId, templatePluginId)
+VALUES (3, 5);

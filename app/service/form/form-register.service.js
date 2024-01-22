@@ -15,11 +15,19 @@ import { getFormByPublic, getFormInfo } from './form.service';
 import { FormRegisterStatus } from '../../db/models/form/form-register';
 import { formRegisterPaymentProcess } from './form-register-payment.service';
 import { badRequest, FIELD_ERROR } from '../../config/error';
+import { FORM_STATUS } from '../../db/models/form/form';
+import { sendTemplateEmail } from '../template/template-email-render.service';
+import { toPrintData } from './form.util';
+import { buildEmail } from '../email/email.util';
+
 
 export const register = async (user, formPublicId, formBody, { ip, userAgent }) => {
   const { name, email, phone, captcha, classes, products, description } = formBody;
   await verifyCaptcha(captcha.token);
   const form = await getFormByPublic(formPublicId);
+  if (form.status !== FORM_STATUS.ACTIVE) {
+    throw badRequest('FORM', FIELD_ERROR.INVALID, 'Form is not active');
+  }
   const rs = {
     formRegister: null,
     payments: []
@@ -54,7 +62,25 @@ export const register = async (user, formPublicId, formBody, { ip, userAgent }) 
         formRegister: rs.formRegister, ip, userAgent, payment: form.payment
       }, transaction);
     }
+    await db.Form.update({
+      lastRegister: new Date()
+    }, {
+      where: {
+        id: form.id
+      },
+      transaction
+    });
     await transaction.commit();
+    if (form.registerTemplate) {
+      // If setting for sending email confirm
+      sendTemplateEmail({
+        emailTemplateId: form.registerTemplate.templateId,
+        companyId: form.companyId,
+        userId: 0
+      }, {
+        to: [buildEmail({ email, name })], printData: toPrintData(rs.formRegister)
+      }).then();
+    }
   } catch (e) {
     await transaction.rollback();
     throw e;
@@ -62,21 +88,7 @@ export const register = async (user, formPublicId, formBody, { ip, userAgent }) 
   return rs;
 };
 
-
-export const getFormRegisterInfo = async (registerPublicId) => {
-  console.log('getFormRegisterInfo: ', registerPublicId);
-  const formRegisterInfo = await db.FormRegister.findOne({
-    where: {
-      publicId: registerPublicId
-    },
-    include: [
-      { model: db.PaymentRequest, as: 'payments' },
-      { model: db.Form, as: 'form' }
-    ]
-  });
-  if (!formRegisterInfo) {
-    throw badRequest('FormRegister', FIELD_ERROR.INVALID, 'Not found any data');
-  }
+export const parseRegisterInfo = async (formRegisterInfo) => {
   const {
     publicId,
     ip,
@@ -113,4 +125,34 @@ export const getFormRegisterInfo = async (registerPublicId) => {
     email,
     payment: payments?.[0]
   };
+};
+
+
+export const getFormRegisterInfo = async (registerPublicId) => {
+  console.log('getFormRegisterInfo: ', registerPublicId);
+  const formRegisterInfo = await db.FormRegister.findOne({
+    where: {
+      publicId: registerPublicId
+    },
+    include: [
+      { model: db.PaymentRequest, as: 'payments' },
+      { model: db.Form, as: 'form' }
+    ]
+  });
+  if (!formRegisterInfo) {
+    throw badRequest('FormRegister', FIELD_ERROR.INVALID, 'Not found any data');
+  }
+  return parseRegisterInfo(formRegisterInfo);
+};
+
+export const toPrintDataFromId = async (id) => {
+  const formRegisterInfo = await db.FormRegister.findOne({
+    where: {
+      id
+    }
+  });
+  if (!formRegisterInfo) {
+    throw badRequest('FormRegister', FIELD_ERROR.INVALID, 'Not found any data');
+  }
+  return toPrintData(formRegisterInfo);
 };

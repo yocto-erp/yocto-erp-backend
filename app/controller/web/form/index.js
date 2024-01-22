@@ -1,6 +1,7 @@
 import { initFormRegisterController } from './form.controller';
-import { initWebFormPublicController } from '../public/form-public.controller';
+import { initFormRegisteredController } from './form-register.controller';
 
 export const initFormController = (app) => {
   initFormRegisterController(app);
+  initFormRegisteredController(app);
 };

@@ -1,5 +1,4 @@
 import Sequelize from 'sequelize';
-import { ASSET_ITEM_TYPE } from '../asset/asset-item';
 
 const { DataTypes } = Sequelize;
 

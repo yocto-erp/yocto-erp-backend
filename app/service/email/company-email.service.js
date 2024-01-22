@@ -6,8 +6,8 @@ import { getEmailConfigure } from '../configuration/configuration.service';
 import { badRequest, FIELD_ERROR } from '../../config/error';
 
 export const EMAIL_PROVIDER = {
-  SMTP: "SMTP",
-  MAILGUN: "MAILGUN"
+  SMTP: 'SMTP',
+  MAILGUN: 'MAILGUN'
 };
 
 const getEmailClient = (configure) => {
@@ -34,20 +34,23 @@ export async function addEmailQueue(emailMessage, companyId, userId) {
     const email = await db.EmailSend.create({
       from: `${company?.name} <${from}>`,
       to: to,
-      cc: cc || "",
-      bcc: bcc || "",
+      cc: cc || '',
+      bcc: bcc || '',
       subject: subject,
       content: message,
       status: EMAIL_STATUS.PENDING,
       retry: 0,
       totalAttach: attachments ? attachments.length : 0
     }, { transaction });
-    await db.EmailCompany.create({
-      emailId: email.id,
-      companyId,
-      userId,
-      createdDate: new Date()
-    }, { transaction });
+    if (userId) {
+      await db.EmailCompany.create({
+        emailId: email.id,
+        companyId,
+        userId,
+        createdDate: new Date()
+      }, { transaction });
+    }
+
     if (attachments && attachments.length) {
       await db.EmailAttachment.bulkCreate(attachments.map((t, i) => ({
         id: i,
@@ -69,8 +72,8 @@ export async function sendTestEmail(configure, { from, to, subject, message }) {
   try {
     return await getEmailClient(configure).send({ from, to, subject, html: message });
   } catch (e) {
-    console.log("Send email error", e);
-    throw badRequest("email", FIELD_ERROR.INVALID, e.response || e.message);
+    console.log('Send email error', e);
+    throw badRequest('email', FIELD_ERROR.INVALID, e.response || e.message);
   }
 }
 
@@ -79,7 +82,7 @@ export async function sendCompanyEmail(emailId, companyId) {
   try {
     const email = await db.EmailSend.findByPk(emailId, {
       include: [
-        { model: db.EmailAttachment, as: "attachments" }
+        { model: db.EmailAttachment, as: 'attachments' }
       ],
       transaction,
       lock: transaction.LOCK.UPDATE
@@ -117,7 +120,7 @@ export async function emailQueueProcessing() {
     const listEmails = await db.EmailCompany.findAll({
       include: [
         {
-          model: db.EmailSend, as: "email", where: {
+          model: db.EmailSend, as: 'email', where: {
             status: EMAIL_STATUS.PENDING
           }
         }
