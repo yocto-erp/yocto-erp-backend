@@ -19,7 +19,7 @@ async function worker(tagging, cb) {
       raw: true
     });
 
-    console.log(taggingSummary);
+    // console.log(taggingSummary);
     if (taggingSummary && taggingSummary.length) {
       for (let i = 0; i < taggingSummary.length; i += 1) {
         const {taggingId, total} = taggingSummary[i];

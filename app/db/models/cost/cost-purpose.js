@@ -1,4 +1,4 @@
-import Sequelize from "sequelize";
+import Sequelize from 'sequelize';
 
 const { DataTypes } = Sequelize;
 
@@ -9,7 +9,8 @@ export const COST_PURPOSE = {
   ORDER: 1,
   DEBT: 2,
   SALE: 3,
-  STUDENT_FEE: 4
+  STUDENT_FEE: 4,
+  REGISTER_FORM: 5
 };
 
 export default class CostPurpose extends Sequelize.Model {
@@ -19,11 +20,10 @@ export default class CostPurpose extends Sequelize.Model {
         costId: { type: DataTypes.BIGINT, primaryKey: true },
         purposeId: { type: DataTypes.INTEGER },
         relativeId: { type: DataTypes.BIGINT }
-
       },
       {
-        tableName: "cost_purpose",
-        modelName: "costPurpose",
+        tableName: 'cost_purpose',
+        modelName: 'costPurpose',
         timestamps: false,
         sequelize, ...opts
       });
@@ -31,8 +31,8 @@ export default class CostPurpose extends Sequelize.Model {
 
   static associate(models) {
     this.belongsTo(models.Cost, {
-      foreignKey: "costId",
-      as: "costPurpose"
+      foreignKey: 'costId',
+      as: 'costPurpose'
     });
   }
 }

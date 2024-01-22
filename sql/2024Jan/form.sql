@@ -133,26 +133,15 @@ create table payment_request_partner_confirm
   confirmedData           json         null,
   confirmedDate           datetime     null,
   confirmedFromIP         varchar(100) null,
-  paymentTypeId           int          null,
+  paymentTypeId           int          not null,
+  partnerRequestId        varchar(64)  not null,
+  constraint _paymentTypeId_partnerRequestId_uindex
+    unique (paymentTypeId, partnerRequestId),
   constraint payment_request_partner_confirm_payment_request_partner_id_fk
     foreign key (paymentRequestPartnerId) references payment_request_partner (id)
       on update cascade on delete cascade,
   constraint payment_request_partner_confirm_payment_type_id_fk
     foreign key (paymentTypeId) references payment_type (id)
-      on update cascade on delete cascade
-);
-
-
-
-create table cost_payment_request
-(
-  costId           bigint not null,
-  paymentRequestId int    not null,
-  constraint cost_payment_request_cost_id_fk
-    foreign key (costId) references cost (id)
-      on update cascade on delete cascade,
-  constraint cost_payment_request_payment_request_id_fk
-    foreign key (paymentRequestId) references payment_request (id)
       on update cascade on delete cascade
 );
 

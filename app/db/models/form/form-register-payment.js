@@ -16,4 +16,8 @@ export default class FormRegisterPayment extends Sequelize.Model {
         sequelize, ...opts
       });
   }
+
+  static associate(models) {
+    this.belongsTo(models.FormRegister, { foreignKey: 'formRegisterId', as: 'formRegister' });
+  }
 }

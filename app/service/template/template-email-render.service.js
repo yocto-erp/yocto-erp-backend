@@ -41,5 +41,6 @@ export async function sendTemplateEmail({ emailTemplateId, companyId, userId = 0
     subject: email.subject,
     message: email.content
   };
+  console.log(emailMessage)
   return addEmailQueue(emailMessage, companyId, userId);
 }

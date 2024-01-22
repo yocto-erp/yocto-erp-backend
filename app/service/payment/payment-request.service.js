@@ -4,6 +4,7 @@ import { PAYMENT_METHOD_TYPE } from '../../db/models/payment/payment-method-sett
 import { getPaymentPartnerRequest, requestPaymentPartner } from './partner/payment-request-partner.service';
 import { PaymentRequestSource, PaymentRequestStatus } from '../../db/models/payment/payment-request';
 import { badRequest, FIELD_ERROR } from '../../config/error';
+import { confirmFormRegisterPayment } from '../form/form-register-payment.service';
 
 /**
  * Create payment request, depend on payment setting, we can request to partner,
@@ -45,27 +46,6 @@ export const requestPayment = async ({
       paymentPartner = null;
   }
   return { paymentRequest, paymentPartner };
-};
-
-/**
- * Confirm payment success
- * @param paymentRequest
- * @param transaction
- * @return {Promise<void>}
- */
-export const confirmPayment = async ({
-                                       paymentRequest
-                                     }, transaction = null) => {
-  const { source } = paymentRequest;
-  paymentRequest.status = PaymentRequestStatus.CONFIRMED;
-  paymentRequest.lastConfirmedDate = new Date();
-  await paymentRequest.save({ transaction });
-  switch (source) {
-    case PaymentRequestSource.PUBLIC_REGISTER:
-
-      break;
-    default:
-  }
 };
 
 export const getPaymentRequest = async (publicId) => {

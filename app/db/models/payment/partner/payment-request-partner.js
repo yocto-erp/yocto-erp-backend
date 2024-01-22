@@ -11,7 +11,7 @@ export default class PaymentRequestPartner extends Sequelize.Model {
         requestData: { type: DataTypes.JSON },
         response: { type: DataTypes.JSON },
         confirmData: { type: DataTypes.JSON },
-        confirmedDate: { type: DataTypes.JSON },
+        confirmedDate: { type: DataTypes.DATE },
         confirmFromIP: { type: DataTypes.STRING(100) },
         paymentRequestId: { type: DataTypes.INTEGER },
         partnerId: { type: DataTypes.STRING(64) }

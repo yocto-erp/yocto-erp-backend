@@ -76,7 +76,7 @@ export const register = async (user, formPublicId, formBody, { ip, userAgent }) 
       sendTemplateEmail({
         emailTemplateId: form.registerTemplate.templateId,
         companyId: form.companyId,
-        userId: 0
+        userId: form.createdById
       }, {
         to: [buildEmail({ email, name })], printData: toPrintData(rs.formRegister)
       }).then();

@@ -42,14 +42,12 @@ export async function addEmailQueue(emailMessage, companyId, userId) {
       retry: 0,
       totalAttach: attachments ? attachments.length : 0
     }, { transaction });
-    if (userId) {
-      await db.EmailCompany.create({
-        emailId: email.id,
-        companyId,
-        userId,
-        createdDate: new Date()
-      }, { transaction });
-    }
+    await db.EmailCompany.create({
+      emailId: email.id,
+      companyId,
+      userId,
+      createdDate: new Date()
+    }, { transaction });
 
     if (attachments && attachments.length) {
       await db.EmailAttachment.bulkCreate(attachments.map((t, i) => ({
@@ -127,6 +125,8 @@ export async function emailQueueProcessing() {
       ],
       limit: 10
     });
+
+    console.log(`Found list email: ${listEmails.length}`);
 
     for (let i = 0; i < listEmails.length; i += 1) {
       // eslint-disable-next-line no-await-in-loop

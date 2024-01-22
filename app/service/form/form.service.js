@@ -160,6 +160,7 @@ export const getFormInfo = async (form, includeAsset = true) => {
     banner,
     publicId: form.publicId,
     status: form.status,
+    createdById: form.createdById,
     ...other
   };
   if (includeAsset) {
