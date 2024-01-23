@@ -2,6 +2,13 @@ import PayOS from '@payos/node';
 import { getPaymentRequestPublicURL } from '../payment-request.common';
 import { PaymentRequestSource } from '../../../db/models/payment/payment-request';
 
+export const PAY_OS_PAYMENT_STATUS = {
+  PAID: 'PAID',
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  CANCELLED: 'CANCELLED'
+};
+
 /**
  * https://payos.vn/docs/api/#operation/payment-request
  * @param paymentRequest: MAX 9
@@ -37,4 +44,17 @@ export const payosRequestPayment = async ({ paymentRequest }, {
     request: body,
     resp
   };
+};
+
+export const payosPaymentInfo = async ({ paymentRequestId }, {
+  clientId,
+  apiKey,
+  checksum
+}) => {
+  const payOS = new PayOS(clientId, apiKey, checksum);
+
+  console.log('getPaymentLink REQUEST: ', paymentRequestId);
+  const resp = await payOS.getPaymentLinkInformation(paymentRequestId);
+  console.log('getPaymentLink RESPONSE: ', resp);
+  return resp;
 };

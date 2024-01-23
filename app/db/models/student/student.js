@@ -4,7 +4,8 @@ const { DataTypes } = Sequelize;
 
 export const MAIN_CONTACT_TYPE = {
   MOTHER: 1,
-  FATHER: 2
+  FATHER: 2,
+  OWN: 3
 };
 export const STUDENT_STATUS = {
   PENDING: 1,

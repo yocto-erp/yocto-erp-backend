@@ -4,6 +4,7 @@ import { getPaymentMethodSetting } from '../../../payment/payment-method.service
 import { badRequest, FIELD_ERROR } from '../../../../config/error';
 import { confirmPayment } from '../../../payment/payment-request.common';
 import { PAYMENT_METHOD_TYPE } from '../../../../db/models/payment/payment-method-setting';
+import { PaymentRequestStatus } from '../../../../db/models/payment/payment-request';
 
 /**
  * https://payos.vn/docs/
@@ -60,7 +61,10 @@ export const confirmPayOSWebHook = async (body, { ip, userAgent }) => {
             paymentRequestPartner.confirmedDate = new Date();
             paymentRequestPartner.confirmFromIP = ip;
             await paymentRequestPartner.save({ transaction });
-            await confirmPayment({ paymentRequest }, transaction);
+            if (paymentRequest.status === PaymentRequestStatus.PENDING) {
+              await confirmPayment({ paymentRequest }, transaction);
+            }
+
             await transaction.commit();
             rs.ok = 1;
           } catch (e) {

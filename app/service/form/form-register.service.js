@@ -82,7 +82,7 @@ export const register = async (user, formPublicId, formBody, { ip, userAgent }) 
         companyId: form.companyId,
         userId: form.createdById
       }, {
-        to: [buildEmail({ email, name })], printData: toPrintData(rs.formRegister)
+        to: [buildEmail({ email, name })], printData: toPrintData(rs.formRegister, form)
       }).then();
     }
   } catch (e) {
@@ -156,5 +156,5 @@ export const toPrintDataFromId = async (id) => {
   if (!formRegisterInfo) {
     throw badRequest('FormRegister', FIELD_ERROR.INVALID, 'Not found any data');
   }
-  return toPrintData(formRegisterInfo);
+  return toPrintData(formRegisterInfo, formRegisterInfo.form);
 };

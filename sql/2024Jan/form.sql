@@ -57,15 +57,6 @@ create index form_register_createdDate_index
 create index form_register_name_phone_email_index
   on yocto_erp.form_register (name, phone, email);
 
-
-
-create table form_register_asset
-(
-  formRegisterId int not null,
-  formAssetId    int not null,
-  primary key (formRegisterId, formAssetId)
-);
-
 alter table payment_method_setting
   modify setting json null;
 
@@ -144,6 +135,21 @@ create table payment_request_partner_confirm
     foreign key (paymentTypeId) references payment_type (id)
       on update cascade on delete cascade
 );
+
+create table student_join_class
+(
+  studentId   bigint   not null,
+  classId     bigint   not null,
+  createdDate datetime null,
+  constraint student_join_class_pk
+    primary key (studentId, classId),
+  constraint student_join_class_student_class_id_fk_2
+    foreign key (classId) references student_class (id),
+  constraint student_join_class_student_id_fk
+    foreign key (studentId) references student (id)
+);
+
+
 
 insert into template_type (id, name)
   value (3, 'Register Form Type');

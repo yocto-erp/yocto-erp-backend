@@ -53,7 +53,7 @@ export const requestPayment = async ({
   return { paymentRequest, paymentPartner };
 };
 
-export const getPaymentRequest = async (publicId) => {
+export const getPaymentRequest = async (publicId, { isForceRefresh = false }) => {
   const paymentRequest = await db.PaymentRequest.findOne({
     where: {
       publicId
@@ -65,7 +65,7 @@ export const getPaymentRequest = async (publicId) => {
   if (!paymentRequest) {
     throw badRequest('PaymentRequest', FIELD_ERROR.INVALID, 'Invalid payment request');
   }
-  const paymentPartner = await getOrCreatePaymentPartnerRequest(paymentRequest);
+  const paymentPartner = await getOrCreatePaymentPartnerRequest(paymentRequest, { isForceRefresh });
 
   return {
     paymentRequest,

@@ -6,6 +6,8 @@ import { FormRegisterStatus } from '../../db/models/form/form-register';
 import { createCost } from '../cost/cost.util';
 import { COST_TYPE } from '../../db/models/cost/cost';
 import { COST_PURPOSE } from '../../db/models/cost/cost-purpose';
+import { newStudent } from '../student/student.util';
+import { MAIN_CONTACT_TYPE, STUDENT_STATUS } from '../../db/models/student/student';
 
 
 /**
@@ -58,7 +60,14 @@ export const confirmFormRegisterPayment = async ({ paymentRequest }, transaction
       paymentRequestId: paymentRequest.id
     },
     include: [
-      { model: db.FormRegister, as: 'formRegister' }
+      {
+        model: db.FormRegister, as: 'formRegister',
+        include: [{
+          model: db.Subject, as: 'subject'
+        }, {
+          model: db.Form, as: 'form'
+        }]
+      }
     ]
   });
   if (formRegisterPayment) {
@@ -69,7 +78,7 @@ export const confirmFormRegisterPayment = async ({ paymentRequest }, transaction
     // we create cost in
     await createCost({
       name: paymentRequest.name,
-      subjectId: paymentRequest.formRegister.subjectId,
+      subjectId: formRegister.subjectId,
       type: COST_TYPE.RECEIPT,
       companyId: paymentRequest.companyId,
       purposeId: COST_PURPOSE.REGISTER_FORM,
@@ -78,5 +87,17 @@ export const confirmFormRegisterPayment = async ({ paymentRequest }, transaction
       userId: paymentRequest.createdById,
       paymentMethodId: paymentRequest.paymentMethodId
     }, transaction);
+    const { registerData: { classes }, subject, form } = formRegister;
+    // If register for class, we create student and assign class
+    if (classes && classes.length) {
+      await newStudent(formRegister.subject, {
+        status: STUDENT_STATUS.ACTIVE,
+        classes: classes.map(t => t.id),
+        mainContact: MAIN_CONTACT_TYPE.OWN,
+        mainContactSubjectId: subject.id,
+        createdById: form.createdById
+      }, transaction);
+    }
+    // What if register for product, we will create sale order ??? IN FUTURE ?
   }
 };

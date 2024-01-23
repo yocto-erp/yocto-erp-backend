@@ -5,7 +5,7 @@ import { getPaymentRequest } from '../../../../service/payment/payment-request.s
 const router = express.Router();
 
 router.get('/:publicId', (req, res, next) => {
-  return getPaymentRequest(req.params.publicId)
+  return getPaymentRequest(req.params.publicId, { isForceRefresh: req.query.isForceRefresh === '1' })
     .then(result => res.status(200).json(result))
     .catch(next);
 });
