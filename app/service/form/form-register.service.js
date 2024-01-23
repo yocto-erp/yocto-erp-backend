@@ -19,7 +19,7 @@ import { FORM_STATUS } from '../../db/models/form/form';
 import { sendTemplateEmail } from '../template/template-email-render.service';
 import { toPrintData } from './form.util';
 import { buildEmail } from '../email/email.util';
-
+import { createCustomerPerson } from '../subject/subject.util';
 
 export const register = async (user, formPublicId, formBody, { ip, userAgent }) => {
   const { name, email, phone, captcha, classes, products, description } = formBody;
@@ -40,6 +40,9 @@ export const register = async (user, formPublicId, formBody, { ip, userAgent }) 
     let totalAmount = 0;
     totalAmount += (products || []).map(t => t.price).reduce((a, b) => a + b, 0);
     totalAmount += (classes || []).map(t => t.tuitionFeePerMonth).reduce((a, b) => a + b, 0);
+    const subject = await createCustomerPerson({
+      name, email, phone, companyId: form.companyId, createdById: form.createdById
+    }, transaction);
     rs.formRegister = await db.FormRegister.create({
       publicId: uuidv4(),
       ip,
@@ -48,6 +51,7 @@ export const register = async (user, formPublicId, formBody, { ip, userAgent }) 
       registerData: registerData,
       createdDate: new Date(),
       totalAmount,
+      subjectId: subject.id,
       isConfirmed: true,
       status: FormRegisterStatus.CONFIRMED,
       formId: form.id,
@@ -99,10 +103,8 @@ export const parseRegisterInfo = async (formRegisterInfo) => {
     isConfirmed,
     status,
     form,
-    name,
-    phone,
-    email,
-    payments
+    payments,
+    subject
   } = formRegisterInfo;
 
   const { classes, products, description, ...other } = registerData;
@@ -120,13 +122,12 @@ export const parseRegisterInfo = async (formRegisterInfo) => {
     isConfirmed,
     status,
     form: await getFormInfo(form, false),
-    name,
-    phone,
-    email,
+    name: subject?.name,
+    phone: subject?.gsm,
+    email: subject?.email,
     payment: payments?.[0]
   };
 };
-
 
 export const getFormRegisterInfo = async (registerPublicId) => {
   console.log('getFormRegisterInfo: ', registerPublicId);
@@ -136,7 +137,8 @@ export const getFormRegisterInfo = async (registerPublicId) => {
     },
     include: [
       { model: db.PaymentRequest, as: 'payments' },
-      { model: db.Form, as: 'form' }
+      { model: db.Form, as: 'form' },
+      { model: db.Subject, as: 'subject' }
     ]
   });
   if (!formRegisterInfo) {

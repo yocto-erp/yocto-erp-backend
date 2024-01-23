@@ -10,9 +10,9 @@ export const listFormRegister = async (user, { search, status, form }, paging) =
   const where = {};
   if (hasText(search)) {
     where[Op.or] = [
-      { name: { [Op.like]: `%${search}%` } },
-      { email: { [Op.like]: `%${search}%` } },
-      { phone: { [Op.like]: `%${search}%` } }
+      { '$subject.name$': { [Op.like]: `%${search}%` } },
+      { '$subject.email$': { [Op.like]: `%${search}%` } },
+      { '$subject.gsm$': { [Op.like]: `%${search}%` } }
     ];
   }
   if (hasText(status) && +status > 0) {
@@ -29,7 +29,8 @@ export const listFormRegister = async (user, { search, status, form }, paging) =
           companyId: user.companyId
         }
       },
-      { model: db.User, as: 'createdBy', attributes: USER_ATTR_VIEW }
+      { model: db.User, as: 'createdBy', attributes: USER_ATTR_VIEW },
+      { model: db.Subject, as: 'subject' }
     ],
     ...paging
   });

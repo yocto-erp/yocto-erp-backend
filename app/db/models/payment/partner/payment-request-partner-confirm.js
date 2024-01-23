@@ -7,10 +7,12 @@ export default class PaymentRequestPartnerConfirm extends Sequelize.Model {
     return super.init(
       {
         id: { type: DataTypes.INTEGER, primaryKey: true },
-        paymentRequestId: { type: DataTypes.INTEGER },
+        paymentRequestPartnerId: { type: DataTypes.INTEGER },
         confirmedData: { type: DataTypes.JSON },
-        confirmedDate: { type: DataTypes.JSON },
-        confirmFromIP: { type: DataTypes.STRING(100) }
+        confirmedDate: { type: DataTypes.DATE },
+        confirmedFromIP: { type: DataTypes.STRING(100) },
+        paymentTypeId: { type: DataTypes.INTEGER },
+        partnerRequestId: { type: DataTypes.STRING(64) }
       },
       {
         tableName: 'payment_request_partner_confirm',
@@ -21,6 +23,9 @@ export default class PaymentRequestPartnerConfirm extends Sequelize.Model {
   }
 
   static associate(models) {
-    this.belongsTo(models.PaymentRequestPartner, { foreignKey: 'paymentRequestParnterId', as: 'paymentRequestPartner' });
+    this.belongsTo(models.PaymentRequestPartner, {
+      foreignKey: 'paymentRequestPartnerId',
+      as: 'paymentRequestPartner'
+    });
   }
 }

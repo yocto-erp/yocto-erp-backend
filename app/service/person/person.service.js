@@ -1,6 +1,6 @@
-import db from "../../db/models";
-import { badRequest, FIELD_ERROR } from "../../config/error";
-import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
+import db from '../../db/models';
+import { badRequest, FIELD_ERROR } from '../../config/error';
+import { DEFAULT_INCLUDE_USER_ATTRS } from '../../db/models/constants';
 
 const { Op } = db.Sequelize;
 
@@ -42,7 +42,7 @@ export function persons(query, order, offset, limit, user) {
         order,
         include: [
           {
-            model: db.User, as: "createdBy",
+            model: db.User, as: 'createdBy',
             attributes: DEFAULT_INCLUDE_USER_ATTRS
           }
         ]
@@ -61,13 +61,13 @@ export async function getPerson(pId, user) {
       id: pId
     },
     include: [
-      { model: db.PartnerPerson, as: "partnerPerson", where: { companyId: user.companyId }, attributes: [] },
+      { model: db.PartnerPerson, as: 'partnerPerson', where: { companyId: user.companyId }, attributes: [] },
       {
-        model: db.Subject, as: "subject"
+        model: db.Subject, as: 'subject'
       }]
   });
   if (!person) {
-    throw badRequest("person", FIELD_ERROR.INVALID, "person not found");
+    throw badRequest('person', FIELD_ERROR.INVALID, 'person not found');
   }
   return person;
 }
@@ -75,7 +75,6 @@ export async function getPerson(pId, user) {
 export async function createPerson(user, createForm) {
   const transaction = await db.sequelize.transaction();
   try {
-
     const person = await db.Person.create(
       {
         firstName: createForm.firstName,

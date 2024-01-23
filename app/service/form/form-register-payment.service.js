@@ -35,9 +35,9 @@ export const formRegisterPaymentProcess = async ({
   };
   const { companyId } = form;
   const paymentMethod = await getPaymentMethod(payment.id, companyId);
-  const { paymentRequest, paymentPartner } = await requestPayment({
+  const { paymentRequest } = await requestPayment({
     companyId: companyId,
-    name: `Payment request from ${formRegister.name}`,
+    name: `Payment from ${form.name}`,
     source: PaymentRequestSource.PUBLIC_REGISTER,
     paymentMethod,
     totalAmount: formRegister.totalAmount,
@@ -49,10 +49,6 @@ export const formRegisterPaymentProcess = async ({
     paymentRequestId: paymentRequest.id
   }, { transaction });
   rs.paymentRequest = paymentRequest;
-  rs.methods.push({
-    paymentMethodType: paymentMethod.paymentTypeId,
-    qrCode: paymentPartner.qrCode
-  });
   return rs;
 };
 
@@ -73,6 +69,7 @@ export const confirmFormRegisterPayment = async ({ paymentRequest }, transaction
     // we create cost in
     await createCost({
       name: paymentRequest.name,
+      subjectId: paymentRequest.formRegister.subjectId,
       type: COST_TYPE.RECEIPT,
       companyId: paymentRequest.companyId,
       purposeId: COST_PURPOSE.REGISTER_FORM,

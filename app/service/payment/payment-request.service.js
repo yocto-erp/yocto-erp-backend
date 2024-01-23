@@ -1,10 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../../db/models';
-import { PAYMENT_METHOD_TYPE } from '../../db/models/payment/payment-method-setting';
-import { getPaymentPartnerRequest, requestPaymentPartner } from './partner/payment-request-partner.service';
-import { PaymentRequestSource, PaymentRequestStatus } from '../../db/models/payment/payment-request';
+import {
+  getOrCreatePaymentPartnerRequest
+} from './partner/payment-request-partner.service';
+import { PaymentRequestStatus } from '../../db/models/payment/payment-request';
 import { badRequest, FIELD_ERROR } from '../../config/error';
-import { confirmFormRegisterPayment } from '../form/form-register-payment.service';
 
 /**
  * Create payment request, depend on payment setting, we can request to partner,
@@ -17,7 +17,6 @@ export const requestPayment = async ({
                                        ip,
                                        userAgent,
                                        paymentMethod,
-
                                        totalAmount,
                                        source
                                      }, transaction = null) => {
@@ -35,7 +34,13 @@ export const requestPayment = async ({
   }, {
     transaction
   });
-  let paymentPartner = null;
+  const paymentPartner = null;
+  /**
+   * No need to create partner request here, we will generate partner request
+   * when user really want to check out, mean our website will show information
+   * for user make payment
+   */
+  /*
   switch (paymentMethod.paymentTypeId) {
     case PAYMENT_METHOD_TYPE.PAYOS:
       paymentPartner = await requestPaymentPartner({
@@ -44,7 +49,7 @@ export const requestPayment = async ({
       break;
     default:
       paymentPartner = null;
-  }
+  } */
   return { paymentRequest, paymentPartner };
 };
 
@@ -60,7 +65,7 @@ export const getPaymentRequest = async (publicId) => {
   if (!paymentRequest) {
     throw badRequest('PaymentRequest', FIELD_ERROR.INVALID, 'Invalid payment request');
   }
-  const paymentPartner = await getPaymentPartnerRequest(paymentRequest);
+  const paymentPartner = await getOrCreatePaymentPartnerRequest(paymentRequest);
 
   return {
     paymentRequest,

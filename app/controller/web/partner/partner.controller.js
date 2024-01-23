@@ -1,23 +1,23 @@
 import express from 'express';
 
-import {hasPermission} from '../../middleware/permission';
-import {PERMISSION} from "../../../db/models/acl/acl-action";
-import {pagingParse} from '../../middleware/paging.middleware';
+import { hasPermission } from '../../middleware/permission';
+import { PERMISSION } from '../../../db/models/acl/acl-action';
+import { pagingParse } from '../../middleware/paging.middleware';
 import {
   createSubject,
   getSubject,
   listSubject,
   removeSubject,
   updateSubject
-} from "../../../service/subject/subject.service";
-import {subjectValidator} from "../../middleware/validators/partner/subject.validator";
+} from '../../../service/subject/subject.service';
+import { subjectValidator } from '../../middleware/validators/partner/subject.validator';
 
 const router = express.Router();
 
-router.get('/', [pagingParse({
+router.get('/', ...hasPermission(PERMISSION.CUSTOMER.READ), pagingParse({
   column: 'id',
   dir: 'asc'
-}), hasPermission(PERMISSION.CUSTOMER.READ)], (req, res, next) => {
+}), (req, res, next) => {
   return listSubject(req.user, req.query, req.paging)
     .then(t => res.status(200).json(t))
     .catch(next);

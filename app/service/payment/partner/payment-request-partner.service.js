@@ -9,7 +9,6 @@ export const requestPaymentPartner = async ({
                                             }, transaction = null) => {
   const { paymentMethodId, companyId } = paymentRequest;
   const paymentMethodSetting = await getPaymentMethodSetting(paymentMethodId, companyId);
-  console.log('Setting: ', paymentMethodSetting);
   const { payos: { clientId, apiKey, checksum } } = paymentMethodSetting;
 
 
@@ -17,15 +16,13 @@ export const requestPaymentPartner = async ({
     paymentRequest
   }, { clientId, apiKey, checksum });
 
-  await db.PaymentRequestPartner.create({
+  return db.PaymentRequestPartner.create({
     createdDate: new Date(),
     requestData: request,
     response: resp,
     paymentRequestId: paymentRequest.id,
     partnerId: resp.paymentLinkId
   }, { transaction });
-
-  return resp;
 };
 
 /**
@@ -47,6 +44,14 @@ export const getPaymentPartnerRequest = async (paymentRequest) => {
         break;
       default:
     }
+  }
+  return rs;
+};
+
+export const getOrCreatePaymentPartnerRequest = async (paymentRequest) => {
+  let rs = await getPaymentPartnerRequest(paymentRequest);
+  if (!rs) {
+    rs = await requestPaymentPartner({ paymentRequest });
   }
   return rs;
 };

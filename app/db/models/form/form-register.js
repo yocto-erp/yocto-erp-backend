@@ -26,9 +26,7 @@ export default class FormRegister extends Sequelize.Model {
         isConfirmed: { type: DataTypes.BOOLEAN }, // in case need confirm via email, depend on setting,
         status: { type: DataTypes.INTEGER },
         formId: { type: DataTypes.INTEGER },
-        name: { type: DataTypes.STRING(100) },
-        phone: { type: DataTypes.STRING(20) },
-        email: { type: DataTypes.STRING(150) }
+        subjectId: { type: DataTypes.BIGINT }
       },
       {
         tableName: 'form_register',
@@ -40,14 +38,15 @@ export default class FormRegister extends Sequelize.Model {
 
   static associate(models) {
     this.belongsTo(models.User, { foreignKey: 'userId', as: 'createdBy' });
+    this.belongsTo(models.Subject, { foreignKey: 'subjectId', as: 'subject' });
     this.belongsTo(models.Form, { foreignKey: 'formId', as: 'form' });
     this.belongsToMany(models.PaymentRequest, {
       through: {
         model: models.FormRegisterPayment
       },
-      foreignKey: "formRegisterId",
-      otherKey: "paymentRequestId",
-      as: "payments"
+      foreignKey: 'formRegisterId',
+      otherKey: 'paymentRequestId',
+      as: 'payments'
     });
   }
 }

@@ -21,19 +21,12 @@ export const confirmPayOSWebHook = async (body, { ip, userAgent }) => {
     const { orderCode, reference } = data;
     const partnerRequestConfirm = await db.PaymentRequestPartnerConfirm.findOne({
       where: {
-        paymentType: PAYMENT_METHOD_TYPE.PAYOS,
+        paymentTypeId: PAYMENT_METHOD_TYPE.PAYOS,
         partnerRequestId: reference
       }
     });
 
     if (!partnerRequestConfirm) {
-      await db.PaymentRequestPartnerConfirm.create({
-        paymentType: PAYMENT_METHOD_TYPE.PAYOS,
-        partnerRequestId: reference,
-        confirmedData: data,
-        confirmedDate: new Date(),
-        confirmFromIP: ip
-      });
       const paymentRequestPartner = await db.PaymentRequestPartner.findOne({
         where: {
           paymentRequestId: orderCode
@@ -41,6 +34,14 @@ export const confirmPayOSWebHook = async (body, { ip, userAgent }) => {
         include: [
           { model: db.PaymentRequest, as: 'paymentRequest', required: true }
         ]
+      });
+      await db.PaymentRequestPartnerConfirm.create({
+        paymentTypeId: PAYMENT_METHOD_TYPE.PAYOS,
+        partnerRequestId: reference,
+        confirmedData: data,
+        confirmedDate: new Date(),
+        confirmedFromIP: ip,
+        paymentRequestPartnerId: paymentRequestPartner?.id
       });
 
       if (paymentRequestPartner) {
