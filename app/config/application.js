@@ -1,6 +1,6 @@
 export default {
   hostname: '0.0.0.0',
-  port: 3000,
+  port: 3011,
   fileUploadDir: './uploads/',
   emailFileUploadDir: './public/uploads/',
   logFile: {
