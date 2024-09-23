@@ -136,12 +136,16 @@ export async function students(query, order, offset, limit, user) {
       },
       {
         model: db.Person, as: "mother"
+      },
+      {
+        model: db.StudentClass, as: "class"
       }
     ],
     offset,
     limit
   });
   const newRows = []
+  // eslint-disable-next-line no-plusplus
   for (let i = 0; i < listStudent?.rows?.length; i++) {
     const data = listStudent?.rows[i]
     const item = {
