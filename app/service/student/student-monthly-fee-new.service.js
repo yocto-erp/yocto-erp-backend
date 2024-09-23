@@ -280,10 +280,10 @@ export async function removeStudentMonthlyFee(sId, user) {
 }
 
 export async function toPrintData(id, companyId) {
-  const bId = hex2binary(id);
+  // const bId = hex2binary(id);
   const fee = await db.StudentMonthlyFee.findOne({
     where: {
-      id: bId,
+      privateId: id,
       companyId
     }, include: [
       {
