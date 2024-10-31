@@ -48,7 +48,7 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
   }
 
   if (studentClass) {
-    wherePerson["$student.classId$"] = studentClass.id;
+    wherePerson.classId = studentClass.id;
   }
   if (monthStr && monthStr.year && monthStr.month) {
     where.monthFee = monthStr.month;
