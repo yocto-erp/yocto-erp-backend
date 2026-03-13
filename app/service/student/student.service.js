@@ -283,6 +283,7 @@ export async function createStudent(user, createForm) {
 }
 
 export async function updateStudent(sId, updateForm, user) {
+  console.log(JSON.stringify(updateForm));
   const student = await db.Student.findOne({
     where: {
       id: sId,
@@ -345,8 +346,8 @@ export async function updateStudent(sId, updateForm, user) {
       alias: updateForm.alias,
       joinDate: updateForm.joinDate,
       status: updateForm.status ? updateForm.status : null,
-      fatherId: updateForm.father?.id,
-      motherId: updateForm.mother?.id,
+      fatherId: updateForm.father ?  updateForm.father.id : null,
+      motherId: updateForm.mother ? updateForm.mother.id : null,
       feePackage: updateForm.feePackage ? updateForm.feePackage : null,
       enableBus: updateForm.enableBus ? updateForm.enableBus : false,
       toSchoolBusStopId: updateForm.toSchoolBusStop?.id,
