@@ -38,7 +38,7 @@ import { every15minUpdateHourlyCost } from "./report/report-cost";
 
 export function initCronTasks() {
   every30secondSendEmail.start();
-  every10minUpdateIPFSStatus.start();
-  every5minUploadToIPFS.start();
+  // every10minUpdateIPFSStatus.start();
+  // every5minUploadToIPFS.start();
   every15minUpdateHourlyCost.start();
 }
