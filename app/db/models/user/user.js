@@ -15,6 +15,11 @@ export const USER_SEX = Object.freeze({
   OTHER: 2
 });
 
+export const USER_ORIGIN = Object.freeze({
+  NORMAL: 1,
+  SCHOOL: 2
+});
+
 export const USER_ATTR_VIEW = ['id', 'email', 'displayName'];
 
 export default class User extends Model {
@@ -28,6 +33,7 @@ export default class User extends Model {
         pwd: { type: DataTypes.STRING(256) },
         createdDate: { type: DataTypes.DATE },
         groupId: { type: DataTypes.INTEGER },
+        origin: { type: DataTypes.INTEGER },
         email_active: { type: DataTypes.BOOLEAN },
         remark: { type: DataTypes.TEXT },
         status: { type: DataTypes.INTEGER },

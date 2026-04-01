@@ -4,10 +4,11 @@ import {
   confirmEmail,
   createCompanyOnboard,
   register,
+  registerSchool,
   resendEmailActive,
   selectCompany,
-  signIn
-} from "../../service/user/auth.service";
+  signIn,
+} from '../../service/user/auth.service';
 import { PERMISSION } from "../../db/models/acl/acl-action";
 import { isTokenValid, requestResetPassword, updatePassword } from "../../service/user/user-forgot-password.service";
 import { sendResetPassword } from "../../service/email/email.service";
@@ -50,6 +51,16 @@ auth.post("/register", registerValidator, async (req, res, next) => {
   try {
     const origin = getOrigin(req);
     const registerResp = await register(req.body, origin);
+    res.status(200).json(registerResp);
+  } catch (err) {
+    next(err);
+  }
+});
+
+auth.post("/register-school", registerValidator, async (req, res, next) => {
+  try {
+    const origin = getOrigin(req);
+    const registerResp = await registerSchool(req.body, origin);
     res.status(200).json(registerResp);
   } catch (err) {
     next(err);

@@ -39,6 +39,7 @@ import { initWebCommentController } from './comment.controller';
 import { initWebWorkspaceController } from './workspace.controller';
 import { initFormController } from './form';
 import { initApiPublicController } from './public';
+import { initCompanySchoolUpdateController } from './company-school/company-school-update.controller';
 
 export function initWebController(app) {
   initWebAuthController(app);
@@ -55,6 +56,7 @@ export function initWebController(app) {
   initWebPersonController(app);
   initWebAssetController(app);
   initConfigureController(app);
+  initCompanySchoolUpdateController(app);
   initStudentController(app);
   initTemplateController(app);
   initTemplateTypeController(app);
