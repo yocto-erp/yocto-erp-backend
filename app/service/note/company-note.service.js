@@ -16,9 +16,14 @@ export function listNoteCompany(user, query) {
           model: db.User,
           as: 'createdBy',
           attributes: ['id', 'displayName', 'email']
-        }]
+        },
+          {
+            model: db.Asset,
+            as: 'assets'
+          }]
       }
-    ]
+    ],
+    order: [[{ model: db.Note, as: "note" }, "id", "desc"]]
   }).then((resp) => {
     return resp.map(t => t.note);
   });
@@ -49,6 +54,7 @@ export async function createNoteCompany(user, createForm) {
     const newNote = await db.Note.create(
       {
         note: createForm.note,
+        title: createForm.title,
         createdById: user.id,
         createdDate: new Date()
       },
@@ -91,7 +97,8 @@ export async function updateNoteCompany(noteId, user, updateForm) {
   try {
     await checkNote.update(
       {
-        note: updateForm.note.trim()
+        note: updateForm.note.trim(),
+        title: updateForm.title
       },
       transaction
     );
