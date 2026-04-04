@@ -67,6 +67,7 @@ import { initProductModel } from './product';
 import { initProjectModel } from './project';
 import { initFormModel } from './form';
 import CompanySchoolUpdate from './company/company-school-update';
+import { initNoteModel } from './note';
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -191,6 +192,10 @@ const models = {
   ...initEcommerceModel(sequelize),
   // Debt
   ...initDebtModel(sequelize),
+
+  // note
+  ...initNoteModel(sequelize),
+
   // Payment
   ...initPaymentModel(sequelize),
   // Tax

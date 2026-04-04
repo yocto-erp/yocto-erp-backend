@@ -40,6 +40,7 @@ import { initWebWorkspaceController } from './workspace.controller';
 import { initFormController } from './form';
 import { initApiPublicController } from './public';
 import { initCompanySchoolUpdateController } from './company-school/company-school-update.controller';
+import { initWebCompanyNoteController } from './note/company-note.controller';
 
 export function initWebController(app) {
   initWebAuthController(app);
@@ -50,6 +51,7 @@ export function initWebController(app) {
   initWebInventoryGoodIssueController(app);
   initWebInventorySummaryController(app);
   initWebProductController(app);
+  initWebCompanyNoteController(app);
   initWebOrderPurchaseController(app);
   initWebOrderSaleController(app);
   initWebCostController(app);
