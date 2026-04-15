@@ -1,26 +1,8 @@
-import { smtpClient } from './smtp.service';
-import { mailgunClient } from './mailgun.service';
 import db from '../../db/models';
 import { EMAIL_STATUS } from '../../db/models/email/email-send';
 import { getEmailConfigure } from '../configuration/configuration.service';
 import { badRequest, FIELD_ERROR } from '../../config/error';
-
-export const EMAIL_PROVIDER = {
-  SMTP: 'SMTP',
-  MAILGUN: 'MAILGUN'
-};
-
-const getEmailClient = (configure) => {
-  const { mailProvider } = configure;
-  switch (mailProvider) {
-    case EMAIL_PROVIDER.MAILGUN:
-      return mailgunClient(configure);
-    case EMAIL_PROVIDER.SMTP:
-      return smtpClient(configure);
-    default:
-      throw new Error(`Not support email client ${mailProvider}`);
-  }
-};
+import { getEmailClient } from './email.common.service';
 
 export async function addEmailQueue(emailMessage, companyId, userId) {
   const { from, to, subject, message, attachments, bcc, cc } = emailMessage;

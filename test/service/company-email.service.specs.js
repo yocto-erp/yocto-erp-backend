@@ -1,13 +1,13 @@
+import path from 'path';
 import {
   addEmailQueue,
-  EMAIL_PROVIDER,
   emailQueueProcessing,
   sendTestEmail
 } from "../../app/service/email/company-email.service";
 import {EMAIL_ENCRYPTION} from "../../app/service/email/smtp.service";
-import fs from 'fs';
-import path from 'path';
 import {EMAIL_ATTACHMENT_TYPE} from "../../app/db/models/email/email-attachment";
+import { EMAIL_PROVIDER } from '../../app/service/email/email.common.service';
+import { getSystemSetting } from '../../app/config/system';
 
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -58,5 +58,9 @@ describe('company-email.service.js', () => {
 
   it('test process queue email', async () => {
     await emailQueueProcessing();
+  })
+  it('test email', async () => {
+    const emailConfigure = await getSystemSetting('EMAIL_SYSTEM');
+    console.log(emailConfigure);
   })
 });
