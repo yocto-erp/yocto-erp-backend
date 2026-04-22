@@ -46,14 +46,21 @@ export async function saveCompanyConfig(
   if (existedCompanyWithPublicId) {
     throw badRequest('publicId', FIELD_ERROR.EXISTED, 'Public Id existed');
   }
-  existed.publicId = publicId;
-  existed.name = name;
-  existed.address = address;
-  existed.remark = remark;
-  existed.gsm = gsm;
-  existed.establishedDate = establishedDate;
-  existed.email = email;
-  existed.website = website;
-  existed.facebook = facebook;
-  return existed.save();
+
+  // eslint-disable-next-line no-return-await
+  return await db.Company.update({
+    publicId: publicId,
+    name: name,
+    address: address,
+    remark: remark,
+    gsm: gsm,
+    establishedDate: establishedDate,
+    email: email,
+    website: website,
+    facebook: facebook,
+  }, {
+    where: {
+      id: user.companyId
+    }
+  });
 }
