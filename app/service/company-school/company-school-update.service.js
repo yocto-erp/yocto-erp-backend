@@ -65,6 +65,11 @@ export function listCompanySchoolUpdate(user, query, { order, offset, limit }) {
               [Op.like]: `%${query.search}%`,
             },
           },
+          {
+            region: {
+              [Op.like]: `%${query.search}%`,
+            },
+          },
           { '$company.name$': { [Op.like]: `%${query.search}%` } },
           { '$company.englishName$': { [Op.like]: `%${query.search}%` } }
         ],
