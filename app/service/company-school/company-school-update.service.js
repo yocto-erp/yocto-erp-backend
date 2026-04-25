@@ -45,7 +45,7 @@ export async function saveCompanySchoolUpdate(user, form) {
     demandThisYear: form.demandThisYear,
     suggestion: form.suggestion,
     lastUpdated: new Date(),
-    companyId: user.companyId,
+    companyId: user.companyId
   });
 }
 

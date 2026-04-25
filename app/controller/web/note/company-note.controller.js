@@ -1,5 +1,4 @@
 import express from 'express';
-import { pagingParse } from '../../middleware/paging.middleware';
 import { hasPermission } from '../../middleware/permission';
 import { PERMISSION } from '../../../db/models/acl/acl-action';
 import {
@@ -36,7 +35,7 @@ companyNote.get(
 
 companyNote.post(
   '/',
-  [hasPermission(PERMISSION.COMPANY_SCHOOL.READ)],
+  [hasPermission(PERMISSION.COMPANY_SCHOOL.CREATE)],
   (req, res, next) => {
     return createNoteCompany(req.user, req.body)
       .then((result) => res.status(200).json(result))
@@ -46,7 +45,7 @@ companyNote.post(
 
 companyNote.post(
   '/:id(\\d+)',
-  hasPermission(PERMISSION.COMPANY_SCHOOL.READ),
+  hasPermission(PERMISSION.COMPANY_SCHOOL.UPDATE),
   (req, res, next) => {
     return updateNoteCompany(req.params.id, req.user, req.body)
       .then((result) => res.status(200).json(result))
@@ -56,7 +55,7 @@ companyNote.post(
 
 companyNote.delete(
   '/:id(\\d+)',
-  hasPermission(PERMISSION.COMPANY_SCHOOL.READ),
+  hasPermission(PERMISSION.COMPANY_SCHOOL.DELETE),
   (req, res, next) => {
     return removeNoteCompany(req.user, req.params.id)
       .then((result) => res.status(200).json(result))
