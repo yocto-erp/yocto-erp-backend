@@ -23,3 +23,11 @@ export async function writeExcelFile() {
   }).commit();
   return workbook.commit();
 }
+
+export const writeFileStream = async (stream, data) => {
+  if (!stream.write(data)) {
+    await new Promise((resolve) => {
+      stream.once("drain", resolve);
+    });
+  }
+};
