@@ -15,7 +15,7 @@ import fs from 'fs';
 const router = express.Router();
 
 router.get('/', [hasPermission([PERMISSION.COMPANY_SCHOOL.READ]),
-    pagingParse({column: 'id', dir: 'asc'})],
+    pagingParse({column: 'id', dir: 'desc'})],
   (req, res, next) => {
     return listCompanySchoolUpdate(req.user, req.query, req.paging)
       .then(result => res.status(200).json(result)).catch(next);

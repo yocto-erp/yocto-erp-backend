@@ -4,6 +4,7 @@ import db from '../../db/models';
 import { writeFileStream } from '../../util/file.util';
 import { BIRTHDAY_FORMAT, formatDateTime } from '../template/template.util';
 import { appLog } from '../../config/winston';
+import ExcelJS from 'exceljs';
 
 const { Op } = db.Sequelize;
 
@@ -102,56 +103,11 @@ if (!fs.existsSync(`${RENDER_FOLDER}/`)) {
   fs.mkdirSync(`${RENDER_FOLDER}/`);
 }
 
-const buildItemExport = async (companySchool) => {
-  const {company, region, joinedDate, fullNameOwner, fullNameManage,
-    level,
-    typeOrganization,
-    legalStructure,
-    studentSize,
-    numberWorker,
-    organizationalStructure,
-    infoClass,
-    methodTeacher,
-    methodSchool,
-    descriptionLastYear,
-    demandThisYear,
-    suggestion} = companySchool;
-
-  const rowItem = {
-    name: company.name,
-    englishName: company.englishName,
-    gsm: company.gsm,
-    email: company.email,
-    address: company.address,
-    remark: company.remark,
-    establishedDate: formatDateTime(company.establishedDate, BIRTHDAY_FORMAT),
-    website: company.website,
-    facebook: company.facebook,
-    region,
-    joinedDate: formatDateTime(joinedDate, BIRTHDAY_FORMAT),
-    fullNameOwner,
-    fullNameManage,
-    level,
-    typeOrganization,
-    legalStructure,
-    studentSize,
-    numberWorker,
-    organizationalStructure,
-    infoClass,
-    methodTeacher,
-    methodSchool,
-    descriptionLastYear,
-    demandThisYear,
-    suggestion
-  };
-  return rowItem
-}
-
 export async function downloadCompanySchoolUpdate(
   user, query
 ) {
-  console.log("query", query)
-  const fileName = `list_school_${new Date().getTime()}.csv`;
+
+  const fileName = `list_school_${new Date().getTime()}.xlsx`;
   const fileSave = `${RENDER_FOLDER}/${fileName}`;
   const rs = {
     total: 0,
@@ -159,7 +115,16 @@ export async function downloadCompanySchoolUpdate(
     url: fileSave,
     fileName: fileName
   };
-  const headers = [
+
+  const options = {
+    filename: fileSave,
+    useStyles: true,
+    useSharedStrings: true
+  };
+
+  const workbook = new ExcelJS.stream.xlsx.WorkbookWriter(options);
+  const worksheet = workbook.addWorksheet("Report");
+  worksheet.columns =  [
     { header: 'Name', key: 'name' },
     { header: 'English Name', key: 'englishName' },
     { header: 'Phone Number', key: 'gsm' },
@@ -212,12 +177,12 @@ export async function downloadCompanySchoolUpdate(
         ]
       };
     }
+    if (query.ids && query.ids.length) {
+      where.id = {
+        [Op.in]: query.ids.split(",")
+      };
+    }
   }
-
-  const fileStream = fs.createWriteStream(fileSave, {flags: "a"});
-  const headerRow = headers.map((t) => t.header).join(",");
-  await writeFileStream(fileStream, `${headerRow}\n`);
-
   const listCompanySchool = await db.CompanySchoolUpdate.findAll({
     where,
     include: [
@@ -231,14 +196,51 @@ export async function downloadCompanySchoolUpdate(
   if (listCompanySchool.length) {
     for (let i = 0; i < listCompanySchool.length; i += 1) {
       // eslint-disable-next-line no-await-in-loop
-      const rowItem = await buildItemExport(listCompanySchool[i]);
-      // eslint-disable-next-line no-loop-func
-      const dataRow = headers.map((t) => rowItem[t.key] || "").join(",");
-      // eslint-disable-next-line no-await-in-loop
-      await writeFileStream(fileStream, `${dataRow}\n`);
+      const {company, region, joinedDate, fullNameOwner, fullNameManage,
+        level,
+        typeOrganization,
+        legalStructure,
+        studentSize,
+        numberWorker,
+        organizationalStructure,
+        infoClass,
+        methodTeacher,
+        methodSchool,
+        descriptionLastYear,
+        demandThisYear,
+        suggestion} = listCompanySchool[i];
+      const rowItem = {
+        name: company.name,
+        englishName: company.englishName,
+        gsm: company.gsm,
+        email: company.email,
+        address: company.address,
+        remark: company.remark,
+        establishedDate: formatDateTime(company.establishedDate, BIRTHDAY_FORMAT),
+        website: company.website,
+        facebook: company.facebook,
+        region,
+        joinedDate: formatDateTime(joinedDate, BIRTHDAY_FORMAT),
+        fullNameOwner,
+        fullNameManage,
+        level,
+        typeOrganization,
+        legalStructure,
+        studentSize,
+        numberWorker,
+        organizationalStructure,
+        infoClass,
+        methodTeacher,
+        methodSchool,
+        descriptionLastYear,
+        demandThisYear,
+        suggestion
+      };
+      worksheet.addRow(rowItem).commit();
       rs.success += 1;
     }
   }
+  await workbook.commit();
   appLog.info(`Download list School ${JSON.stringify(rs)}`);
   return rs.url;
 }
