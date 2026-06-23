@@ -80,9 +80,3 @@ export const schedulerLog = container.get('scheduler');
 export const emailLog = container.get('email');
 export const eventLog = container.get('event');
 export const dbLog = container.get('database');
-
-export const httpStream = {
-  write: message => {
-    httpLog.info(message);
-  }
-};
