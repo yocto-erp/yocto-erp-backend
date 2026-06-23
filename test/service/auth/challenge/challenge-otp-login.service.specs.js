@@ -19,6 +19,7 @@ describe('challenge-otp-login', () => {
   it('confirmOTPLogin', async () => {
     const rs = await confirmOTPLogin({
       challengePublicId: '4a93a464-d998-4cab-a761-48b433375bd5', userAgent: 'testing user agent',
+      email: 'lephuoccanh@gmail.com',
       ip: '127.0.0.1', code: '0X2Vkb'
     });
     console.log(rs);

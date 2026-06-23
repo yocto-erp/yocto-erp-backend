@@ -99,7 +99,7 @@ const getOrCreateUserWithEmail = async ({ email }, transaction) => {
   return rs;
 };
 
-export const confirmOTPLogin = async ({ challengePublicId, userAgent, ip, code }) => {
+export const confirmOTPLogin = async ({ challengePublicId, email, userAgent, ip, code }) => {
   appLog.info(`Confirm OTP Login with ${challengePublicId} - ${userAgent} - ${ip}`);
   const challenge = await db.Challenge.findOne({
     where: {
@@ -124,9 +124,12 @@ export const confirmOTPLogin = async ({ challengePublicId, userAgent, ip, code }
   if (!challengeOTPLogin) {
     throw badRequest('challenge', FIELD_ERROR.INVALID, 'Invalid challenge');
   }
-  const { challengeOTP, email } = challengeOTPLogin;
+  const { challengeOTP, email: challengeEmail } = challengeOTPLogin;
   if (challengeOTP.code !== code) {
     throw badRequest('challenge', FIELD_ERROR.INVALID, 'Invalid challenge code');
+  }
+  if (challengeEmail !== email) {
+    throw badRequest('challenge', FIELD_ERROR.INVALID, 'Invalid challenge email');
   }
 
   const transaction = await db.sequelize.transaction();
