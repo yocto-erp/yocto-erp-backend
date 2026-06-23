@@ -1,8 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../../db/models';
-import {
-  getOrCreatePaymentPartnerRequest
-} from './partner/payment-request-partner.service';
 import { PaymentRequestStatus } from '../../db/models/payment/payment-request';
 import { badRequest, FIELD_ERROR } from '../../config/error';
 
@@ -53,7 +50,7 @@ export const requestPayment = async ({
   return { paymentRequest, paymentPartner };
 };
 
-export const getPaymentRequest = async (publicId, { isForceRefresh = false }) => {
+export const getPaymentRequest = async (publicId) => {
   const paymentRequest = await db.PaymentRequest.findOne({
     where: {
       publicId
@@ -65,10 +62,8 @@ export const getPaymentRequest = async (publicId, { isForceRefresh = false }) =>
   if (!paymentRequest) {
     throw badRequest('PaymentRequest', FIELD_ERROR.INVALID, 'Invalid payment request');
   }
-  const paymentPartner = await getOrCreatePaymentPartnerRequest(paymentRequest, { isForceRefresh });
 
   return {
-    paymentRequest,
-    paymentPartner
+    paymentRequest
   };
 };
