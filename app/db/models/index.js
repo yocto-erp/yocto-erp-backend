@@ -66,6 +66,7 @@ import Comment from './comment/comment';
 import { initProductModel } from './product';
 import { initProjectModel } from './project';
 import { initFormModel } from './form';
+import { initChallengeModel } from './auth';
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -201,7 +202,10 @@ const models = {
   Comment: Comment.init(sequelize),
 
   // Project
-  ...initProjectModel(sequelize)
+  ...initProjectModel(sequelize),
+
+  // Challenge
+  ...initChallengeModel(sequelize)
 };
 
 Object.values(models)

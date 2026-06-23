@@ -11,31 +11,31 @@ const dialectOptions = {
   decimalNumbers: true
 };
 
-// eslint-disable-next-line no-unused-vars
 function dbLogging(str, time) {
-  // dbLog.info(str, time);
-  // dbLog.info(`Timed: ${time} ms`);
+  if (process.env.DB_LOGGING === '1') {
+    dbLog.info(`${str} - ${time}ms`);
+  }
 }
 
 export default {
   development: {
-    dialect: "mysql",
+    dialect: 'mysql',
     pool: pool,
-    port: process.env.DB_PORT || "3306",
+    port: process.env.DB_PORT || '3306',
     benchmark: true,
     logging: dbLogging,
     dialectOptions
   },
   test: {
-    dialect: "mysql",
+    dialect: 'mysql',
     pool: pool,
-    port: process.env.DB_PORT || "3306",
+    port: process.env.DB_PORT || '3306',
     benchmark: true,
     logging: dbLogging,
     dialectOptions
   },
   production: {
-    dialect: "mysql",
+    dialect: 'mysql',
     pool: pool,
     benchmark: true,
     logging: dbLogging,

@@ -5,20 +5,48 @@ require('winston-daily-rotate-file');
 
 const {format} = winston;
 const {
-  combine, label, json, timestamp
+  combine, label, printf, timestamp
 } = format;
 
-export const container = new winston.Container();
+const filter = format((info) => {
+  const {message, stack} = info;
+  if (stack) {
+    return {
+      ...info,
+      message: JSON.stringify(message),
+      stack
+    };
+  }
+
+  return {
+    ...info,
+    message:
+      typeof info.message === "object"
+        ? JSON.stringify(info.message)
+        : info.message
+  };
+});
+
+const myFormat = printf(
+  ({level, message, label: _label, timestamp: _timestamp, stack}) => {
+    return `[${_timestamp}] [${level.toUpperCase()}] [${_label.toUpperCase()}]: ${message}${
+      stack ? `. ${stack}` : ""
+    }`;
+  }
+);
 
 function createFormat(_label) {
   return combine(
     timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss.SSS'
+      format: "YYYY-MM-DD HH:mm:ss.SSS"
     }),
     label({label: _label}),
-    json()
+    filter(),
+    myFormat
   );
 }
+
+export const container = new winston.Container();
 
 function createLoggerOptions(loggerName) {
   const rs = {
@@ -42,7 +70,7 @@ function createLoggerOptions(loggerName) {
       handleExceptions: true,
       json: false,
       colorize: true,
-      format: winston.format.simple()
+      format: createFormat(loggerName)
     }));
   }
 

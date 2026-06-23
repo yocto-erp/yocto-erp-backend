@@ -37,6 +37,10 @@ export function differentHour(fromDate, toDate) {
   return Math.abs(moment(toDate).diff(moment(fromDate), "hours"));
 }
 
+export function differentMin(fromDate, toDate) {
+  return Math.abs(moment(toDate).diff(moment(fromDate), "minutes", true));
+}
+
 export function getHourRange(date) {
   const hourBegin = date ? new Date(date.getTime()) : new Date();
   const hourTo = date ? new Date(date.getTime()) : new Date();

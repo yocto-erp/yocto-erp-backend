@@ -36,6 +36,7 @@ import { initWebCommentController } from './comment.controller';
 import { initWebWorkspaceController } from './workspace.controller';
 import { initFormController } from './form';
 import { initApiPublicController } from './public';
+import { initWebAuthNewController } from './auth';
 
 export function initWebController(app) {
   initWebAuthController(app);
@@ -76,6 +77,9 @@ export function initWebController(app) {
   initWebCommentController(app);
   initWebWorkspaceController(app);
   initFormController(app);
+
+  // For Auth
+  initWebAuthNewController(app);
 
   // for public API
   initApiPublicController(app);
