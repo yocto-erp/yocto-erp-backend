@@ -4,6 +4,10 @@ import { CHALLENGE_ACTION, CHALLENGE_STATUS } from '../../../db/models/auth/chal
 import { generateRandomCode, uuidV4 } from '../../../util/string.util';
 import { addHours } from '../../../util/date.util';
 import { sendOTPEmail } from './challenge-otp.service';
+import { badRequest, FIELD_ERROR } from '../../../config/error';
+import { USER_STATUS } from '../../../db/models/user/user';
+import { getUserToken } from '../../user/auth.service';
+import { appLog } from '../../../config/winston';
 
 /**
  * 1. Check email already have challenge (not expired) or create new one
@@ -65,4 +69,78 @@ export const createOTPLoginAndSendEmail = async ({ email, userAgent, ip }) => {
     console.log(err);
   }
   return challenge;
+};
+
+const getOrCreateUserWithEmail = async ({ email }, transaction) => {
+  const rs = {
+    user: null,
+    isNew: false,
+    userToken: null
+  };
+
+  rs.user = await db.User.findOne({
+    where: {
+      email
+    },
+    transaction
+  });
+  if (!rs.user) {
+    rs.user = await db.User.create({
+      email,
+      displayName: '',
+      createdDate: new Date(),
+      email_active: true,
+      status: USER_STATUS.ACTIVE,
+      createdById: 0
+    }, { transaction });
+    rs.isNew = true;
+  }
+  rs.userToken = await getUserToken(rs.user);
+  return rs;
+};
+
+export const confirmOTPLogin = async ({ challengePublicId, userAgent, ip, code }) => {
+  appLog.info(`Confirm OTP Login with ${challengePublicId} - ${userAgent} - ${ip}`);
+  const challenge = await db.Challenge.findOne({
+    where: {
+      publicId: challengePublicId,
+      status: CHALLENGE_STATUS.AVAILABLE,
+      expiredDate: {
+        [Op.gt]: new Date()
+      }
+    }
+  });
+  if (!challenge) {
+    throw badRequest('challenge', FIELD_ERROR.INVALID, `Invalid challenge ${challengePublicId}`);
+  }
+  const challengeOTPLogin = await db.ChallengeOtpLogin.findOne({
+    where: {
+      challengeId: challenge.id
+    },
+    include: [{
+      model: db.ChallengeOTP, as: 'challengeOTP', required: true
+    }]
+  });
+  if (!challengeOTPLogin) {
+    throw badRequest('challenge', FIELD_ERROR.INVALID, 'Invalid challenge');
+  }
+  const { challengeOTP, email } = challengeOTPLogin;
+  if (challengeOTP.code !== code) {
+    throw badRequest('challenge', FIELD_ERROR.INVALID, 'Invalid challenge code');
+  }
+
+  const transaction = await db.sequelize.transaction();
+  try {
+    challenge.status = CHALLENGE_STATUS.CONFIRMED;
+    challenge.confirmedOn = new Date();
+    await challenge.save({ transaction });
+
+    const confirmResponse = await getOrCreateUserWithEmail({ email }, transaction);
+    // If userId not existed, then create new user with email
+    await transaction.commit();
+    return confirmResponse;
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
 };

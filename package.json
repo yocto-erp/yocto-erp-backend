@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Simple lite ERP Management ",
   "main": "index.js",
+  "type": "commonjs",
   "engines": {
     "node": ">=17"
   },

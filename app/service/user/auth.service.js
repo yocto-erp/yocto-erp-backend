@@ -1,35 +1,35 @@
-import jwt from "jsonwebtoken";
-import md5 from "md5";
-import db from "../../db/models";
-import { badRequest, FIELD_ERROR, FieldError, FormError, HTTP_ERROR, HttpError } from "../../config/error";
-import { USER_STATUS } from "../../db/models/user/user";
-import APP_CONFIG from "../../config/application";
-import { appLog } from "../../config/winston";
-import { USER_EVENT, userEmitter } from "../../event/user.event";
-import { ALL_PERMISSIONS } from "../../db/models/acl/acl-action";
-import { ACTION_TYPE } from "../../db/models/acl/acl-group-action";
-import * as emailService from "../email/email.service";
-import { USER_INVITE_STATUS } from "../../db/models/user/user-company";
+import jwt from 'jsonwebtoken';
+import md5 from 'md5';
+import db from '../../db/models';
+import { badRequest, FIELD_ERROR, FieldError, FormError, HTTP_ERROR, HttpError } from '../../config/error';
+import { USER_STATUS } from '../../db/models/user/user';
+import APP_CONFIG from '../../config/application';
+import { appLog } from '../../config/winston';
+import { USER_EVENT, userEmitter } from '../../event/user.event';
+import { ALL_PERMISSIONS } from '../../db/models/acl/acl-action';
+import { ACTION_TYPE } from '../../db/models/acl/acl-group-action';
+import * as emailService from '../email/email.service';
+import { USER_INVITE_STATUS } from '../../db/models/user/user-company';
 
 
-const userNameFilter = ["admin", "www", "support", "cryptocash", "usd", "ciphercore", "ciphc", "peak", "addfund",
-  "transfer", "transaction", "withdraw", "password", "package", "order", "amount", "dashboard", "menu",
-  "genealogy", "btc", "class", "profile", "purchase", "wallet", "deposit", "history", "new", "faq", "av", "gift", "notice",
-  "account", "addfund", "administrator", "agent", "amount", "asset", "bank", "bitcoin", "blockchain", "BTC", "business",
-  "cash", "ciphc", "cipher", "cipher-core", "class", "coin", "company", "crypto", "cryptocash", "dashboard", "Deposit",
-  "director", "Download", "email", "Exchange", "Fee", "fin", "forgot", "freecode", "fund", "genealogy", "gift",
-  "history", "joinus", "login", "manager", "market", "marketing", "master", "menu", "money", "nakamura", "news",
-  "newsletter", "notice", "nti", "office", "order", "package", "password", "pay", "Payment", "peak", "profile", "purchase", "sale", "save",
-  "shop", "signup", "sixpay", "staff", "support", "system", "takotoshi", "token", "transaction", "transfer",
-  "update", "upload", "USD", "wallet", "webmaster", "webmaster", "weboffice", "Withdraw", "email"];
+const userNameFilter = ['admin', 'www', 'support', 'cryptocash', 'usd', 'ciphercore', 'ciphc', 'peak', 'addfund',
+  'transfer', 'transaction', 'withdraw', 'password', 'package', 'order', 'amount', 'dashboard', 'menu',
+  'genealogy', 'btc', 'class', 'profile', 'purchase', 'wallet', 'deposit', 'history', 'new', 'faq', 'av', 'gift', 'notice',
+  'account', 'addfund', 'administrator', 'agent', 'amount', 'asset', 'bank', 'bitcoin', 'blockchain', 'BTC', 'business',
+  'cash', 'ciphc', 'cipher', 'cipher-core', 'class', 'coin', 'company', 'crypto', 'cryptocash', 'dashboard', 'Deposit',
+  'director', 'Download', 'email', 'Exchange', 'Fee', 'fin', 'forgot', 'freecode', 'fund', 'genealogy', 'gift',
+  'history', 'joinus', 'login', 'manager', 'market', 'marketing', 'master', 'menu', 'money', 'nakamura', 'news',
+  'newsletter', 'notice', 'nti', 'office', 'order', 'package', 'password', 'pay', 'Payment', 'peak', 'profile', 'purchase', 'sale', 'save',
+  'shop', 'signup', 'sixpay', 'staff', 'support', 'system', 'takotoshi', 'token', 'transaction', 'transfer',
+  'update', 'upload', 'USD', 'wallet', 'webmaster', 'webmaster', 'weboffice', 'Withdraw', 'email'];
 
-async function getUserToken(userInform, selectCompanyId = null) {
+export async function getUserToken(userInform, selectCompanyId = null) {
   const userJson = userInform.get({ plain: true });
 
   /**
    * At the moment only support 1 user had one company, so default choose the first company
    */
-  const userCompanies = userJson.userCompanies.filter(t => t.userCompany.inviteStatus === USER_INVITE_STATUS.CONFIRMED);
+  const userCompanies = (userJson.userCompanies || []).filter(t => t.userCompany.inviteStatus === USER_INVITE_STATUS.CONFIRMED);
 
   userJson.userCompanies = userCompanies;
   userJson.companyId = null;
@@ -89,11 +89,11 @@ export async function selectCompany(user, companyId) {
     },
     include: [
       {
-        model: db.Company, as: "userCompanies"
+        model: db.Company, as: 'userCompanies'
       },
       {
-        model: db.Asset, as: "avatar", include: [
-          { model: db.AssetIpfs, as: "ipfs" }
+        model: db.Asset, as: 'avatar', include: [
+          { model: db.AssetIpfs, as: 'ipfs' }
         ]
       }
     ]
@@ -105,7 +105,7 @@ export async function selectCompany(user, companyId) {
 
 export async function signIn({ email, password }) {
   if (!email || email.length === 0 || !password || password.length === 0) {
-    throw badRequest("credential", FIELD_ERROR.INVALID, "Email or password invalid");
+    throw badRequest('credential', FIELD_ERROR.INVALID, 'Email or password invalid');
   }
   const user = await db.User.findOne({
     where: {
@@ -113,27 +113,27 @@ export async function signIn({ email, password }) {
     },
     include: [
       {
-        model: db.Company, as: "userCompanies"
+        model: db.Company, as: 'userCompanies'
       },
       {
-        model: db.Asset, as: "avatar",
+        model: db.Asset, as: 'avatar',
         include: [
-          { model: db.AssetIpfs, as: "ipfs" }
+          { model: db.AssetIpfs, as: 'ipfs' }
         ]
       }
     ]
   });
   if (!user) {
-    throw badRequest("credential", FIELD_ERROR.INVALID, "Email or password invalid");
+    throw badRequest('credential', FIELD_ERROR.INVALID, 'Email or password invalid');
   }
   if (!db.User.comparePassword(password, user.pwd)) {
-    throw badRequest("credential", FIELD_ERROR.INVALID, "Password is invalid");
+    throw badRequest('credential', FIELD_ERROR.INVALID, 'Password is invalid');
   }
   if (!user.email_active) {
-    throw badRequest("credential", FIELD_ERROR.EMAIL_NOT_ACTIVE, "Email not active");
+    throw badRequest('credential', FIELD_ERROR.EMAIL_NOT_ACTIVE, 'Email not active');
   }
   if (user.status !== USER_STATUS.ACTIVE) {
-    throw badRequest("credential", FIELD_ERROR.EMAIL_NOT_ACTIVE, "User not active");
+    throw badRequest('credential', FIELD_ERROR.EMAIL_NOT_ACTIVE, 'User not active');
   }
 
   user.lastLogin = new Date();
@@ -149,7 +149,7 @@ export async function register(registerForm, origin) {
   });
   if (currentUsername && currentUsername.status !== USER_STATUS.INVITED) {
     throw new FormError(
-      new FieldError("email",
+      new FieldError('email',
         FIELD_ERROR.INVALID,
         `Email ${registerForm.email} is already taken`)
     );
@@ -157,7 +157,7 @@ export async function register(registerForm, origin) {
 
   if (userNameFilter.indexOf(registerForm.email.trim().toLowerCase()) >= 0) {
     throw new FormError(
-      new FieldError("email",
+      new FieldError('email',
         FIELD_ERROR.INVALID,
         `Email ${registerForm.email} is not allow to register`)
     );
@@ -198,7 +198,7 @@ export async function register(registerForm, origin) {
 
     await transaction.commit();
 
-    if (process.env.NODE_ENV !== "test") {
+    if (process.env.NODE_ENV !== 'test') {
       userEmitter.emit(USER_EVENT.REGISTER, newUser, origin);
     }
 
@@ -215,7 +215,7 @@ export async function userExisted(email) {
   });
   if (currentUsername) {
     throw new FormError(
-      new FieldError("email",
+      new FieldError('email',
         FIELD_ERROR.INVALID,
         `Email ${email} is already taken`)
     );
@@ -223,7 +223,7 @@ export async function userExisted(email) {
 
   if (userNameFilter.indexOf(email.trim().toLowerCase()) >= 0) {
     throw new FormError(
-      new FieldError("email",
+      new FieldError('email',
         FIELD_ERROR.INVALID,
         `Email ${email} is not allow to register`)
     );
@@ -238,7 +238,7 @@ export async function emailExisted(email) {
   });
   if (currentUser) {
     throw new FormError(
-      new FieldError("email",
+      new FieldError('email',
         FIELD_ERROR.INVALID,
         `Email ${email} is already taken`)
     );
@@ -252,14 +252,14 @@ export async function confirmEmail(email, token) {
       active_code: token,
       isConfirmed: false
     },
-    order: [["date_inserted", "DESC"]]
+    order: [['date_inserted', 'DESC']]
   });
   if (!activeToken) {
-    throw new HttpError(HTTP_ERROR.NOT_FOUND, "Invalid Token");
+    throw new HttpError(HTTP_ERROR.NOT_FOUND, 'Invalid Token');
   }
   const user = await db.User.findByPk(activeToken.user_id);
   if (!user || user.email !== email) {
-    throw new HttpError(HTTP_ERROR.NOT_FOUND, "Invalid Email");
+    throw new HttpError(HTTP_ERROR.NOT_FOUND, 'Invalid Email');
   }
   await user.update({
     email_active: true
@@ -278,7 +278,7 @@ export async function resendEmailActive(email, origin) {
   if (user) {
     try {
       const token = md5(`${user.email}-${new Date()}`);
-      const url = `${origin || "http://localhost:4200"}/email-activate?email=${user.email}&token=${token}`;
+      const url = `${origin || 'http://localhost:4200'}/email-activate?email=${user.email}&token=${token}`;
 
       return db.UserActivate.create({
         user_id: user.id,
@@ -311,8 +311,8 @@ export async function createCompanyOnboard(user, createForm) {
     );
 
     const group = await db.ACLGroup.create({
-      name: "COMPANY_GROUP",
-      remark: "Default group for master access",
+      name: 'COMPANY_GROUP',
+      remark: 'Default group for master access',
       createdById: 0,
       totalPermission: ALL_PERMISSIONS.length
     }, { transaction });
@@ -340,7 +340,7 @@ export async function createCompanyOnboard(user, createForm) {
       },
       include: [
         {
-          model: db.Company, as: "userCompanies"
+          model: db.Company, as: 'userCompanies'
         }
       ]
     });
