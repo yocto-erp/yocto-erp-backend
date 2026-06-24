@@ -68,6 +68,10 @@ export default class User extends Model {
       otherKey: "shopId",
       as: "shops"
     });
+    this.hasMany(models.UserCompany, {
+      foreignKey: "userId",
+      as: "companies"
+    });
     this.belongsToMany(models.Company, {
       through: models.UserCompany,
       foreignKey: "userId",

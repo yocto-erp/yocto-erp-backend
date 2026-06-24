@@ -1,15 +1,15 @@
-import jwt from 'jsonwebtoken';
 import md5 from 'md5';
 import db from '../../db/models';
 import { badRequest, FIELD_ERROR, FieldError, FormError, HTTP_ERROR, HttpError } from '../../config/error';
 import { USER_STATUS } from '../../db/models/user/user';
-import APP_CONFIG from '../../config/application';
 import { appLog } from '../../config/winston';
 import { USER_EVENT, userEmitter } from '../../event/user.event';
 import { ALL_PERMISSIONS } from '../../db/models/acl/acl-action';
 import { ACTION_TYPE } from '../../db/models/acl/acl-group-action';
 import * as emailService from '../email/email.service';
 import { USER_INVITE_STATUS } from '../../db/models/user/user-company';
+import { generateUserToken } from '../auth/jwt.service';
+import { userFirstOnboard } from '../auth/onboard.service';
 
 
 const userNameFilter = ['admin', 'www', 'support', 'cryptocash', 'usd', 'ciphercore', 'ciphc', 'peak', 'addfund',
@@ -39,10 +39,15 @@ export async function getUserToken(userInform, selectCompanyId = null) {
   if (userCompanies.length === 1) {
     selectCompanyIndex = 0;
   } else if (userCompanies.length > 0) {
-    for (let i = 0; i < userCompanies.length; i += 1) {
-      if (userCompanies[i].id === selectCompanyId) {
-        selectCompanyIndex = i;
+    if (selectCompanyId) {
+      for (let i = 0; i < userCompanies.length; i += 1) {
+        if (userCompanies[i].id === selectCompanyId) {
+          selectCompanyIndex = i;
+        }
       }
+    }
+    if (selectCompanyIndex === null) {
+      selectCompanyIndex = 0;
     }
   }
 
@@ -79,7 +84,12 @@ export async function getUserToken(userInform, selectCompanyId = null) {
   }
 
 
-  return { token: jwt.sign(userJson, APP_CONFIG.JWT.secret, { expiresIn: '24h' }), user: userJson };
+  return {
+    token: await generateUserToken({
+      userId: userJson.id,
+      companyId: userJson.companyId
+    }), user: userJson
+  };
 }
 
 export async function selectCompany(user, companyId) {
@@ -116,10 +126,7 @@ export async function signIn({ email, password }) {
         model: db.Company, as: 'userCompanies'
       },
       {
-        model: db.Asset, as: 'avatar',
-        include: [
-          { model: db.AssetIpfs, as: 'ipfs' }
-        ]
+        model: db.Asset, as: 'avatar'
       }
     ]
   });
@@ -133,7 +140,7 @@ export async function signIn({ email, password }) {
     throw badRequest('credential', FIELD_ERROR.EMAIL_NOT_ACTIVE, 'Email not active');
   }
   if (user.status !== USER_STATUS.ACTIVE) {
-    throw badRequest('credential', FIELD_ERROR.EMAIL_NOT_ACTIVE, 'User not active');
+    throw badRequest('credential', FIELD_ERROR.INVALID, 'User not active');
   }
 
   user.lastLogin = new Date();
@@ -187,6 +194,7 @@ export async function register(registerForm, origin) {
         },
         { transaction }
       );
+      await userFirstOnboard(newUser, transaction);
     } else {
       currentUsername.pwd = db.User.hashPassword(registerForm.password);
       currentUsername.displayName = `${registerForm.firstName} ${registerForm.lastName}`;

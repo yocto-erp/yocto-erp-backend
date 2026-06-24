@@ -17,7 +17,8 @@ export const SYSTEM_CONFIG = {
   NOTIFY_ADD_FUND_EMAIL: 'Yocto ERP <info@yoctoerp.com>',
   NOTIFY_KYC: 'Yocto ERP <info@yoctoerp.com>',
   NOTIFY_AUTO_REPLY_EMAIL: 'Yocto ERP <info@yoctoerp.com>',
-  NOTIFY_NOTICE_EMAIL: 'Yocto ERP <info@yoctoerp.com>'
+  NOTIFY_NOTICE_EMAIL: 'Yocto ERP <info@yoctoerp.com>',
+  AUTH_EXPIRED_TOKEN: 30
 };
 
 export function loadConfigure() {
