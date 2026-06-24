@@ -4,10 +4,33 @@ import { badRequest, FIELD_ERROR } from '../../config/error';
 const { Op } = db.Sequelize;
 
 export async function getCompanyConfig(user) {
-  return db.Company.findByPk(user.companyId);
+  const company = await db.Company.findByPk(user.companyId);
+  const schoolUpdate = await db.CompanySchoolUpdate.findOne({
+    where: {
+      companyId: user.companyId
+    },
+    order: [['id', 'DESC']]
+  });
+  return {
+    ...company.toJSON(),
+    schoolUpdate: schoolUpdate
+  };
 }
 
-export async function saveCompanyConfig(user, { gsm, publicId, address, remark, name }) {
+export async function saveCompanyConfig(
+  user,
+  {
+    gsm,
+    publicId,
+    address,
+    remark,
+    name,
+    establishedDate,
+    email,
+    website,
+    facebook,
+  }
+) {
   const existed = await getCompanyConfig(user);
   if (!existed) {
     throw badRequest('company', FIELD_ERROR.INVALID, 'Invalid company');
@@ -16,17 +39,28 @@ export async function saveCompanyConfig(user, { gsm, publicId, address, remark, 
     where: {
       publicId,
       id: {
-        [Op.ne]: user.companyId
-      }
-    }
+        [Op.ne]: user.companyId,
+      },
+    },
   });
   if (existedCompanyWithPublicId) {
     throw badRequest('publicId', FIELD_ERROR.EXISTED, 'Public Id existed');
   }
-  existed.publicId = publicId;
-  existed.name = name;
-  existed.address = address;
-  existed.remark = remark;
-  existed.gsm = gsm;
-  return existed.save();
+
+  // eslint-disable-next-line no-return-await
+  return await db.Company.update({
+    publicId: publicId,
+    name: name,
+    address: address,
+    remark: remark,
+    gsm: gsm,
+    establishedDate: establishedDate,
+    email: email,
+    website: website,
+    facebook: facebook,
+  }, {
+    where: {
+      id: user.companyId
+    }
+  });
 }

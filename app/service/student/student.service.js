@@ -1,17 +1,37 @@
-import db from "../../db/models";
-import { badRequest, FIELD_ERROR } from "../../config/error";
-import { hasText } from "../../util/string.util";
-import { MAIN_CONTACT_TYPE } from "../../db/models/student/student";
-import { SUBJECT_CATEGORY } from "../../db/models/partner/subject";
-import { getOrCreatePersonalSubject } from "../subject/subject.service";
-import { DEFAULT_INCLUDE_USER_ATTRS } from "../../db/models/constants";
+import db from '../../db/models';
+import { badRequest, FIELD_ERROR } from '../../config/error';
+import { hasText } from '../../util/string.util';
+import { MAIN_CONTACT_TYPE } from '../../db/models/student/student';
+import { SUBJECT_CATEGORY } from '../../db/models/partner/subject';
+import { getOrCreatePersonalSubject } from '../subject/subject.service';
+import { DEFAULT_INCLUDE_USER_ATTRS } from '../../db/models/constants';
 
 const { Op } = db.Sequelize;
 
-export function students(query, order, offset, limit, user) {
+
+export const getStudentJoinClass = ({studentId}) => {
+  return db.StudentJoinClass.findAll({
+    where: {
+      studentId
+    },
+    include: [{model: db.StudentClass, as: "class", required: true}]
+  }).then((t) => t.map((item) => item.class));
+};
+export const getStudentJoinClassByClass = ({studentId}) => {
+  return db.StudentJoinClass.findAll({
+    where: {
+      classId: {
+        [Op.in]: studentId
+      }
+    },
+    include: [{model: db.StudentClass, as: "class", required: true}]
+  }).then((t) => t.map((item) => item.studentId));
+};
+export async function students(query, order, offset, limit, user) {
   const { search, class: studentClass, status } = query;
   const where = {};
   let wherePerson = {};
+
   if (search && search.length) {
     wherePerson = {
       [Op.or]: [
@@ -54,9 +74,32 @@ export function students(query, order, offset, limit, user) {
     };
   }
   where.companyId = user.companyId;
-  if (studentClass) {
-    console.log("StudentClass", studentClass);
-    wherePerson.classId = Number(studentClass.id);
+  // eslint-disable-next-line no-unused-vars
+  let _listStudentId = new Set();
+  if(studentClass) {
+    const _studentClass = JSON.parse(studentClass)
+    const listStudentId = []
+    if (_studentClass && _studentClass.length > 0) {
+      for (let i = 0; i < _studentClass.length; i++) {
+        const data = _studentClass[i]
+        // eslint-disable-next-line no-await-in-loop
+        listStudentId.push(data?.id)
+      }
+      const listStudentJoinClass = await getStudentJoinClassByClass({
+        studentId: listStudentId
+      })
+      _listStudentId = new Set(listStudentJoinClass)
+      if (_listStudentId.size) {
+        where.id = {
+          [Op.in]: Array.from(_listStudentId)
+        };
+      } else {
+        return {
+          count: 0,
+          rows: []
+        };
+      }
+    }
   }
   if (hasText(status)) {
     where.status = Number(status);
@@ -71,7 +114,7 @@ export function students(query, order, offset, limit, user) {
     }
     return t;
   });
-  return db.Student.findAndCountAll({
+  const listStudent = await db.Student.findAndCountAll({
     order: _order,
     where: { ...where, ...wherePerson },
     include: [
@@ -86,9 +129,6 @@ export function students(query, order, offset, limit, user) {
         model: db.StudentBusStop, as: "toHomeBusStop"
       },
       {
-        model: db.StudentClass, as: "class"
-      },
-      {
         model: db.Person, as: "child"
       },
       {
@@ -96,11 +136,29 @@ export function students(query, order, offset, limit, user) {
       },
       {
         model: db.Person, as: "mother"
+      },
+      {
+        model: db.StudentClass, as: "class"
       }
     ],
     offset,
     limit
   });
+  const newRows = []
+  // eslint-disable-next-line no-plusplus
+  for (let i = 0; i < listStudent?.rows?.length; i++) {
+    const data = listStudent?.rows[i]
+    const item = {
+      ...data.dataValues,
+      // eslint-disable-next-line no-await-in-loop
+      classStudents: await getStudentJoinClass({studentId: data?.id})
+    }
+    newRows.push(item)
+  }
+  return {
+    count: listStudent.count,
+    rows: newRows
+  }
 }
 
 export async function getStudent(sId, user) {
@@ -130,6 +188,13 @@ export async function getStudent(sId, user) {
       },
       {
         model: db.Person, as: "mother"
+      },
+      {
+        model: db.StudentJoinClass,
+        as: "classStudents",
+        include: [
+          {model: db.StudentClass, as: "class"}
+        ]
       }
     ]
   });
@@ -194,13 +259,21 @@ export async function createStudent(user, createForm) {
         toSchoolBusRoute: createForm.toSchoolBusRoute,
         toHomeBusRoute: createForm.toHomeBusRoute,
         enableMeal: createForm.enableMeal ? createForm.enableMeal : false,
-        classId: createForm.class?.id,
+        // classId: createForm.class?.id,
         mainContact: createForm.mainContact,
         subjectId: mainContactSubject.id,
         createdById: user.id,
         createdDate: new Date()
       }, { transaction }
     );
+    const classStudent = createForm?.classStudents.map((item) => {
+      return {
+        studentId: student.id,
+        classId: item.id,
+        createdDate: new Date()
+      }
+    })
+    await db.StudentJoinClass.bulkCreate(classStudent, {transaction})
     await transaction.commit();
     return student;
   } catch (e) {
@@ -210,6 +283,7 @@ export async function createStudent(user, createForm) {
 }
 
 export async function updateStudent(sId, updateForm, user) {
+  console.log(JSON.stringify(updateForm));
   const student = await db.Student.findOne({
     where: {
       id: sId,
@@ -228,9 +302,21 @@ export async function updateStudent(sId, updateForm, user) {
   if (!person) {
     throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
   }
+  const findStudentJoinClass = await db.StudentJoinClass.findOne({
+    where: {
+      studentId: student?.id
+    }
+  })
 
   const transaction = await db.sequelize.transaction();
   try {
+    if (findStudentJoinClass) {
+      await db.StudentJoinClass.destroy({
+        where: {
+          studentId: findStudentJoinClass?.studentId
+        }
+      }, {transaction})
+    }
     const splitFullName = updateForm.fullName.trim().split(" ");
     let firstName = "";
     const lastName = splitFullName[splitFullName.length - 1];
@@ -253,7 +339,6 @@ export async function updateStudent(sId, updateForm, user) {
     } else {
       mainContactSubject = await getOrCreatePersonalSubject(user, updateForm.father.id, SUBJECT_CATEGORY.PARENT);
     }
-
     const studentUpdate = await db.Student.update({
       personId: person.id,
       companyId: user.companyId,
@@ -261,8 +346,8 @@ export async function updateStudent(sId, updateForm, user) {
       alias: updateForm.alias,
       joinDate: updateForm.joinDate,
       status: updateForm.status ? updateForm.status : null,
-      fatherId: updateForm.father?.id,
-      motherId: updateForm.mother?.id,
+      fatherId: updateForm.father ?  updateForm.father.id : null,
+      motherId: updateForm.mother ? updateForm.mother.id : null,
       feePackage: updateForm.feePackage ? updateForm.feePackage : null,
       enableBus: updateForm.enableBus ? updateForm.enableBus : false,
       toSchoolBusStopId: updateForm.toSchoolBusStop?.id,
@@ -270,12 +355,21 @@ export async function updateStudent(sId, updateForm, user) {
       toSchoolBusRoute: updateForm.toSchoolBusRoute,
       toHomeBusRoute: updateForm.toHomeBusRoute,
       enableMeal: updateForm.enableMeal ? updateForm.enableMeal : false,
-      classId: updateForm.class?.id,
+      // classId: updateForm.class?.id,
       mainContact: updateForm.mainContact,
       subjectId: mainContactSubject.id,
       lastModifiedById: user.id,
       lastModifiedDate: new Date()
     }, { where: { id: sId } }, { transaction });
+
+    const classStudent = updateForm?.classStudents.map((item) => {
+      return {
+        studentId: student.id,
+        classId: item?.id || item?.classId,
+        createdDate: new Date()
+      }
+    })
+    await db.StudentJoinClass.bulkCreate(classStudent, {transaction})
 
     await transaction.commit();
     return studentUpdate;
@@ -306,6 +400,11 @@ export async function removeStudent(sId, user) {
   }
   const transaction = await db.sequelize.transaction();
   try {
+    await db.StudentJoinClass.destroy({
+      where: {
+        studentId: checkStudent.id
+      }
+    }, {transaction})
     await db.Person.destroy({
       where: {
         id: checkPerson.id

@@ -54,3 +54,14 @@ export function update(name, value, type) {
   });
 }
 
+export async function getSystemSetting(name) {
+  const configure = await db.SystemProperty.findOne({
+    where: {
+      name: name
+    }
+  });
+  if (configure) {
+    return JSON.parse(configure.value);
+  }
+  return null;
+}

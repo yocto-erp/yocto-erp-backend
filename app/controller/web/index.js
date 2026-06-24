@@ -36,6 +36,8 @@ import { initWebCommentController } from './comment.controller';
 import { initWebWorkspaceController } from './workspace.controller';
 import { initFormController } from './form';
 import { initApiPublicController } from './public';
+import { initCompanySchoolUpdateController } from './company-school/company-school-update.controller';
+import { initWebCompanyNoteController } from './note/company-note.controller';
 import { initWebAuthNewController } from './auth';
 
 export function initWebController(app) {
@@ -47,12 +49,14 @@ export function initWebController(app) {
   initWebInventoryGoodIssueController(app);
   initWebInventorySummaryController(app);
   initWebProductController(app);
+  initWebCompanyNoteController(app);
   initWebOrderPurchaseController(app);
   initWebOrderSaleController(app);
   initWebCostController(app);
   initWebPersonController(app);
   initWebAssetController(app);
   initConfigureController(app);
+  initCompanySchoolUpdateController(app);
   initStudentController(app);
   initTemplateController(app);
   initTemplateTypeController(app);

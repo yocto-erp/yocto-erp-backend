@@ -2,7 +2,7 @@ import Sequelize from "sequelize";
 
 const { DataTypes } = Sequelize;
 
-// CURRENT MAX 139
+// CURRENT MAX 143
 
 export const PERMISSION = {
   PRODUCT: {
@@ -215,6 +215,12 @@ export const PERMISSION = {
     CREATE: 137,
     DELETE: 138,
     UPDATE: 139
+  },
+  COMPANY_SCHOOL: {
+    READ: 140,
+    CREATE: 141,
+    DELETE: 142,
+    UPDATE: 143
   }
 };
 

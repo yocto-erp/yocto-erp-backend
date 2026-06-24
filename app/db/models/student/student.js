@@ -58,5 +58,6 @@ export default class Student extends Sequelize.Model {
     this.belongsTo(models.Person, { foreignKey: "motherId", as: "mother" });
     this.belongsTo(models.DebtSubjectBalance, { foreignKey: "subjectId", as: "debt" });
     this.hasOne(models.StudentDailyTracking, { foreignKey: "studentId", as: "tracking" });
+    this.hasMany(models.StudentJoinClass, { foreignKey: "studentId", as: "classStudents" });
   }
 }

@@ -18,6 +18,6 @@ export default class StudentJoinClass extends Sequelize.Model {
 
   static associate(models) {
     this.belongsTo(models.Student, { foreignKey: 'studentId', as: 'student' });
-    this.belongsTo(models.StudentClass, { foreignKey: 'classId', as: 'clazz' });
+    this.belongsTo(models.StudentClass, { foreignKey: 'classId', as: 'class' })
   }
 }

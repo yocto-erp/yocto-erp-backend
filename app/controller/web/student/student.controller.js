@@ -16,7 +16,7 @@ import { studentValidator } from "../../middleware/validators/student/student.va
 const student = express.Router();
 
 student.get("/", [pagingParse({
-  column: "id",
+  column: "studentId",
   dir: "asc"
 }), hasPermission(PERMISSION.CUSTOMER.READ)], (req, res, next) => {
   return students(req.query, req.paging.order, req.paging.offset, req.paging.size, req.user)

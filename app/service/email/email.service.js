@@ -1,20 +1,11 @@
-import { client } from "mailgun.js";
 import fs from "fs";
 import path from "path";
 import { emailLog } from "../../config/winston";
-import { SYSTEM_CONFIG } from "../../config/system";
+import { getSystemSetting, SYSTEM_CONFIG } from '../../config/system';
 import db from "../../db/models";
 import { EMAIL_STATUS } from "../../db/models/email/email-send";
 import { sendErrorMessage } from "../partner/telegram";
-
-function getMailGunClient() {
-  return client({
-    username: "api",
-    key: process.env.MAILGUN_API_KEY
-  });
-}
-
-const domain = process.env.MAILGUN_DOMAIN;
+import { getEmailClient } from './email.common.service';
 
 const DEBUG = false;
 const systemEmail = {
@@ -60,11 +51,11 @@ export async function sendHtml({
   if (cc) {
     emailOpts.cc = cc;
   }
-
   try {
-    const rs = await getMailGunClient().messages.create(domain, emailOpts);
+    const emailConfigure = await getSystemSetting('EMAIL_SYSTEM');
+    const rs = await getEmailClient(emailConfigure).send(emailOpts);
     emailLog.info(`Send Email Resp: ${JSON.stringify(rs)}`);
-    db.EmailSend.create({
+    await db.EmailSend.create({
       from: from,
       to: to,
       cc: cc || "",
@@ -79,7 +70,7 @@ export async function sendHtml({
     return true;
   } catch (error) {
     sendErrorMessage(error.stack).then();
-    db.EmailSend.create({
+    await db.EmailSend.create({
       from: from,
       to: to,
       cc: cc || "",
@@ -94,19 +85,6 @@ export async function sendHtml({
     emailLog.error(error.message, error);
     return false;
   }
-}
-
-export async function resendEmail(emailId) {
-  const email = await db.EmailSend.findByPk(emailId);
-  const { from, to, cc, bcc, subject } = email;
-  const html = email.content;
-  return getMailGunClient().messages.create(domain, { from, to, cc, bcc, subject, html })
-    .then((t) => {
-      email.status = 1;
-      email.retry += 1;
-      email.api_response = JSON.stringify(t);
-      return email.save();
-    });
 }
 
 export function sendRegister(email, displayName, url) {

@@ -1,4 +1,4 @@
-import EventEmitter from "events";
+// import EventEmitter from "events";
 import { eventLog } from "../config/winston";
 import db from "../db/models";
 import { INVENTORY_TYPE } from "../db/models/inventory/inventory";
@@ -9,7 +9,7 @@ export const INVENTORY_EVENT = Object.freeze({
   UPDATE: "inventory:update_inventory_summary",
   DELETE: "inventory:delete_inventory_summary"
 });
-export const inventoryEmitter = new EventEmitter();
+// export const inventoryEmitter = new EventEmitter();
 
 
 export async function unitBaseAndSumQuantity(productId, unitId, quantity, transaction) {
@@ -96,12 +96,12 @@ export async function createInventorySummary(inventory) {
   }
 }
 
-inventoryEmitter.on(INVENTORY_EVENT.CREATE, (inventory) => {
-  eventLog.info(`Event inventory:create_inventory_summary ${JSON.stringify(inventory)}`);
-  setImmediate(async () => {
-    await createInventorySummary(inventory);
-  });
-});
+// inventoryEmitter.on(INVENTORY_EVENT.CREATE, (inventory) => {
+//   eventLog.info(`Event inventory:create_inventory_summary ${JSON.stringify(inventory)}`);
+//   setImmediate(async () => {
+//     await createInventorySummary(inventory);
+//   });
+// });
 
 export async function updateInventorySummaryOld({ inventoryOld }) {
   const transaction = await db.sequelize.transaction();
@@ -193,13 +193,13 @@ export async function updateInventorySummaryNew({ inventoryNew }) {
   }
 }
 
-inventoryEmitter.on(INVENTORY_EVENT.UPDATE, ({ inventoryOld, inventoryNew }) => {
-  eventLog.info(`Event inventory:update_inventory_summary ${JSON.stringify({ inventoryOld, inventoryNew })}`);
-  setImmediate(async () => {
-    await updateInventorySummaryOld({ inventoryOld });
-    await updateInventorySummaryNew({ inventoryNew });
-  });
-});
+// inventoryEmitter.on(INVENTORY_EVENT.UPDATE, ({ inventoryOld, inventoryNew }) => {
+//   eventLog.info(`Event inventory:update_inventory_summary ${JSON.stringify({ inventoryOld, inventoryNew })}`);
+//   setImmediate(async () => {
+//     await updateInventorySummaryOld({ inventoryOld });
+//     await updateInventorySummaryNew({ inventoryNew });
+//   });
+// });
 
 export async function deleteInventorySummary(inventory) {
   const transaction = await db.sequelize.transaction();
@@ -238,9 +238,9 @@ export async function deleteInventorySummary(inventory) {
   }
 }
 
-inventoryEmitter.on(INVENTORY_EVENT.DELETE, (inventory) => {
-  eventLog.info(`Event inventory:delete_inventory_summary ${JSON.stringify(inventory)}`);
-  setImmediate(async () => {
-    await deleteInventorySummary(inventory);
-  });
-});
+// inventoryEmitter.on(INVENTORY_EVENT.DELETE, (inventory) => {
+//   eventLog.info(`Event inventory:delete_inventory_summary ${JSON.stringify(inventory)}`);
+//   setImmediate(async () => {
+//     await deleteInventorySummary(inventory);
+//   });
+// });
