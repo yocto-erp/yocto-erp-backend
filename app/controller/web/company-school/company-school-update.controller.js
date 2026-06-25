@@ -1,4 +1,5 @@
 import express from 'express';
+import fs from 'fs';
 import { hasPermission, isAuthenticated } from '../../middleware/permission';
 import {
   downloadCompanySchoolUpdate,
@@ -9,8 +10,6 @@ import {
 } from '../../../service/company-school/company-school-update.service';
 import { PERMISSION } from '../../../db/models/acl/acl-action';
 import { pagingParse } from '../../middleware/paging.middleware';
-import { generatePDF } from '../../../service/student/student-monthly-fee.service';
-import fs from 'fs';
 
 const router = express.Router();
 

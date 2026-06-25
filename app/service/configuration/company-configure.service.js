@@ -14,11 +14,11 @@ export async function getCompanyConfig(user) {
   });
   return {
     ...company.toJSON(),
-    schoolUpdate: {
+    schoolUpdate: schoolUpdate ? {
       ...schoolUpdate,
       level: schoolUpdate.level ? JSON.parse(schoolUpdate.level) : [],
       region: schoolUpdate.region ? JSON.parse(schoolUpdate.region) : []
-    }
+    } : null
   };
 }
 

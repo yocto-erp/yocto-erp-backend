@@ -10,9 +10,6 @@ import UserActivate from './user/user-activate';
 import SystemProperty from './system-property';
 import databaseConfig from '../../config/database';
 import UserResetPassword from './user/user-reset-password';
-import Company from './company/company';
-import CompanyPerson from './company/company-person';
-import CompanyShop from './company/company-shop';
 import Cost from './cost/cost';
 import CostPurpose from './cost/cost-purpose';
 import CostAsset from './cost/cost-asset';
@@ -32,7 +29,6 @@ import InventorySummarySerial from './inventory/inventory-summary-serial';
 import Tagging from './tagging/tagging';
 import TaggingItem from './tagging/tagging-item';
 import TaggingItemType from './tagging/tagging-item-type';
-import CompanyConfigure from './company/company-configure';
 import Template from './template/template';
 import TemplateType from './template/template-type';
 import TemplateTypePlugin from './template/template-type-plugin';
@@ -67,8 +63,8 @@ import { initProductModel } from './product';
 import { initProjectModel } from './project';
 import { initFormModel } from './form';
 import { initChallengeModel } from './auth';
-import CompanySchoolUpdate from './company/company-school-update';
 import { initNoteModel } from './note';
+import { initCompanyModel } from './company';
 
 
 const env = process.env.NODE_ENV || 'development';
@@ -92,11 +88,7 @@ const models = {
   ACLModule: ACLModule.init(sequelize),
 
   // Company
-  Company: Company.init(sequelize),
-  CompanySchoolUpdate: CompanySchoolUpdate.init(sequelize),
-  CompanyPerson: CompanyPerson.init(sequelize),
-  CompanyShop: CompanyShop.init(sequelize),
-  CompanyConfigure: CompanyConfigure.init(sequelize),
+  ...initCompanyModel(sequelize),
 
   // Cost
   Cost: Cost.init(sequelize),

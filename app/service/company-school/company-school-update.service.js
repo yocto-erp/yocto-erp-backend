@@ -41,26 +41,40 @@ export async function getCompanySchoolUpdateById(id) {
 }
 
 export async function saveCompanySchoolUpdate(user, form) {
-  return db.CompanySchoolUpdate.create({
-    region: JSON.stringify(form.region),
-    joinedDate: form.joinedDate ? form.joinedDate : null,
-    fullNameOwner: form.fullNameOwner ? form.fullNameOwner : null,
-    fullNameManage: form.fullNameManage ? form.fullNameManage : null,
-    level: JSON.stringify(form.level),
-    typeOrganization: form.typeOrganization ? form.typeOrganization : null,
-    legalStructure: form.legalStructure ? form.legalStructure : null,
-    studentSize: form.studentSize ? form.studentSize : null,
-    numberWorker: form.numberWorker ? form.numberWorker : null,
-    organizationalStructure: form.organizationalStructure ? form.organizationalStructure : null,
-    infoClass: form.infoClass ? form.infoClass : null,
-    methodTeacher: form.methodTeacher ? form.methodTeacher : null,
-    methodSchool: form.methodSchool ? form.methodSchool : null,
-    descriptionLastYear: form.descriptionLastYear ? form.descriptionLastYear : null,
-    demandThisYear: form.demandThisYear ? form.demandThisYear : null,
-    suggestion: form.suggestion ? form.suggestion : null,
-    lastUpdated: new Date(),
-    companyId: user.companyId
-  });
+  const transaction = await db.sequelize.transaction();
+  try {
+    const schoolUpdate = await db.CompanySchoolUpdate.create({
+      region: JSON.stringify(form.region),
+      joinedDate: form.joinedDate ? form.joinedDate : null,
+      fullNameOwner: form.fullNameOwner ? form.fullNameOwner : null,
+      fullNameManage: form.fullNameManage ? form.fullNameManage : null,
+      level: JSON.stringify(form.level),
+      typeOrganization: form.typeOrganization ? form.typeOrganization : null,
+      legalStructure: form.legalStructure ? form.legalStructure : null,
+      studentSize: form.studentSize ? form.studentSize : null,
+      numberWorker: form.numberWorker ? form.numberWorker : null,
+      organizationalStructure: form.organizationalStructure ? form.organizationalStructure : null,
+      infoClass: form.infoClass ? form.infoClass : null,
+      methodTeacher: form.methodTeacher ? form.methodTeacher : null,
+      methodSchool: form.methodSchool ? form.methodSchool : null,
+      descriptionLastYear: form.descriptionLastYear ? form.descriptionLastYear : null,
+      demandThisYear: form.demandThisYear ? form.demandThisYear : null,
+      suggestion: form.suggestion ? form.suggestion : null,
+      lastUpdated: new Date(),
+      companyId: user.companyId
+    }, { transaction });
+    console.log(`Create School Update: ${JSON.stringify(schoolUpdate)}`);
+    await db.CompanySchool.upsert({
+      companyId: user.companyId,
+      schoolId: schoolUpdate.id
+    }, { transaction });
+    await transaction.commit();
+    return schoolUpdate;
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
+
 }
 
 export function listCompanySchoolUpdate(user, query, { order, offset, limit }) {
@@ -76,11 +90,6 @@ export function listCompanySchoolUpdate(user, query, { order, offset, limit }) {
           },
           {
             fullNameManage: {
-              [Op.like]: `%${query.search}%`
-            }
-          },
-          {
-            region: {
               [Op.like]: `%${query.search}%`
             }
           },
