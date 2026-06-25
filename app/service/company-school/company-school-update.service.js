@@ -8,6 +8,13 @@ import { badRequest, FIELD_ERROR } from '../../config/error';
 
 const { Op } = db.Sequelize;
 
+const mappingSchool = (school) => ({
+  ...school,
+  level: school.level ? JSON.parse(school.level) : [],
+  region: school.region ? JSON.parse(school.region) : [],
+  extraData: school.extraData ? JSON.parse(school.extraData) : {}
+});
+
 export async function getCompanySchoolUpdate(user) {
   const rs = await db.CompanySchoolUpdate.findOne({
     where: {
@@ -19,11 +26,7 @@ export async function getCompanySchoolUpdate(user) {
   if (!rs) {
     throw badRequest('SCHOOL', FIELD_ERROR.INVALID, 'Not found any school information');
   }
-  return {
-    ...rs,
-    level: rs.level ? JSON.parse(rs.level) : [],
-    region: rs.region ? JSON.parse(rs.region) : []
-  };
+  return mappingSchool(rs);
 }
 
 export async function getCompanySchoolUpdateById(id) {
@@ -61,7 +64,8 @@ export async function saveCompanySchoolUpdate(user, form) {
       demandThisYear: form.demandThisYear ? form.demandThisYear : null,
       suggestion: form.suggestion ? form.suggestion : null,
       lastUpdated: new Date(),
-      companyId: user.companyId
+      companyId: user.companyId,
+      extraData: JSON.stringify(form.extraData || {})
     }, { transaction });
     console.log(`Create School Update: ${JSON.stringify(schoolUpdate)}`);
     await db.CompanySchool.upsert({
@@ -84,12 +88,12 @@ export function listCompanySchoolUpdate(user, query, { order, offset, limit }) {
       where = {
         [Op.or]: [
           {
-            fullNameOwner: {
+            '$school.fullNameOwner$': {
               [Op.like]: `%${query.search}%`
             }
           },
           {
-            fullNameManage: {
+            '$school.fullNameManage$': {
               [Op.like]: `%${query.search}%`
             }
           },
@@ -99,19 +103,28 @@ export function listCompanySchoolUpdate(user, query, { order, offset, limit }) {
       };
     }
   }
-  // where.companyId = user.companyId;
-  return db.CompanySchoolUpdate.findAndCountAll({
-    order,
+  return db.CompanySchool.findAndCountAll({
+    order: [['schoolId', 'DESC']],
     where,
     offset,
     include: [
       {
         model: db.Company,
-        as: 'company'
+        as: 'company', required: true
+      },
+      {
+        model: db.CompanySchoolUpdate,
+        as: 'school', required: true
       }
     ],
     limit
-  });
+  }).then(resp => ({
+    rows: resp.rows.map(t => ({
+      company: t.company,
+      school: mappingSchool(t.school.get({ plain: true }))
+    })),
+    count: resp.count
+  }));
 }
 
 

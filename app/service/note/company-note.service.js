@@ -2,9 +2,9 @@ import db from '../../db/models';
 import { badRequest, FIELD_ERROR } from '../../config/error';
 import { isArrayHasLength } from '../../util/func.util';
 
-export function listNoteCompany(user, query) {
+export function listNoteCompany(user, query, { offset, limit }) {
   const { companyId } = query;
-  return db.CompanyNote.findAll({
+  return db.CompanyNote.findAndCountAll({
     where: {
       companyId: companyId
     },
@@ -12,21 +12,24 @@ export function listNoteCompany(user, query) {
       {
         model: db.Note,
         as: 'note',
-        include: [{
-          model: db.User,
-          as: 'createdBy',
-          attributes: ['id', 'displayName', 'email']
-        },
+        include: [
+          {
+            model: db.User,
+            as: 'createdBy',
+            attributes: ['id', 'displayName', 'email']
+          },
           {
             model: db.Asset,
             as: 'assets'
           }]
       }
     ],
-    order: [[{ model: db.Note, as: "note" }, "id", "desc"]]
-  }).then((resp) => {
-    return resp.map(t => t.note);
-  });
+    offset, limit,
+    order: [['noteId', 'desc']]
+  }).then((resp) => ({
+    count: resp.count,
+    rows: resp.rows.map(t => t.note)
+  }));
 }
 
 export async function getNoteCompany(user, nId) {
@@ -147,6 +150,7 @@ export async function updateNoteCompany(noteId, user, updateForm) {
     throw error;
   }
 }
+
 export async function removeNoteCompany(user, noteId) {
   const checkNote = await db.Note.findByPk(noteId);
   if (!checkNote) {

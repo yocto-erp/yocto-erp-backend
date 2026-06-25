@@ -24,7 +24,8 @@ export default class CompanySchoolUpdate extends Sequelize.Model {
         demandThisYear: {type: DataTypes.TEXT},
         suggestion: {type: DataTypes.TEXT},
         lastUpdated: {type: DataTypes.DATE},
-        companyId: {type: DataTypes.BIGINT}
+        companyId: {type: DataTypes.BIGINT},
+        extraData: {type: DataTypes.TEXT},
       },
       {
         tableName: 'company_school_update',

@@ -8,16 +8,18 @@ import {
   removeNoteCompany,
   updateNoteCompany
 } from '../../../service/note/company-note.service';
+import { pagingParse } from '../../middleware/paging.middleware';
 
 const companyNote = express.Router();
 
 companyNote.get(
   '/',
   [
-    hasPermission(PERMISSION.COMPANY_SCHOOL.READ)
+    hasPermission(PERMISSION.COMPANY_SCHOOL.READ),
+    pagingParse({ column: 'id', dir: 'asc' })
   ],
   (req, res, next) => {
-    return listNoteCompany(req.user, req.query)
+    return listNoteCompany(req.user, req.query, req.paging)
       .then((result) => res.status(200).json(result))
       .catch(next);
   }

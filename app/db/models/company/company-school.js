@@ -16,4 +16,10 @@ export default class CompanySchool extends Sequelize.Model {
         sequelize, ...opts
       });
   }
+
+  static associate(models) {
+    this.belongsTo(models.Company, { foreignKey: 'companyId', as: 'company' });
+    this.belongsTo(models.CompanySchoolUpdate, { foreignKey: 'schoolId', as: 'school' });
+  }
+
 }
