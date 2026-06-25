@@ -9,11 +9,16 @@ export async function getCompanyConfig(user) {
     where: {
       companyId: user.companyId
     },
-    order: [['id', 'DESC']]
+    order: [['id', 'DESC']],
+    raw: true
   });
   return {
     ...company.toJSON(),
-    schoolUpdate: schoolUpdate
+    schoolUpdate: {
+      ...schoolUpdate,
+      level: schoolUpdate.level ? JSON.parse(schoolUpdate.level) : [],
+      region: schoolUpdate.region ? JSON.parse(schoolUpdate.region) : []
+    }
   };
 }
 
@@ -28,7 +33,7 @@ export async function saveCompanyConfig(
     establishedDate,
     email,
     website,
-    facebook,
+    facebook
   }
 ) {
   const existed = await getCompanyConfig(user);
@@ -39,9 +44,9 @@ export async function saveCompanyConfig(
     where: {
       publicId,
       id: {
-        [Op.ne]: user.companyId,
-      },
-    },
+        [Op.ne]: user.companyId
+      }
+    }
   });
   if (existedCompanyWithPublicId) {
     throw badRequest('publicId', FIELD_ERROR.EXISTED, 'Public Id existed');
@@ -57,7 +62,7 @@ export async function saveCompanyConfig(
     establishedDate: establishedDate,
     email: email,
     website: website,
-    facebook: facebook,
+    facebook: facebook
   }, {
     where: {
       id: user.companyId

@@ -1,20 +1,29 @@
 import path from 'path';
 import fs from 'fs';
+import ExcelJS from 'exceljs';
 import db from '../../db/models';
-import { writeFileStream } from '../../util/file.util';
 import { BIRTHDAY_FORMAT, formatDateTime } from '../template/template.util';
 import { appLog } from '../../config/winston';
-import ExcelJS from 'exceljs';
+import { badRequest, FIELD_ERROR } from '../../config/error';
 
 const { Op } = db.Sequelize;
 
 export async function getCompanySchoolUpdate(user) {
-  return db.CompanySchoolUpdate.findOne({
+  const rs = await db.CompanySchoolUpdate.findOne({
     where: {
-      companyId: user.companyId,
+      companyId: user.companyId
     },
     order: [['id', 'DESC']],
+    raw: true
   });
+  if (!rs) {
+    throw badRequest('SCHOOL', FIELD_ERROR.INVALID, 'Not found any school information');
+  }
+  return {
+    ...rs,
+    level: rs.level ? JSON.parse(rs.level) : [],
+    region: rs.region ? JSON.parse(rs.region) : []
+  };
 }
 
 export async function getCompanySchoolUpdateById(id) {
@@ -32,17 +41,16 @@ export async function getCompanySchoolUpdateById(id) {
 }
 
 export async function saveCompanySchoolUpdate(user, form) {
-  // eslint-disable-next-line no-return-await
-  return await db.CompanySchoolUpdate.create({
-    region: form.region ? form.region : null ,
+  return db.CompanySchoolUpdate.create({
+    region: JSON.stringify(form.region),
     joinedDate: form.joinedDate ? form.joinedDate : null,
     fullNameOwner: form.fullNameOwner ? form.fullNameOwner : null,
     fullNameManage: form.fullNameManage ? form.fullNameManage : null,
-    level: form.level ? form.level : null,
+    level: JSON.stringify(form.level),
     typeOrganization: form.typeOrganization ? form.typeOrganization : null,
     legalStructure: form.legalStructure ? form.legalStructure : null,
     studentSize: form.studentSize ? form.studentSize : null,
-    numberWorker: form.numberWorker ?  form.numberWorker : null,
+    numberWorker: form.numberWorker ? form.numberWorker : null,
     organizationalStructure: form.organizationalStructure ? form.organizationalStructure : null,
     infoClass: form.infoClass ? form.infoClass : null,
     methodTeacher: form.methodTeacher ? form.methodTeacher : null,
@@ -63,22 +71,22 @@ export function listCompanySchoolUpdate(user, query, { order, offset, limit }) {
         [Op.or]: [
           {
             fullNameOwner: {
-              [Op.like]: `%${query.search}%`,
-            },
+              [Op.like]: `%${query.search}%`
+            }
           },
           {
             fullNameManage: {
-              [Op.like]: `%${query.search}%`,
-            },
+              [Op.like]: `%${query.search}%`
+            }
           },
           {
             region: {
-              [Op.like]: `%${query.search}%`,
-            },
+              [Op.like]: `%${query.search}%`
+            }
           },
           { '$company.name$': { [Op.like]: `%${query.search}%` } },
           { '$company.englishName$': { [Op.like]: `%${query.search}%` } }
-        ],
+        ]
       };
     }
   }
@@ -90,15 +98,15 @@ export function listCompanySchoolUpdate(user, query, { order, offset, limit }) {
     include: [
       {
         model: db.Company,
-        as: 'company',
-      },
+        as: 'company'
+      }
     ],
-    limit,
+    limit
   });
 }
 
 
-const RENDER_FOLDER = path.resolve(__dirname, "..", "..", "renderFolder");
+const RENDER_FOLDER = path.resolve(__dirname, '..', '..', 'renderFolder');
 if (!fs.existsSync(`${RENDER_FOLDER}/`)) {
   fs.mkdirSync(`${RENDER_FOLDER}/`);
 }
@@ -123,8 +131,8 @@ export async function downloadCompanySchoolUpdate(
   };
 
   const workbook = new ExcelJS.stream.xlsx.WorkbookWriter(options);
-  const worksheet = workbook.addWorksheet("Report");
-  worksheet.columns =  [
+  const worksheet = workbook.addWorksheet('Report');
+  worksheet.columns = [
     { header: 'Name', key: 'name' },
     { header: 'English Name', key: 'englishName' },
     { header: 'Phone Number', key: 'gsm' },
@@ -179,7 +187,7 @@ export async function downloadCompanySchoolUpdate(
     }
     if (query.ids && query.ids.length) {
       where.id = {
-        [Op.in]: query.ids.split(",")
+        [Op.in]: query.ids.split(',')
       };
     }
   }
@@ -196,7 +204,8 @@ export async function downloadCompanySchoolUpdate(
   if (listCompanySchool.length) {
     for (let i = 0; i < listCompanySchool.length; i += 1) {
       // eslint-disable-next-line no-await-in-loop
-      const {company, region, joinedDate, fullNameOwner, fullNameManage,
+      const {
+        company, region, joinedDate, fullNameOwner, fullNameManage,
         level,
         typeOrganization,
         legalStructure,
@@ -208,7 +217,8 @@ export async function downloadCompanySchoolUpdate(
         methodSchool,
         descriptionLastYear,
         demandThisYear,
-        suggestion} = listCompanySchool[i];
+        suggestion
+      } = listCompanySchool[i];
       const rowItem = {
         name: company.name,
         englishName: company.englishName,

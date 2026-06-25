@@ -203,7 +203,7 @@ export async function register(registerForm, origin) {
         },
         { transaction }
       );
-      await userFirstOnboard(newUser, transaction);
+      await userFirstOnboard({ user: newUser, permissions: ALL_PERMISSIONS }, transaction);
     } else {
       currentUsername.pwd = db.User.hashPassword(registerForm.password);
       currentUsername.displayName = `${registerForm.firstName} ${registerForm.lastName}`;
@@ -227,8 +227,6 @@ export async function register(registerForm, origin) {
 }
 
 export async function registerSchool(registerForm, origin) {
-  appLog.info(`${JSON.stringify(registerForm)}`);
-
   const currentUsername = await db.User.findOne({
     where: { email: registerForm.email }
   });
@@ -280,6 +278,11 @@ export async function registerSchool(registerForm, origin) {
         },
         { transaction }
       );
+      await userFirstOnboard({
+        user: newUser, permissions: [], company: {
+          category: COMPANY_CATEGORY.SCHOOL
+        }
+      }, transaction);
     } else {
       currentUsername.pwd = db.User.hashPassword(registerForm.password);
       currentUsername.displayName = `${registerForm.firstName} ${registerForm.lastName}`;
@@ -430,4 +433,28 @@ export async function createCompanyOnboard(user, createForm) {
     await transaction.rollback();
     throw e;
   }
+}
+
+export async function onboardCompany(user, createForm) {
+  await db.Company.update(
+    {
+      name: createForm.name,
+      gsm: createForm.gsm,
+      address: createForm.address,
+      remark: createForm.remark,
+      englishName: createForm.englishName,
+      category:
+        USER_ORIGIN.NORMAL === Number(user.origin)
+          ? COMPANY_CATEGORY.NORMAL
+          : COMPANY_CATEGORY.SCHOOL
+    },
+    {
+      where: {
+        id: user.companyId
+      }
+    }
+  );
+
+
+  return { ok: 1 };
 }
