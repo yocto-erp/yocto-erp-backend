@@ -162,7 +162,7 @@ export async function downloadCompanySchoolUpdate(
       ];
     }
     if (query.ids && query.ids.length) {
-      where.id = {
+      where.schoolId = {
         [Op.in]: query.ids.split(',')
       };
     }
