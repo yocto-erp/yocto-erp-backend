@@ -235,6 +235,8 @@ export async function downloadCompanySchoolUpdate(
       const {
         company, school
       } = listCompanySchool[i];
+      const convSchool = mappingSchool(school.get({ plain: true }));
+      console.log(convSchool);
       const {
         region, joinedDate, fullNameOwner, fullNameManage,
         level,
@@ -249,7 +251,7 @@ export async function downloadCompanySchoolUpdate(
         descriptionLastYear,
         demandThisYear,
         suggestion
-      } = mappingSchool(school);
+      } = convSchool;
       const rowItem = {
         name: company.name,
         englishName: company.englishName,
