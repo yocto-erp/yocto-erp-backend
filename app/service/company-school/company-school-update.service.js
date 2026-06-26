@@ -1,14 +1,13 @@
 import path from 'path';
 import fs from 'fs';
 import ExcelJS from 'exceljs';
+import { Op } from 'sequelize';
 import db from '../../db/models';
 import { BIRTHDAY_FORMAT, formatDateTime } from '../template/template.util';
 import { appLog } from '../../config/winston';
 import { badRequest, FIELD_ERROR } from '../../config/error';
 
-const { Op } = db.Sequelize;
-
-const mappingSchool = (school) => ({
+export const mappingSchool = (school) => ({
   ...school,
   level: school.level ? JSON.parse(school.level) : [],
   region: school.region ? JSON.parse(school.region) : [],
@@ -30,7 +29,7 @@ export async function getCompanySchoolUpdate(user) {
 }
 
 export async function getCompanySchoolUpdateById(id) {
-  return db.CompanySchoolUpdate.findOne({
+  const rs = await db.CompanySchoolUpdate.findOne({
     where: {
       id: id
     },
@@ -41,6 +40,13 @@ export async function getCompanySchoolUpdateById(id) {
       }
     ]
   });
+  if (!rs) {
+    throw badRequest('SCHOOL', FIELD_ERROR.INVALID, 'Not found any school information');
+  }
+  return {
+    ...mappingSchool(rs.get({ plain: true })),
+    company: rs.company
+  };
 }
 
 export async function saveCompanySchoolUpdate(user, form) {
@@ -81,7 +87,7 @@ export async function saveCompanySchoolUpdate(user, form) {
 
 }
 
-export function listCompanySchoolUpdate(user, query, { order, offset, limit }) {
+export function listCompanySchoolUpdate(user, query, { offset, limit }) {
   let where = {};
   if (query) {
     if (query.search && query.search.length) {
@@ -120,6 +126,7 @@ export function listCompanySchoolUpdate(user, query, { order, offset, limit }) {
     limit
   }).then(resp => ({
     rows: resp.rows.map(t => ({
+      id: t.schoolId,
       company: t.company,
       school: mappingSchool(t.school.get({ plain: true }))
     })),
@@ -136,7 +143,46 @@ if (!fs.existsSync(`${RENDER_FOLDER}/`)) {
 export async function downloadCompanySchoolUpdate(
   user, query
 ) {
-
+  const where = {};
+  if (query) {
+    if (query.search && query.search.length) {
+      where[Op.or] = [
+        {
+          '$school.fullNameOwner$': {
+            [Op.like]: `%${query.search}%`
+          }
+        },
+        {
+          '$school.fullNameManage$': {
+            [Op.like]: `%${query.search}%`
+          }
+        },
+        { '$company.name$': { [Op.like]: `%${query.search}%` } },
+        { '$company.englishName$': { [Op.like]: `%${query.search}%` } }
+      ];
+    }
+    if (query.ids && query.ids.length) {
+      where.id = {
+        [Op.in]: query.ids.split(',')
+      };
+    }
+  }
+  const listCompanySchool = await db.CompanySchool.findAll({
+    where,
+    include: [
+      {
+        model: db.CompanySchoolUpdate,
+        as: 'school'
+      },
+      {
+        model: db.Company,
+        as: 'company'
+      }
+    ]
+  });
+  if (!listCompanySchool.length) {
+    throw badRequest('SCHOOL', FIELD_ERROR.INVALID, 'Not found any school information');
+  }
   const fileName = `list_school_${new Date().getTime()}.xlsx`;
   const fileSave = `${RENDER_FOLDER}/${fileName}`;
   const rs = {
@@ -182,52 +228,15 @@ export async function downloadCompanySchoolUpdate(
     { header: 'Suggestion', key: 'suggestion' }
   ];
 
-  let where = {};
-  if (query) {
-    if (query.search && query.search.length) {
-      where = {
-        [Op.or]: [
-          {
-            fullNameOwner: {
-              [Op.like]: `%${query.search}%`
-            }
-          },
-          {
-            fullNameManage: {
-              [Op.like]: `%${query.search}%`
-            }
-          },
-          {
-            region: {
-              [Op.like]: `%${query.search}%`
-            }
-          },
-          { '$company.name$': { [Op.like]: `%${query.search}%` } },
-          { '$company.englishName$': { [Op.like]: `%${query.search}%` } }
-        ]
-      };
-    }
-    if (query.ids && query.ids.length) {
-      where.id = {
-        [Op.in]: query.ids.split(',')
-      };
-    }
-  }
-  const listCompanySchool = await db.CompanySchoolUpdate.findAll({
-    where,
-    include: [
-      {
-        model: db.Company,
-        as: 'company'
-      }
-    ]
-  });
+
   rs.total = listCompanySchool.length;
   if (listCompanySchool.length) {
     for (let i = 0; i < listCompanySchool.length; i += 1) {
-      // eslint-disable-next-line no-await-in-loop
       const {
-        company, region, joinedDate, fullNameOwner, fullNameManage,
+        company, school
+      } = listCompanySchool[i];
+      const {
+        region, joinedDate, fullNameOwner, fullNameManage,
         level,
         typeOrganization,
         legalStructure,
@@ -240,7 +249,7 @@ export async function downloadCompanySchoolUpdate(
         descriptionLastYear,
         demandThisYear,
         suggestion
-      } = listCompanySchool[i];
+      } = mappingSchool(school);
       const rowItem = {
         name: company.name,
         englishName: company.englishName,
@@ -251,11 +260,11 @@ export async function downloadCompanySchoolUpdate(
         establishedDate: formatDateTime(company.establishedDate, BIRTHDAY_FORMAT),
         website: company.website,
         facebook: company.facebook,
-        region,
+        region: region.map(t => t.name).join(','),
         joinedDate: formatDateTime(joinedDate, BIRTHDAY_FORMAT),
         fullNameOwner,
         fullNameManage,
-        level,
+        level: level.map(t => t.name).join(','),
         typeOrganization,
         legalStructure,
         studentSize,

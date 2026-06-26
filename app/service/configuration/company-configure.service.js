@@ -1,5 +1,6 @@
 import db from '../../db/models';
 import { badRequest, FIELD_ERROR } from '../../config/error';
+import { mappingSchool } from '../company-school/company-school-update.service';
 
 const { Op } = db.Sequelize;
 
@@ -14,11 +15,7 @@ export async function getCompanyConfig(user) {
   });
   return {
     ...company.toJSON(),
-    schoolUpdate: schoolUpdate ? {
-      ...schoolUpdate,
-      level: schoolUpdate.level ? JSON.parse(schoolUpdate.level) : [],
-      region: schoolUpdate.region ? JSON.parse(schoolUpdate.region) : []
-    } : null
+    schoolUpdate: schoolUpdate ? mappingSchool(schoolUpdate) : null
   };
 }
 
