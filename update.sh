@@ -1,5 +1,7 @@
+#!/bin/bash
+source ~/.nvm/nvm.sh
+nvm use 24
 git pull
-nvm use 20.11.0
 npm install
 npm run build
 systemctl restart yocto
