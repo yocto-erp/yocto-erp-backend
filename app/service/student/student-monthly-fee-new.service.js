@@ -1,22 +1,22 @@
-import { v4 as uuidv4 } from "uuid";
-import Mustache from "mustache";
-import db from "../../db/models";
-import { badRequest, FIELD_ERROR } from "../../config/error";
-import { hex2binary } from "../../util/string.util";
-import { formatDateTime, formatTemplateMoney, personToPrintData } from "../template/template.util";
-import { templateRenderPDF } from "../template/template-render.service";
-import { getEmailTemplate } from "../template/template-email.service";
-import { EMAIL_ATTACHMENT_TYPE } from "../../db/models/email/email-attachment";
-import { addEmailQueue } from "../email/company-email.service";
-import { COST_TYPE } from "../../db/models/cost/cost";
-import { updateItemTags } from "../tagging/tagging.service";
-import { TAGGING_TYPE } from "../../db/models/tagging/tagging-item-type";
-import { addTaggingQueue } from "../../queue/tagging.queue";
+import { v4 as uuidv4 } from 'uuid';
+import Mustache from 'mustache';
+import db from '../../db/models';
+import { badRequest, FIELD_ERROR } from '../../config/error';
+import { hex2binary } from '../../util/string.util';
+import { formatDateTime, formatTemplateMoney, personToPrintData } from '../template/template.util';
+import { templateRenderPDF } from '../template/template-render.service';
+import { getEmailTemplate } from '../template/template-email.service';
+import { EMAIL_ATTACHMENT_TYPE } from '../../db/models/email/email-attachment';
+import { addEmailQueue } from '../email/company-email.service';
+import { COST_TYPE } from '../../db/models/cost/cost';
+import { updateItemTags } from '../tagging/tagging.service';
+import { TAGGING_TYPE } from '../../db/models/tagging/tagging-item-type';
+import { addTaggingQueue } from '../../queue/tagging.queue';
 
 const { Op } = db.Sequelize;
 
 export async function listStudentMonthlyFee(query, order, offset, limit, user) {
-  console.log(query);
+  console.log('listStudentMonthlyFee: ', query);
   const { search, month: monthStr, isPaid, class: studentClass } = query;
   const where = {};
   let wherePerson = {};
@@ -24,24 +24,24 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
     wherePerson = {
       [Op.or]: [
         {
-          "$student.child.firstName$": {
+          '$student.child.firstName$': {
             [Op.like]: `%${search}%`
           }
         }, {
-          "$student.child.lastName$": {
+          '$student.child.lastName$': {
             [Op.like]: `%${search}%`
           }
         }, {
-          "$student.alias$": {
+          '$student.alias$': {
             [Op.like]: `%${search}%`
           }
         }
       ]
     };
   }
-  if (isPaid === "1") {
+  if (isPaid === '1') {
     where.paidDate = null;
-  } else if (isPaid === "2") {
+  } else if (isPaid === '2') {
     where.paidDate = {
       [Op.ne]: null
     };
@@ -50,16 +50,17 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
   if (studentClass) {
     wherePerson.classId = studentClass.id;
   }
+
   if (monthStr && monthStr.year && monthStr.month) {
     where.monthFee = monthStr.month;
     where.yearFee = monthStr.year;
   }
   where.companyId = user.companyId;
-  console.log(isPaid, where);
+
   const _order = order.map(t => {
     const [col, dir] = t;
-    if (col === "lastName") {
-      return [{ model: db.Student, as: "student" }, { model: db.Person, as: "child" }, col, dir];
+    if (col === 'lastName') {
+      return [{ model: db.Student, as: 'student' }, { model: db.Person, as: 'child' }, col, dir];
     }
     return t;
   });
@@ -70,14 +71,14 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
     },
     include: [
       {
-        model: db.Student, as: "student",
+        model: db.Student, as: 'student',
         required: true,
         include: [
-          { model: db.Person, as: "child", required: true }
+          { model: db.Person, as: 'child', required: true }
         ]
       },
       {
-        model: db.StudentClass, as: "class"
+        model: db.StudentClass, as: 'class'
       }
     ],
     offset,
@@ -85,7 +86,7 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
   });
   const { rows, count } = resp;
   const response = rows.map(r => {
-    const uuid = Buffer.from(r.id, "hex").toString("hex");
+    const uuid = Buffer.from(r.id, 'hex').toString('hex');
     const rs = r.get({ plain: true });
     rs.id = uuid;
     return rs;
@@ -97,7 +98,7 @@ export async function listStudentMonthlyFee(query, order, offset, limit, user) {
 }
 
 export async function getStudentMonthlyFee(sId, user) {
-  const splitIds = sId.split(",");
+  const splitIds = sId.split(',');
   const ids = [];
   for (let i = 0; i < splitIds.length; i += 1) {
     ids.push(splitIds[i]);
@@ -109,23 +110,30 @@ export async function getStudentMonthlyFee(sId, user) {
     },
     include: [
       {
-        model: db.Student, as: "student",
+        model: db.Student, as: 'student',
         include: [
           {
-            model: db.Person, as: "child",
-            attributes: ["id", "firstName", "lastName", "name"]
+            model: db.Person, as: 'child',
+            attributes: ['id', 'firstName', 'lastName', 'name']
           }
         ]
       },
       {
-        model: db.StudentClass, as: "class"
+        model: db.StudentClass, as: 'class'
       }
     ]
   });
   return students.map(r => {
-    const uuid = Buffer.from(r.id, "hex").toString("hex");
+    const uuid = Buffer.from(r.id, 'hex').toString('hex');
     const rs = r.get({ plain: true });
+    console.log(rs)
     rs.id = uuid;
+    try {
+      rs.extraData = JSON.parse(rs.extraData);
+    } catch (e) {
+      rs.extraData = {};
+    }
+
     return rs;
   });
 }
@@ -134,8 +142,8 @@ export async function createStudentMonthlyFee(user, createForm) {
   try {
     if (createForm && createForm.details) {
       for (let i = 0; i < createForm.details.length; i += 1) {
-        const { monthYear: { from, to, numberOfMonths } } = createForm.details[i];
-
+        const studentFee = createForm.details[i];
+        const { monthYear: { from, to, numberOfMonths } } = studentFee;
         const uuidS = hex2binary(uuidv4());
 
         // eslint-disable-next-line no-await-in-loop
@@ -143,37 +151,38 @@ export async function createStudentMonthlyFee(user, createForm) {
           id: uuidS,
           monthFee: from.month,
           yearFee: from.year,
-          scholarShip: createForm.details[i].scholarShip,
-          scholarFee: createForm.details[i].scholarFee,
-          studentId: createForm.details[i].studentId,
+          scholarShip: studentFee.scholarShip,
+          scholarFee: studentFee.scholarFee,
+          studentId: studentFee.studentId,
           companyId: user.companyId,
-          absentDay: createForm.details[i].absentDay,
-          absentDayFee: createForm.details[i].absentDayFee,
-          trialDate: createForm.details[i].trialDate,
-          trialDateFee: createForm.details[i].trialDateFee,
+          absentDay: studentFee.absentDay,
+          absentDayFee: studentFee.absentDayFee,
+          trialDate: studentFee.trialDate || 0,
+          trialDateFee: studentFee.trialDateFee || 0,
           busFee: createForm.details[i].busFee,
           debt: createForm.details[i].debt,
-          mealFee: createForm.details[i].mealFee,
-          otherFee: +createForm.details[i].otherFee,
-          otherDeduceFee: +createForm.details[i].otherDeduceFee,
-          remark: createForm.details[i].remark,
-          feePerMonth: createForm.details[i].feePerMonth,
-          totalAmount: createForm.details[i].totalAmount,
-          studentAbsentDay: createForm.details[i].studentAbsentDay,
-          studentAbsentDayFee: createForm.details[i].studentAbsentDayFee,
+          mealFee: studentFee.mealFee,
+          otherFee: studentFee.otherFee,
+          otherDeduceFee: studentFee.otherDeduceFee,
+          remark: studentFee.remark,
+          feePerMonth: studentFee.feePerMonth,
+          totalAmount: studentFee.totalAmount,
+          studentAbsentDay: studentFee.studentAbsentDay,
+          studentAbsentDayFee: studentFee.studentAbsentDayFee,
           toMonth: to?.month,
           toYear: to?.year,
           numberOfMonths,
           lastUpdatedDate: new Date(),
           lastUpdatedById: user.id,
-          classId: createForm?.class.id
+          classId: studentFee.class.id,
+          extraData: JSON.stringify(studentFee.extraData || {})
         });
       }
     }
     return true;
   } catch (e) {
-    console.log(e);
-    throw badRequest("student", FIELD_ERROR.INVALID, "student Exist");
+    console.error(e);
+    throw badRequest('student', FIELD_ERROR.INVALID, e.message);
   }
 }
 
@@ -183,46 +192,47 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
     const transaction = await db.sequelize.transaction();
     try {
       for (let i = 0; i < updateForm.details.length; i += 1) {
-        const { monthYear: { from, to, numberOfMonths } } = updateForm.details[i];
+        const item = updateForm.details[i];
+        const { monthYear: { from, to, numberOfMonths } } = item;
 
         // eslint-disable-next-line no-await-in-loop
         const studentFee = await db.StudentMonthlyFee.findOne({
           where: {
-            id: Buffer.from(updateForm.details[i].id, "hex"),
+            id: Buffer.from(updateForm.details[i].id, 'hex'),
             companyId: user.companyId
           }, transaction
         });
         if (!studentFee) {
-          throw badRequest("studentFee", FIELD_ERROR.INVALID, `Student Fee not exist`);
+          throw badRequest('studentFee', FIELD_ERROR.INVALID, `Student Fee not exist`);
         }
         // eslint-disable-next-line no-await-in-loop
         await studentFee.update({
           monthFee: from.month,
           yearFee: from.year,
-          scholarShip: updateForm.details[i].scholarShip,
-          scholarFee: updateForm.details[i].scholarFee,
-          studentId: updateForm.details[i].studentId,
-          companyId: user.companyId,
-          absentDay: updateForm.details[i].absentDay,
-          absentDayFee: updateForm.details[i].absentDayFee,
-          trialDate: updateForm.details[i].trialDate,
-          trialDateFee: updateForm.details[i].trialDateFee,
-          busFee: updateForm.details[i].busFee,
-          mealFee: updateForm.details[i].mealFee,
-          otherFee: updateForm.details[i].otherFee,
-          debt: updateForm.details[i].debt,
-          otherDeduceFee: +updateForm.details[i].otherDeduceFee,
-          remark: updateForm.details[i].remark,
-          studentAbsentDay: updateForm.details[i].studentAbsentDay,
-          studentAbsentDayFee: updateForm.details[i].studentAbsentDayFee,
-          feePerMonth: updateForm.details[i].feePerMonth,
-          totalAmount: updateForm.details[i].totalAmount,
+          scholarShip: item.scholarShip,
+          scholarFee: item.scholarFee,
+          studentId: item.studentId,
+          absentDay: item.absentDay,
+          absentDayFee: item.absentDayFee,
+          trialDate: item.trialDate,
+          trialDateFee: item.trialDateFee,
+          busFee: item.busFee,
+          mealFee: item.mealFee,
+          otherFee: item.otherFee,
+          debt: item.debt,
+          otherDeduceFee: item.otherDeduceFee,
+          remark: item.remark,
+          studentAbsentDay: item.studentAbsentDay,
+          studentAbsentDayFee: item.studentAbsentDayFee,
+          feePerMonth: item.feePerMonth,
+          totalAmount: item.totalAmount,
           toMonth: to?.month,
           toYear: to?.year,
           numberOfMonths,
           lastUpdatedDate: new Date(),
           lastUpdatedById: user.id,
-          classId: updateForm?.class?.id
+          classId: item.class.id,
+          extraData: JSON.stringify(item.extraData || {})
         }, { transaction });
       }
       await transaction.commit();
@@ -255,14 +265,14 @@ async function getStudentMonthlyFeeItem(id, companyId) {
       companyId
     }, include: [
       {
-        model: db.Student, as: "student",
+        model: db.Student, as: 'student',
         include: [
           {
-            model: db.Person, as: "child"
+            model: db.Person, as: 'child'
           }, {
-            model: db.Person, as: "father"
+            model: db.Person, as: 'father'
           }, {
-            model: db.Person, as: "mother"
+            model: db.Person, as: 'mother'
           }
         ]
       }
@@ -273,7 +283,7 @@ async function getStudentMonthlyFeeItem(id, companyId) {
 export async function removeStudentMonthlyFee(sId, user) {
   const checkStudent = await getStudentMonthlyFeeItem(sId, user.companyId);
   if (!checkStudent) {
-    throw badRequest("student", FIELD_ERROR.INVALID, "Student fee not found");
+    throw badRequest('student', FIELD_ERROR.INVALID, 'Student fee not found');
   }
 
   return checkStudent.destroy();
@@ -287,15 +297,15 @@ export async function toPrintData(id, companyId) {
       companyId
     }, include: [
       {
-        model: db.Student, as: "student",
+        model: db.Student, as: 'student',
         include: [
-          { model: db.DebtSubjectBalance, as: "debt" },
+          { model: db.DebtSubjectBalance, as: 'debt' },
           {
-            model: db.Person, as: "child"
+            model: db.Person, as: 'child'
           }, {
-            model: db.Person, as: "father"
+            model: db.Person, as: 'father'
           }, {
-            model: db.Person, as: "mother"
+            model: db.Person, as: 'mother'
           }
         ]
       }
@@ -303,7 +313,7 @@ export async function toPrintData(id, companyId) {
   });
 
   const monthStr = `0${fee.monthFee + 1}`;
-  let toMonthStr = "";
+  let toMonthStr = '';
   if (fee.toMonth > 0) {
     toMonthStr = `0${fee.toMonth + 1}`;
     toMonthStr = toMonthStr.substring(toMonthStr.length - 2);
@@ -386,9 +396,9 @@ async function processSendEmailForFee(feeId, emailTemplate, printTemplateId, isP
 
   const emailMessage = {
     from,
-    cc: cc ? cc.join(",") : "",
-    bcc: bcc ? bcc.join(",") : "",
-    to: to.join(","),
+    cc: cc ? cc.join(',') : '',
+    bcc: bcc ? bcc.join(',') : '',
+    to: to.join(','),
     subject: subjectText,
     message: contentHTML,
     attachments
@@ -399,7 +409,7 @@ async function processSendEmailForFee(feeId, emailTemplate, printTemplateId, isP
 export async function sendEmails({ listId, emailTemplateId, isPDFAttached, printTemplateId, from, cc, bcc }, user) {
   const emailTemplate = await getEmailTemplate(emailTemplateId, user);
   if (!emailTemplate) {
-    throw badRequest("EmailTemplate", "NOT_FOUND", "Invalid email template");
+    throw badRequest('EmailTemplate', 'NOT_FOUND', 'Invalid email template');
   }
   const rs = {
     success: [],
@@ -436,7 +446,7 @@ export async function paidMonthlyFee(feeId, form, user) {
   const { companyId } = user;
   const fee = await getStudentMonthlyFeeItem(feeId, user.companyId);
   if (!fee) {
-    throw badRequest("studentFee", FIELD_ERROR.INVALID, "Student fee not found");
+    throw badRequest('studentFee', FIELD_ERROR.INVALID, 'Student fee not found');
   }
   const transaction = await db.sequelize.transaction();
   try {
@@ -543,9 +553,9 @@ export async function paidMonthlyFee(feeId, form, user) {
       }
       const emailMessage = {
         from,
-        cc: cc ? cc.join(",") : "",
-        bcc: bcc ? bcc.join(",") : "",
-        to: to.join(","),
+        cc: cc ? cc.join(',') : '',
+        bcc: bcc ? bcc.join(',') : '',
+        to: to.join(','),
         subject,
         message: content
       };

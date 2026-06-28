@@ -1,9 +1,9 @@
 import express from 'express';
 
-import fs from "fs";
-import {hasPermission} from '../../middleware/permission';
-import {PERMISSION} from "../../../db/models/acl/acl-action";
-import {pagingParse} from '../../middleware/paging.middleware';
+import fs from 'fs';
+import { hasPermission } from '../../middleware/permission';
+import { PERMISSION } from '../../../db/models/acl/acl-action';
+import { pagingParse } from '../../middleware/paging.middleware';
 import {
   createStudentMonthlyFee,
   deleteListStudentMonthlyFee,
@@ -26,14 +26,11 @@ studentMonthlyFee.get('/', [pagingParse([
   }, {
     column: 'monthFee',
     dir: 'desc'
-  }, {
-    column: 'lastName',
-    dir: 'asc'
   }]), hasPermission(PERMISSION.CUSTOMER.READ)], (req, res, next) => {
   console.log(req.paging);
   return listStudentMonthlyFee(req.query, req.paging.order, req.paging.offset, req.paging.size, req.user)
     .then(t => {
-      res.status(200).json(t)
+      res.status(200).json(t);
     })
     .catch(next);
 });
@@ -57,7 +54,7 @@ studentMonthlyFee.get('/:id/pdf/:templateId', hasPermission(PERMISSION.CUSTOMER.
       res.status(404).end('Not found');
     });
   } catch (e) {
-    return next(e)
+    next(e);
   }
 });
 
@@ -95,7 +92,7 @@ studentMonthlyFee.post('/list/delete', hasPermission(PERMISSION.CUSTOMER.DELETE)
 studentMonthlyFee.get('/:id/print-data', hasPermission(PERMISSION.CUSTOMER.READ), async (req, res, next) => {
   return toPrintData(req.params.id, req.user.companyId)
     .then(t => res.status(200).json(t))
-    .catch(next)
+    .catch(next);
 });
 
 studentMonthlyFee.post('/:id/pay', hasPermission(PERMISSION.CUSTOMER.READ), async (req, res, next) => {

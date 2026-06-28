@@ -5,29 +5,35 @@ import { MAIN_CONTACT_TYPE } from '../../db/models/student/student';
 import { SUBJECT_CATEGORY } from '../../db/models/partner/subject';
 import { getOrCreatePersonalSubject } from '../subject/subject.service';
 import { DEFAULT_INCLUDE_USER_ATTRS } from '../../db/models/constants';
+import { mappingQueryArray } from '../../util/request.util';
 
 const { Op } = db.Sequelize;
 
 
-export const getStudentJoinClass = ({studentId}) => {
+export const getStudentJoinClass = ({ studentId }) => {
   return db.StudentJoinClass.findAll({
     where: {
       studentId
     },
-    include: [{model: db.StudentClass, as: "class", required: true}]
+    include: [{ model: db.StudentClass, as: 'class', required: true }]
   }).then((t) => t.map((item) => item.class));
 };
-export const getStudentJoinClassByClass = ({studentId}) => {
+
+export const getStudentJoinClassByClass = ({ listClassId }) => {
   return db.StudentJoinClass.findAll({
     where: {
       classId: {
-        [Op.in]: studentId
+        [Op.in]: listClassId
       }
     },
-    include: [{model: db.StudentClass, as: "class", required: true}]
+    attributes: ['studentId'],
+    distinct: true,
+    include: [{ model: db.StudentClass, as: 'class', required: true }]
   }).then((t) => t.map((item) => item.studentId));
 };
+
 export async function students(query, order, offset, limit, user) {
+  console.log('List students: ', query);
   const { search, class: studentClass, status } = query;
   const where = {};
   let wherePerson = {};
@@ -36,11 +42,11 @@ export async function students(query, order, offset, limit, user) {
     wherePerson = {
       [Op.or]: [
         {
-          "$child.firstName$": {
+          '$child.firstName$': {
             [Op.like]: `%${search}%`
           }
         }, {
-          "$child.lastName$": {
+          '$child.lastName$': {
             [Op.like]: `%${search}%`
           }
         }, {
@@ -53,20 +59,20 @@ export async function students(query, order, offset, limit, user) {
           }
         },
         {
-          "$father.firstName$": {
+          '$father.firstName$': {
             [Op.like]: `%${search}%`
           }
         }, {
-          "$father.lastName$": {
+          '$father.lastName$': {
             [Op.like]: `%${search}%`
           }
         },
         {
-          "$mother.firstName$": {
+          '$mother.firstName$': {
             [Op.like]: `%${search}%`
           }
         }, {
-          "$mother.lastName$": {
+          '$mother.lastName$': {
             [Op.like]: `%${search}%`
           }
         }
@@ -76,19 +82,13 @@ export async function students(query, order, offset, limit, user) {
   where.companyId = user.companyId;
   // eslint-disable-next-line no-unused-vars
   let _listStudentId = new Set();
-  if(studentClass) {
-    const _studentClass = JSON.parse(studentClass)
-    const listStudentId = []
-    if (_studentClass && _studentClass.length > 0) {
-      for (let i = 0; i < _studentClass.length; i++) {
-        const data = _studentClass[i]
-        // eslint-disable-next-line no-await-in-loop
-        listStudentId.push(data?.id)
-      }
+  if (studentClass) {
+    const listClassId = mappingQueryArray(studentClass, 'id');
+    if (listClassId) {
       const listStudentJoinClass = await getStudentJoinClassByClass({
-        studentId: listStudentId
-      })
-      _listStudentId = new Set(listStudentJoinClass)
+        listClassId
+      });
+      _listStudentId = new Set(listStudentJoinClass);
       if (_listStudentId.size) {
         where.id = {
           [Op.in]: Array.from(_listStudentId)
@@ -107,10 +107,10 @@ export async function students(query, order, offset, limit, user) {
   console.log(order);
   const _order = order.map(t => {
     const [name, dir] = t;
-    if (name === "name") {
+    if (name === 'name') {
       return [{
-        model: db.Person, as: "child"
-      }, "lastName", dir];
+        model: db.Person, as: 'child'
+      }, 'lastName', dir];
     }
     return t;
   });
@@ -119,46 +119,46 @@ export async function students(query, order, offset, limit, user) {
     where: { ...where, ...wherePerson },
     include: [
       {
-        model: db.User, as: "createdBy",
+        model: db.User, as: 'createdBy',
         attributes: DEFAULT_INCLUDE_USER_ATTRS
       },
       {
-        model: db.StudentBusStop, as: "toSchoolBusStop"
+        model: db.StudentBusStop, as: 'toSchoolBusStop'
       },
       {
-        model: db.StudentBusStop, as: "toHomeBusStop"
+        model: db.StudentBusStop, as: 'toHomeBusStop'
       },
       {
-        model: db.Person, as: "child"
+        model: db.Person, as: 'child'
       },
       {
-        model: db.Person, as: "father"
+        model: db.Person, as: 'father'
       },
       {
-        model: db.Person, as: "mother"
+        model: db.Person, as: 'mother'
       },
       {
-        model: db.StudentClass, as: "class"
+        model: db.StudentClass, as: 'class'
       }
     ],
     offset,
     limit
   });
-  const newRows = []
+  const newRows = [];
   // eslint-disable-next-line no-plusplus
   for (let i = 0; i < listStudent?.rows?.length; i++) {
-    const data = listStudent?.rows[i]
+    const data = listStudent?.rows[i];
     const item = {
       ...data.dataValues,
       // eslint-disable-next-line no-await-in-loop
-      classStudents: await getStudentJoinClass({studentId: data?.id})
-    }
-    newRows.push(item)
+      classStudents: await getStudentJoinClass({ studentId: data?.id })
+    };
+    newRows.push(item);
   }
   return {
     count: listStudent.count,
     rows: newRows
-  }
+  };
 }
 
 export async function getStudent(sId, user) {
@@ -169,37 +169,37 @@ export async function getStudent(sId, user) {
     },
     include: [
       {
-        model: db.Person, as: "child"
+        model: db.Person, as: 'child'
       },
       {
-        model: db.User, as: "createdBy"
+        model: db.User, as: 'createdBy'
       },
       {
-        model: db.StudentBusStop, as: "toSchoolBusStop"
+        model: db.StudentBusStop, as: 'toSchoolBusStop'
       },
       {
-        model: db.StudentBusStop, as: "toHomeBusStop"
+        model: db.StudentBusStop, as: 'toHomeBusStop'
       },
       {
-        model: db.StudentClass, as: "class"
+        model: db.StudentClass, as: 'class'
       },
       {
-        model: db.Person, as: "father"
+        model: db.Person, as: 'father'
       },
       {
-        model: db.Person, as: "mother"
+        model: db.Person, as: 'mother'
       },
       {
         model: db.StudentJoinClass,
-        as: "classStudents",
+        as: 'classStudents',
         include: [
-          {model: db.StudentClass, as: "class"}
+          { model: db.StudentClass, as: 'class' }
         ]
       }
     ]
   });
   if (!student) {
-    throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
+    throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
   }
   return student;
 }
@@ -211,16 +211,16 @@ export async function createStudent(user, createForm) {
     }
   });
   if (existedStudent) {
-    throw badRequest("studentId", "EXISTED", "Student Id existed !");
+    throw badRequest('studentId', 'EXISTED', 'Student Id existed !');
   }
   const transaction = await db.sequelize.transaction();
   try {
-    const splitFullName = createForm.fullName.trim().split(" ");
-    let firstName = "";
+    const splitFullName = createForm.fullName.trim().split(' ');
+    let firstName = '';
     const lastName = splitFullName[splitFullName.length - 1];
     if (splitFullName.length > 1) {
       splitFullName.splice(splitFullName.length - 1, 1);
-      firstName = splitFullName.join(" ");
+      firstName = splitFullName.join(' ');
     }
 
     const person = await db.Person.create(
@@ -271,9 +271,9 @@ export async function createStudent(user, createForm) {
         studentId: student.id,
         classId: item.id,
         createdDate: new Date()
-      }
-    })
-    await db.StudentJoinClass.bulkCreate(classStudent, {transaction})
+      };
+    });
+    await db.StudentJoinClass.bulkCreate(classStudent, { transaction });
     await transaction.commit();
     return student;
   } catch (e) {
@@ -291,7 +291,7 @@ export async function updateStudent(sId, updateForm, user) {
     }
   });
   if (!student) {
-    throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
+    throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
   }
 
   const person = await db.Person.findOne({
@@ -300,13 +300,13 @@ export async function updateStudent(sId, updateForm, user) {
     }
   });
   if (!person) {
-    throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
+    throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
   }
   const findStudentJoinClass = await db.StudentJoinClass.findOne({
     where: {
       studentId: student?.id
     }
-  })
+  });
 
   const transaction = await db.sequelize.transaction();
   try {
@@ -315,14 +315,14 @@ export async function updateStudent(sId, updateForm, user) {
         where: {
           studentId: findStudentJoinClass?.studentId
         }
-      }, {transaction})
+      }, { transaction });
     }
-    const splitFullName = updateForm.fullName.trim().split(" ");
-    let firstName = "";
+    const splitFullName = updateForm.fullName.trim().split(' ');
+    let firstName = '';
     const lastName = splitFullName[splitFullName.length - 1];
     if (splitFullName.length > 1) {
       splitFullName.splice(splitFullName.length - 1, 1);
-      firstName = splitFullName.join(" ");
+      firstName = splitFullName.join(' ');
     }
 
     await person.update({
@@ -346,7 +346,7 @@ export async function updateStudent(sId, updateForm, user) {
       alias: updateForm.alias,
       joinDate: updateForm.joinDate,
       status: updateForm.status ? updateForm.status : null,
-      fatherId: updateForm.father ?  updateForm.father.id : null,
+      fatherId: updateForm.father ? updateForm.father.id : null,
       motherId: updateForm.mother ? updateForm.mother.id : null,
       feePackage: updateForm.feePackage ? updateForm.feePackage : null,
       enableBus: updateForm.enableBus ? updateForm.enableBus : false,
@@ -367,9 +367,9 @@ export async function updateStudent(sId, updateForm, user) {
         studentId: student.id,
         classId: item?.id || item?.classId,
         createdDate: new Date()
-      }
-    })
-    await db.StudentJoinClass.bulkCreate(classStudent, {transaction})
+      };
+    });
+    await db.StudentJoinClass.bulkCreate(classStudent, { transaction });
 
     await transaction.commit();
     return studentUpdate;
@@ -387,7 +387,7 @@ export async function removeStudent(sId, user) {
     }
   });
   if (!checkStudent) {
-    throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
+    throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
   }
 
   const checkPerson = await db.Person.findOne({
@@ -396,7 +396,7 @@ export async function removeStudent(sId, user) {
     }
   });
   if (!checkPerson) {
-    throw badRequest("student", FIELD_ERROR.INVALID, "student not found");
+    throw badRequest('student', FIELD_ERROR.INVALID, 'student not found');
   }
   const transaction = await db.sequelize.transaction();
   try {
@@ -404,7 +404,7 @@ export async function removeStudent(sId, user) {
       where: {
         studentId: checkStudent.id
       }
-    }, {transaction})
+    }, { transaction });
     await db.Person.destroy({
       where: {
         id: checkPerson.id
