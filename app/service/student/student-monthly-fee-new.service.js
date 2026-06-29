@@ -3,7 +3,7 @@ import Mustache from 'mustache';
 import db from '../../db/models';
 import { badRequest, FIELD_ERROR } from '../../config/error';
 import { hex2binary } from '../../util/string.util';
-import { formatDateTime, formatTemplateMoney, personToPrintData } from '../template/template.util';
+import { classToPrintData, formatDateTime, formatTemplateMoney, personToPrintData } from '../template/template.util';
 import { templateRenderPDF } from '../template/template-render.service';
 import { getEmailTemplate } from '../template/template-email.service';
 import { EMAIL_ATTACHMENT_TYPE } from '../../db/models/email/email-attachment';
@@ -126,7 +126,7 @@ export async function getStudentMonthlyFee(sId, user) {
   return students.map(r => {
     const uuid = Buffer.from(r.id, 'hex').toString('hex');
     const rs = r.get({ plain: true });
-    console.log(rs)
+    console.log(rs);
     rs.id = uuid;
     try {
       rs.extraData = JSON.parse(rs.extraData);
@@ -308,7 +308,8 @@ export async function toPrintData(id, companyId) {
             model: db.Person, as: 'mother'
           }
         ]
-      }
+      },
+      { model: db.StudentClass, as: 'class' }
     ]
   });
 
@@ -336,7 +337,7 @@ export async function toPrintData(id, companyId) {
     tuitionFee: formatTemplateMoney(fee.feePerMonth * (fee.numberOfMonths || 1)),
     mealFee: formatTemplateMoney(fee.mealFee),
     absentDay: fee.absentDay,
-    absentDayFee: fee.absentDayFee,
+    absentDayFee: formatTemplateMoney(fee.absentDayFee),
     studentAbsentDay: fee.studentAbsentDay,
     studentAbsentDayFee: formatTemplateMoney(fee.studentAbsentDayFee),
     deduceTuition: formatTemplateMoney(fee.deduceTuition),
@@ -350,7 +351,8 @@ export async function toPrintData(id, companyId) {
     credit: formatTemplateMoney(credit),
     remark: fee.remark,
     total: formatTemplateMoney(total),
-    class: fee.classId
+    class: classToPrintData(fee.class),
+    extraData: JSON.parse(fee.extraData || {})
   };
   const student = personToPrintData(fee.student.child);
 

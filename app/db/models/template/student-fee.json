@@ -1,0 +1,112 @@
+[
+  {
+    "key": "studentFee.monthFee",
+    "value": "{{studentFee.monthFee}}",
+    "remark": "Từ tháng"
+  },
+  {
+    "key": "studentFee.yearFee",
+    "value": "{{studentFee.yearFee}}",
+    "remark": "Từ Năm"
+  },
+  {
+    "key": "studentFee.scholarShip",
+    "value": "{{studentFee.scholarShip}}",
+    "remark": "Số tiền học bổng"
+  },
+  {
+    "key": "studentFee.scholarShipPercent",
+    "value": "{{studentFee.scholarShipPercent}}",
+    "remark": "Học bổng (%)"
+  },
+  {
+    "key": "studentFee.tuitionFee",
+    "value": "{{studentFee.tuitionFee}}",
+    "remark": "Học phí (1 tháng)"
+  },
+  {
+    "key": "studentFee.mealFee",
+    "value": "{{studentFee.mealFee}}",
+    "remark": "Tiền ăn xế"
+  },
+  {
+    "key": "studentFee.absentDay",
+    "value": "{{studentFee.absentDay}}",
+    "remark": "Số ngày nghỉ của trường"
+  },
+  {
+    "key": "studentFee.absentDayFee",
+    "value": "{{studentFee.absentDayFee}}",
+    "remark": "Học phí giảm trừ theo số ngày nghỉ của trường"
+  },
+  {
+    "key": "studentFee.studentAbsentDay",
+    "value": "{{studentFee.studentAbsentDay}}",
+    "remark": "Số ngày nghỉ học sinh"
+  },
+  {
+    "key": "studentFee.studentAbsentDayFee",
+    "value": "{{studentFee.studentAbsentDayFee}}",
+    "remark": "Số tiền hoàn lại cho ngày nghỉ của học sinh"
+  },
+  {
+    "key": "studentFee.deduceTuition",
+    "value": "{{studentFee.deduceTuition}}",
+    "remark": "Giảm trừ học phí"
+  },
+  {
+    "key": "studentFee.busFee",
+    "value": "{{studentFee.busFee}}",
+    "remark": "Phí xe bus"
+  },
+  {
+    "key": "studentFee.beginningYearFee",
+    "value": "{{studentFee.beginningYearFee}}",
+    "remark": "Phí đầu năm"
+  },
+  {
+    "key": "studentFee.otherFee",
+    "value": "{{studentFee.otherFee}}",
+    "remark": "Phí khác"
+  },
+  {
+    "key": "studentFee.otherDeduceFee",
+    "value": "{{studentFee.otherDeduceFee}}",
+    "remark": "Phí giảm trừ khác"
+  },
+  {
+    "key": "studentFee.debt",
+    "value": "{{studentFee.debt}}",
+    "remark": "Nợ"
+  },
+  {
+    "key": "studentFee.remark",
+    "value": "{{studentFee.remark}}",
+    "remark": "Mô tả thêm"
+  },
+  {
+    "key": "studentFee.total",
+    "value": "{{studentFee.total}}",
+    "remark": "Tổng cộng học phí"
+  },
+  {
+    "key": "studentFee.toMonth",
+    "value": "{{studentFee.toMonth}}",
+    "remark": "Đến tháng"
+  },
+  {
+    "key": "studentFee.toYear",
+    "value": "{{studentFee.toYear}}",
+    "remark": "Đến Năm"
+  },
+  {
+    "key": "studentFee.otherFeeDesc",
+    "value": "{{studentFee.extraData.otherFeeDesc}}",
+    "remark": "Mô tả chi phí khác"
+  },
+  {
+    "key": "studentFee.otherDeduceFeeDesc",
+    "value": "{{studentFee.extraData.otherDeduceFeeDesc}}",
+    "remark": "Mô tả tiền trả lại khác"
+  }
+]

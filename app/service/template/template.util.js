@@ -1,6 +1,6 @@
 import numeral from 'numeral';
-import moment from "moment";
-import {GENDER} from "../../db/models/person";
+import moment from 'moment';
+import { GENDER } from '../../db/models/person';
 
 const TIMESTAMP_FORMAT = 'YYYYDDMM_hhmmss';
 export const BIRTHDAY_FORMAT = 'DD-MM-YYYY';
@@ -54,5 +54,15 @@ export function personToPrintData(person) {
     birthday: formatDateTime(person.birthday, BIRTHDAY_FORMAT),
     sex: gender(person.sex),
     remark: person.remark
-  }
+  };
+}
+
+export function classToPrintData(studentClass) {
+  if (!studentClass) return {};
+  return {
+    id: studentClass.id,
+    name: studentClass.name,
+    tuitionFeePerMonth: formatTemplateMoney(studentClass.tuitionFeePerMonth),
+    mealFeePerMonth: formatTemplateMoney(studentClass.mealFeePerMonth)
+  };
 }
