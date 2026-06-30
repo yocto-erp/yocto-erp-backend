@@ -6,13 +6,40 @@ import db from '../../db/models';
 import { BIRTHDAY_FORMAT, formatDateTime } from '../template/template.util';
 import { appLog } from '../../config/winston';
 import { badRequest, FIELD_ERROR } from '../../config/error';
+import { hasText } from '../../util/string.util';
 
-export const mappingSchool = (school) => ({
-  ...school,
-  level: school.level ? JSON.parse(school.level) : [],
-  region: school.region ? JSON.parse(school.region) : [],
-  extraData: school.extraData ? JSON.parse(school.extraData) : {}
-});
+export const mappingSchool = (school) => {
+  let level = [];
+  let region = [];
+  try {
+    if (school.level) {
+      level = JSON.parse(school.level);
+    }
+  } catch (e) {
+    // ignore
+  }
+  try {
+    if (school.region) {
+      region = JSON.parse(school.region);
+    }
+  } catch (e) {
+    // ignore
+  }
+  let extraData = {};
+  if (hasText(school.extraData)) {
+    try {
+      extraData = JSON.parse(school.extraData);
+    } catch (e) {
+      // ignore
+    }
+  }
+  return {
+    ...school,
+    level,
+    region,
+    extraData
+  };
+};
 
 export async function getCompanySchoolUpdate(user) {
   const rs = await db.CompanySchoolUpdate.findOne({
