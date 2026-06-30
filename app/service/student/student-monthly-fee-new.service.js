@@ -175,7 +175,7 @@ export async function createStudentMonthlyFee(user, createForm) {
           lastUpdatedDate: new Date(),
           lastUpdatedById: user.id,
           classId: studentFee.class.id,
-          isTuitionPaid: studentFee.isTuitionPaid,
+          isTuitionPaid: !!studentFee.isTuitionPaid,
           extraData: JSON.stringify(studentFee.extraData || {})
         });
       }
@@ -234,7 +234,7 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
           lastUpdatedById: user.id,
           classId: item.class.id,
           extraData: JSON.stringify(item.extraData || {}),
-          isTuitionPaid: item.isTuitionPaid
+          isTuitionPaid: !!item.isTuitionPaid
         }, { transaction });
       }
       await transaction.commit();
