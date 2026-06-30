@@ -12,7 +12,7 @@ describe('Student Month Fee Test', () => {
     console.log(rs);
   });
   it('toPrintData', async () => {
-    const rs = await toPrintData(108, 2);
+    const rs = await toPrintData(109, 2);
     console.log(rs);
   });
   it('generatePDF studentFee', async () => {

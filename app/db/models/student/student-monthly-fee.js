@@ -43,7 +43,9 @@ export default class StudentMonthlyFee extends Sequelize.Model {
       numberOfMonths: { type: DataTypes.INTEGER },
       classId: { type: DataTypes.INTEGER },
       privateId: { type: DataTypes.INTEGER },
-      extraData: { type: DataTypes.TEXT }
+      extraData: { type: DataTypes.TEXT },
+      createdDate: { type: DataTypes.DATE },
+      isTuitionPaid: { type: DataTypes.BOOLEAN }
     }, {
       tableName: 'student_monthly_fee',
       modelName: 'studentMonthlyFee',

@@ -175,6 +175,7 @@ export async function createStudentMonthlyFee(user, createForm) {
           lastUpdatedDate: new Date(),
           lastUpdatedById: user.id,
           classId: studentFee.class.id,
+          isTuitionPaid: studentFee.isTuitionPaid,
           extraData: JSON.stringify(studentFee.extraData || {})
         });
       }
@@ -232,7 +233,8 @@ export async function updateStudentMonthlyFee(sId, updateForm, user) {
           lastUpdatedDate: new Date(),
           lastUpdatedById: user.id,
           classId: item.class.id,
-          extraData: JSON.stringify(item.extraData || {})
+          extraData: JSON.stringify(item.extraData || {}),
+          isTuitionPaid: item.isTuitionPaid
         }, { transaction });
       }
       await transaction.commit();
@@ -320,9 +322,9 @@ export async function toPrintData(id, companyId) {
     toMonthStr = toMonthStr.substring(toMonthStr.length - 2);
   }
 
-  const debt = fee.student?.debt?.debit || 0;
-  const credit = fee.student?.debt?.credit || 0;
-  const total = fee.totalAmount + debt - credit;
+  const debt = 0;
+  const credit = 0;
+  const total = fee.totalAmount;
   let extraData = {};
   if (fee.extraData) {
     try {
@@ -331,7 +333,7 @@ export async function toPrintData(id, companyId) {
       // ignore
     }
   }
-
+  const tuitionFee = fee.isTuitionPaid ? 0 : fee.feePerMonth * (fee.numberOfMonths || 1);
 
   const studentFee = {
     monthFee: monthStr,
@@ -343,7 +345,7 @@ export async function toPrintData(id, companyId) {
     numberOfMonths: fee.numberOfMonths || 1,
     scholarShip: formatTemplateMoney(fee.scholarFee),
     scholarShipPercent: `${fee.scholarShip} %`,
-    tuitionFee: formatTemplateMoney(fee.feePerMonth * (fee.numberOfMonths || 1)),
+    tuitionFee: formatTemplateMoney(tuitionFee),
     mealFee: formatTemplateMoney(fee.mealFee),
     absentDay: fee.absentDay,
     absentDayFee: formatTemplateMoney(fee.absentDayFee),
@@ -355,10 +357,11 @@ export async function toPrintData(id, companyId) {
     otherFee: formatTemplateMoney(fee.otherFee),
     otherDeduceFee: formatTemplateMoney(fee.otherDeduceFee),
     debtNumber: debt,
-    creditNumber: debt,
+    creditNumber: credit,
     debt: formatTemplateMoney(debt),
     credit: formatTemplateMoney(credit),
     remark: fee.remark,
+    totalNumber: total,
     total: formatTemplateMoney(total),
     class: classToPrintData(fee.class),
     extraData
