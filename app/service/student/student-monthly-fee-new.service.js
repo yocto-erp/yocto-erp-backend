@@ -323,6 +323,15 @@ export async function toPrintData(id, companyId) {
   const debt = fee.student?.debt?.debit || 0;
   const credit = fee.student?.debt?.credit || 0;
   const total = fee.totalAmount + debt - credit;
+  let extraData = {};
+  if (fee.extraData) {
+    try {
+      extraData = JSON.parse(fee.extraData);
+    } catch (e) {
+      // ignore
+    }
+  }
+
 
   const studentFee = {
     monthFee: monthStr,
@@ -352,7 +361,7 @@ export async function toPrintData(id, companyId) {
     remark: fee.remark,
     total: formatTemplateMoney(total),
     class: classToPrintData(fee.class),
-    extraData: JSON.parse(fee.extraData || {})
+    extraData
   };
   const student = personToPrintData(fee.student.child);
 
