@@ -1,0 +1,34 @@
+{
+  "company": {
+    "name": "Hawis",
+    "englishName": "Hawis Edu",
+    "gsm": "0938130683",
+    "email": "",
+    "address": "Le",
+    "establishedDate": "19-06-2026"
+  },
+  "school": {
+    "region": "Miền Bắc,Miền Trung,Miền Nam",
+    "swanJoinedDate": "11-06-2026",
+    "owner": "Le Cảnh",
+    "manager": "Lê Cảnh",
+    "grade": "Mầm non,Tiểu học",
+    "typeOrganization": "phi lợi nhuận",
+    "structure": "trường mầm non, vừa có playgroup",
+    "staffs": "Bảo vệ kiêm giám đốc",
+    "educationMethod": "Steiner-inspired",
+    "classesDetail": "- Lớp ánh sao (mầm non), 10 bạn, cô Nhật Anh phụ trách.\n- Lớp một, 8 bạn, thầy Hùng",
+    "certificate": "Nhiều lắm",
+    "mentor": "Cô Thanh, Barbara",
+    "lastYearSummary": "Ổn",
+    "nextYearDemand": "Tự học",
+    "suggestion": "Tự xây",
+    "lastUpdated": "20262506_103913",
+    "buildingArea": "",
+    "playgroundArea": "",
+    "maxClass": "",
+    "totalClass": "",
+    "maxStudent": "",
+    "totalStudent": 50
+  }
+}

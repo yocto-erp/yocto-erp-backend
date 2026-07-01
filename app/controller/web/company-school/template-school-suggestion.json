@@ -1,0 +1,142 @@
+[
+  {
+    "key": "company.name",
+    "value": "{{company.name}}",
+    "remark": "Tên công ty"
+  },
+  {
+    "key": "company.englishName",
+    "value": "{{company.englishName}}",
+    "remark": "Tên công ty (tiếng anh)"
+  },
+  {
+    "key": "company.gsm",
+    "value": "{{company.gsm}}",
+    "remark": "Số điện thoại"
+  },
+  {
+    "key": "company.email",
+    "value": "{{company.email}}",
+    "remark": "Email"
+  },
+  {
+    "key": "company.address",
+    "value": "{{company.address}}",
+    "remark": "Địa chỉ"
+  },
+  {
+    "key": "company.establishedDate",
+    "value": "{{company.establishedDate}}",
+    "remark": "Ngày thành lập"
+  },
+  {
+    "key": "school.region",
+    "value": "{{school.region}}",
+    "remark": "Vùng miền"
+  },
+  {
+    "key": "school.swanJoinedDate",
+    "value": "{{school.swanJoinedDate}}",
+    "remark": "Ngày gia nhập swan"
+  },
+  {
+    "key": "school.owner",
+    "value": "{{school.owner}}",
+    "remark": "Chủ trường"
+  },
+  {
+    "key": "school.manager",
+    "value": "{{school.manager}}",
+    "remark": "Quản lý"
+  },
+  {
+    "key": "school.grade",
+    "value": "{{school.grade}}",
+    "remark": "Khối lớp"
+  },
+  {
+    "key": "school.typeOrganization",
+    "value": "{{school.typeOrganization}}",
+    "remark": "Mô hình trường"
+  },
+  {
+    "key": "school.structure",
+    "value": "{{school.structure}}",
+    "remark": "Cấu trúc trường"
+  },
+  {
+    "key": "school.staffs",
+    "value": "{{school.staffs}}",
+    "remark": "Nhân viên"
+  },
+  {
+    "key": "school.educationMethod",
+    "value": "{{school.educationMethod}}",
+    "remark": "Phương pháp hoạt động"
+  },
+  {
+    "key": "school.classesDetail",
+    "value": "{{school.classesDetail}}",
+    "remark": "Thông tin lớp"
+  },
+  {
+    "key": "school.certificate",
+    "value": "{{school.certificate}}",
+    "remark": "Chứng chỉ"
+  },
+  {
+    "key": "school.mentor",
+    "value": "{{school.mentor}}",
+    "remark": "Tư vấn"
+  },
+  {
+    "key": "school.lastYearSummary",
+    "value": "{{school.lastYearSummary}}",
+    "remark": "Tình hình năm qua"
+  },
+  {
+    "key": "school.nextYearDemand",
+    "value": "{{school.nextYearDemand}}",
+    "remark": "Nhu cầu sắp tới"
+  },
+  {
+    "key": "school.suggestion",
+    "value": "{{school.suggestion}}",
+    "remark": "Góp ý xây dựng"
+  },
+  {
+    "key": "school.lastUpdated",
+    "value": "{{school.lastUpdated}}",
+    "remark": "Ngày cập nhập thông tin"
+  },
+  {
+    "key": "school.buildingArea",
+    "value": "{{school.buildingArea}}",
+    "remark": "Diện tích xây dựng"
+  },
+  {
+    "key": "school.playgroundArea",
+    "value": "{{school.playgroundArea}}",
+    "remark": "Diện tích sân chơi"
+  },
+  {
+    "key": "school.maxClass",
+    "value": "{{school.maxClass}}",
+    "remark": "Số lớp tối đa"
+  },
+  {
+    "key": "school.totalClass",
+    "value": "{{school.totalClass}}",
+    "remark": "Số lớp hiện tại"
+  },
+  {
+    "key": "school.maxStudent",
+    "value": "{{school.maxStudent}}",
+    "remark": "Số học sinh tối đa"
+  },
+  {
+    "key": "school.totalStudent",
+    "value": "{{school.totalStudent}}",
+    "remark": "Số học sinh hiện tại"
+  }
+]

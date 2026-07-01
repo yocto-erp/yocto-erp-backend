@@ -3,10 +3,11 @@ import fs from 'fs';
 import ExcelJS from 'exceljs';
 import { Op } from 'sequelize';
 import db from '../../db/models';
-import { BIRTHDAY_FORMAT, formatDateTime } from '../template/template.util';
+import { BIRTHDAY_FORMAT, formatDateTime, VN_DATE_TIME } from '../template/template.util';
 import { appLog } from '../../config/winston';
 import { badRequest, FIELD_ERROR } from '../../config/error';
 import { hasText } from '../../util/string.util';
+import { templateRenderPDF } from '../template/template-render.service';
 
 export const mappingSchool = (school) => {
   let level = [];
@@ -289,7 +290,7 @@ export async function downloadCompanySchoolUpdate(
         establishedDate: formatDateTime(company.establishedDate, BIRTHDAY_FORMAT),
         website: company.website,
         facebook: company.facebook,
-        region: region.map(t => t.name).join(','),
+        region: (region || []).map(t => t.name).join(','),
         joinedDate: formatDateTime(joinedDate, BIRTHDAY_FORMAT),
         fullNameOwner,
         fullNameManage,
@@ -315,3 +316,45 @@ export async function downloadCompanySchoolUpdate(
   return rs.url;
 }
 
+export const schoolToPrintData = async (schoolId) => {
+  const school = await getCompanySchoolUpdateById(schoolId);
+  return {
+    company: {
+      name: school.company.name,
+      englishName: school.company.englishName,
+      gsm: school.company.gsm,
+      email: school.company.email,
+      address: school.company.address,
+      establishedDate: formatDateTime(school.company.establishedDate, BIRTHDAY_FORMAT)
+    },
+    school: {
+      region: school.region.map(t => t.name).join(', '),
+      swanJoinedDate: formatDateTime(school.joinedDate, BIRTHDAY_FORMAT),
+      owner: school.fullNameOwner,
+      manager: school.fullNameManage,
+      grade: school.level.map(t => t.name).join(', '),
+      typeOrganization: school.typeOrganization,
+      structure: school.legalStructure,
+      staffs: school.numberWorker,
+      educationMethod: school.organizationalStructure,
+      classesDetail: school.infoClass,
+      certificate: school.methodTeacher,
+      mentor: school.methodSchool,
+      lastYearSummary: school.descriptionLastYear,
+      nextYearDemand: school.demandThisYear,
+      suggestion: school.suggestion,
+      lastUpdated: formatDateTime(school.lastUpdated, VN_DATE_TIME),
+      buildingArea: school.extraData.buildingArea || '',
+      playgroundArea: school.extraData.playgroundArea || '',
+      maxClass: school.extraData.totalClass || '',
+      totalClass: school.extraData.schoolCurrentClass || '',
+      maxStudent: school.extraData.schoolTotalStudent || '',
+      totalStudent: school.studentSize
+    }
+  };
+};
+
+export const printPDF = async (templateId, schoolId) => {
+  const school = await schoolToPrintData(schoolId);
+  return templateRenderPDF(templateId, school, school.company.name);
+};

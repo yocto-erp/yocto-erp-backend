@@ -4,6 +4,7 @@ import { GENDER } from '../../db/models/person';
 
 const TIMESTAMP_FORMAT = 'YYYYDDMM_hhmmss';
 export const BIRTHDAY_FORMAT = 'DD-MM-YYYY';
+export const VN_DATE_TIME = 'DD-MM-YYYY hh:mm:ss';
 
 export function formatDateTime(d, format = TIMESTAMP_FORMAT) {
   if (!d) return '';

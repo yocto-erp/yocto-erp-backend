@@ -5,7 +5,7 @@ import {
   downloadCompanySchoolUpdate,
   getCompanySchoolUpdate,
   getCompanySchoolUpdateById,
-  listCompanySchoolUpdate,
+  listCompanySchoolUpdate, printPDF,
   saveCompanySchoolUpdate
 } from '../../../service/company-school/company-school-update.service';
 import { PERMISSION } from '../../../db/models/acl/acl-action';
@@ -14,7 +14,7 @@ import { pagingParse } from '../../middleware/paging.middleware';
 const router = express.Router();
 
 router.get('/', [hasPermission([PERMISSION.COMPANY_SCHOOL.READ]),
-    pagingParse({column: 'id', dir: 'desc'})],
+    pagingParse({ column: 'id', dir: 'desc' })],
   (req, res, next) => {
     return listCompanySchoolUpdate(req.user, req.query, req.paging)
       .then(result => res.status(200).json(result)).catch(next);
@@ -24,6 +24,23 @@ router.get('/:id(\\d+)', hasPermission(PERMISSION.COMPANY_SCHOOL.READ), (req, re
   return getCompanySchoolUpdateById(req.params.id)
     .then(result => res.status(200).json(result))
     .catch(next);
+});
+
+router.get('/:id(\\d+)/print/:templateId', hasPermission(PERMISSION.COMPANY_SCHOOL.READ), async (req, res, next) => {
+  try {
+    const pdfFile = await printPDF(req.params.templateId, req.params.id, req.user.companyId);
+    const s = fs.createReadStream(pdfFile);
+    s.on('open', function onOpen() {
+      res.set('Content-Type', 'application/pdf');
+      s.pipe(res);
+    });
+    s.on('error', function onError() {
+      res.set('Content-Type', 'text/plain');
+      res.status(404).end('Not found');
+    });
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.get('/getDetail', isAuthenticated(),
@@ -55,7 +72,7 @@ router.get('/download', hasPermission(PERMISSION.COMPANY_SCHOOL.READ), async (re
       res.status(404).end('Not found');
     });
   } catch (e) {
-    return next(e)
+    next(e);
   }
 });
 
